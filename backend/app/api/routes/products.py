@@ -706,6 +706,9 @@ async def import_product_image(
                             try:
                                 img_data = img_obj.data
                                 img = Image.open(io.BytesIO(img_data))
+                                # Only OCR images large enough to be actual page scans (ignores logos/icons to save RAM/time)
+                                if img.width < 400 or img.height < 400:
+                                    continue
                                 # Preprocess image (Grayscale only to save memory)
                                 img = img.convert('L')
                                 ocr_text_parts.append(pytesseract.image_to_string(img, config='--psm 6'))
