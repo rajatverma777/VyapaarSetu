@@ -21,7 +21,8 @@ export default function SettingsPage() {
     company_name: '', gstin: '', address: '', city: '', state: '',
     state_code: '', pincode: '', mobile: '', email: '', website: '',
     bank_name: '', bank_account: '', bank_ifsc: '',
-    invoice_prefix: 'INV', invoice_terms: '', invoice_footer: ''
+    invoice_prefix: 'INV', invoice_terms: '', invoice_footer: '',
+    logo_base64: '', watermark_base64: ''
   })
 
   // Profile
@@ -316,6 +317,83 @@ export default function SettingsPage() {
                 <FormField label="Invoice Footer">
                   <input className="input" value={company.invoice_footer} onChange={e => setC('invoice_footer', e.target.value)} placeholder="e.g. Thank you for your business!" />
                 </FormField>
+              </div>
+
+              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Invoice Branding</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Logo Upload */}
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20">
+                    <label className="text-xs font-semibold text-gray-500 mb-2">Company Logo (Header)</label>
+                    {company.logo_base64 ? (
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white flex items-center justify-center">
+                        <img src={company.logo_base64} alt="Company Logo" className="max-w-full max-h-full object-contain" />
+                        <button
+                          onClick={() => setC('logo_base64', '')}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                        <Building2 size={32} />
+                      </div>
+                    )}
+                    <label className="btn-secondary text-xs cursor-pointer">
+                      Upload Logo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onloadend = () => setC('logo_base64', reader.result)
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Watermark Upload */}
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20">
+                    <label className="text-xs font-semibold text-gray-500 mb-2">Invoice Watermark (Background)</label>
+                    {company.watermark_base64 ? (
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white flex items-center justify-center">
+                        <img src={company.watermark_base64} alt="Invoice Watermark" className="max-w-full max-h-full object-contain opacity-50" />
+                        <button
+                          onClick={() => setC('watermark_base64', '')}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                        <Palette size={32} />
+                      </div>
+                    )}
+                    <label className="btn-secondary text-xs cursor-pointer">
+                      Upload Watermark
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onloadend = () => setC('watermark_base64', reader.result)
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex justify-end mt-5">

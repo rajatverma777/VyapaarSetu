@@ -575,9 +575,25 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
     contact_line2 = "  |  ".join(contact_parts2)
 
     logo_img = None
-    header_logo_path = LOGO_TRANS_PATH if os.path.exists(LOGO_TRANS_PATH) else LOGO_PATH
-    if os.path.exists(header_logo_path):
-        logo_img = Image(header_logo_path, width=13 * mm, height=13 * mm)
+    logo_base64 = company.get("logo_base64")
+    if logo_base64:
+        try:
+            import base64
+            import io
+            if "," in logo_base64:
+                header, base64_data = logo_base64.split(",", 1)
+            else:
+                base64_data = logo_base64
+            img_data = base64.b64decode(base64_data)
+            img_file = io.BytesIO(img_data)
+            logo_img = Image(img_file, width=13 * mm, height=13 * mm)
+        except Exception as e:
+            print(f"Failed to load user logo base64: {e}")
+            
+    if not logo_img:
+        header_logo_path = LOGO_TRANS_PATH if os.path.exists(LOGO_TRANS_PATH) else LOGO_PATH
+        if os.path.exists(header_logo_path):
+            logo_img = Image(header_logo_path, width=13 * mm, height=13 * mm)
 
     # Sub-table of company details (Name + Address + Contacts)
     co_paragraphs = [
@@ -933,8 +949,30 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
     # ── Define canvas layout callback to center watermark and fix footer at absolute bottom ──
     def draw_page_decorations(canvas, doc_obj):
         # 1. Centered Watermark Logo Crest
-        watermark_img = CREST_PATH if os.path.exists(CREST_PATH) else LOGO_PATH
-        if os.path.exists(watermark_img):
+        watermark_img = None
+        watermark_base64 = company.get("watermark_base64")
+        if watermark_base64:
+            try:
+                import base64
+                import io
+                from reportlab.lib.utils import ImageReader
+                if "," in watermark_base64:
+                    header, base64_data = watermark_base64.split(",", 1)
+                else:
+                    base64_data = watermark_base64
+                img_data = base64.b64decode(base64_data)
+                img_file = io.BytesIO(img_data)
+                watermark_img = ImageReader(img_file)
+            except Exception as e:
+                print(f"Failed to load watermark base64: {e}")
+                
+        if not watermark_img:
+            default_path = CREST_PATH if os.path.exists(CREST_PATH) else LOGO_PATH
+            if os.path.exists(default_path):
+                from reportlab.lib.utils import ImageReader
+                watermark_img = ImageReader(default_path)
+                
+        if watermark_img:
             canvas.saveState()
             canvas.setFillAlpha(0.20)
             canvas.setStrokeAlpha(0.20)

@@ -24,6 +24,8 @@ class CompanySettings(BaseModel):
     invoice_prefix: str = "INV"
     invoice_terms: Optional[str] = None
     invoice_footer: Optional[str] = None
+    logo_base64: Optional[str] = None
+    watermark_base64: Optional[str] = None
 
 @router.get("/company")
 async def get_company_settings(
