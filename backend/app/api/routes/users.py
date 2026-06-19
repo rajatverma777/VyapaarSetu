@@ -99,6 +99,8 @@ async def update_profile(
         {"_id": current_user["_id"]},
         update_op
     )
+    from app.core.security import invalidate_user_cache
+    invalidate_user_cache(current_user["username"])
     return {"message": "Profile updated"}
 
 @router.put("/{user_id}")
@@ -141,6 +143,8 @@ async def update_user(
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
+    from app.core.security import invalidate_user_cache
+    invalidate_user_cache(user["username"])
     return {"message": "User updated"}
 
 @router.post("/change-password")
@@ -158,6 +162,8 @@ async def change_password(
         {"_id": current_user["_id"]},
         {"$set": {"password": hashed}}
     )
+    from app.core.security import invalidate_user_cache
+    invalidate_user_cache(current_user["username"])
     return {"message": "Password changed successfully"}
 
 @router.delete("/{user_id}")
@@ -170,9 +176,15 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
 
     # Ensure target user belongs to the same tenant!
+    user = await db.users.find_one({"_id": ObjectId(user_id), "tenant_id": current_user.get("tenant_id")})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     result = await db.users.delete_one({"_id": ObjectId(user_id), "tenant_id": current_user.get("tenant_id")})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
+    from app.core.security import invalidate_user_cache
+    invalidate_user_cache(user["username"])
     return {"message": "User deleted"}
 
 

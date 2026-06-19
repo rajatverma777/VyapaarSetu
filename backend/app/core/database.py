@@ -134,9 +134,22 @@ async def get_database(request: Request = None):
     if token:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            tenant_id = payload.get("tenant_id")
+            if tenant_id:
+                return TenantDatabase(db_instance.db, tenant_id)
+                
             username: str = payload.get("sub")
             if username:
-                user = await db_instance.db.users.find_one({"username": username, "is_active": True})
+                if hasattr(request, "state"):
+                    if hasattr(request.state, "user"):
+                        user = request.state.user
+                    else:
+                        user = await db_instance.db.users.find_one({"username": username, "is_active": True})
+                        if user:
+                            request.state.user = user
+                else:
+                    user = await db_instance.db.users.find_one({"username": username, "is_active": True})
+                    
                 if user and "tenant_id" in user:
                     return TenantDatabase(db_instance.db, user["tenant_id"])
         except Exception:

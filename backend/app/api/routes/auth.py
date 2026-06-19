@@ -36,7 +36,13 @@ async def login(
         )
 
     access_token = create_access_token(
-        data={"sub": user["username"]},
+        data={
+            "sub": user["username"],
+            "id": str(user["_id"]),
+            "tenant_id": user.get("tenant_id"),
+            "role": user.get("role"),
+            "permissions": user.get("permissions", {})
+        },
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     refresh_token = create_refresh_token(data={"sub": user["username"]})
@@ -85,7 +91,13 @@ async def refresh_token_endpoint(
         raise credentials_exception
 
     access_token = create_access_token(
-        data={"sub": user["username"]},
+        data={
+            "sub": user["username"],
+            "id": str(user["_id"]),
+            "tenant_id": user.get("tenant_id"),
+            "role": user.get("role"),
+            "permissions": user.get("permissions", {})
+        },
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     new_refresh_token = create_refresh_token(data={"sub": user["username"]})
@@ -200,10 +212,16 @@ async def get_setup_status(db = Depends(get_database)):
     return {"need_setup": user_count == 0}
 
 @router.get("/me")
-async def get_me(current_user = Depends(get_current_active_user)):
-    user = serialize_doc(current_user)
-    user.pop("password", None)
-    return user
+async def get_me(
+    db = Depends(get_database),
+    current_user = Depends(get_current_active_user)
+):
+    user = await db.users.find_one({"_id": current_user["_id"]})
+    if not user:
+        user = current_user
+    user_data = serialize_doc(user)
+    user_data.pop("password", None)
+    return user_data
 
 @router.post("/logout")
 async def logout(current_user = Depends(get_current_active_user)):

@@ -57,3 +57,9 @@ backend/static/invoices/
 *.jpg
 *.jpeg
 
+# Unignore static logo and watermark assets for PDF templates
+!backend/app/static/care_pharma_logo.png
+!backend/app/static/care_pharma_logo_transparent.png
+!backend/app/static/care_pharma_crest.png
+
+

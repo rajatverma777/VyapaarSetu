@@ -239,6 +239,11 @@ export function SearchAutocomplete({ onSelect, onSearch, placeholder = 'Searchâ€
   const containerRef = useRef()
   const listRef = useRef()
 
+  const onSearchRef = useRef(onSearch)
+  useEffect(() => {
+    onSearchRef.current = onSearch
+  }, [onSearch])
+
   useEffect(() => {
     const handler = (e) => {
       if (!containerRef.current?.contains(e.target)) setShowDrop(false)
@@ -251,13 +256,13 @@ export function SearchAutocomplete({ onSelect, onSearch, placeholder = 'Searchâ€
     if (search.length < 1) { setResults([]); setShowDrop(false); return }
     const t = setTimeout(async () => {
       try {
-        const res = await onSearch(search)
+        const res = await onSearchRef.current(search)
         setResults(res)
         setShowDrop(true)
       } catch { }
-    }, 250)
+    }, 100) // Reduced to 100ms for near-instant typing response
     return () => clearTimeout(t)
-  }, [search, onSearch])
+  }, [search])
 
   // Reset highlight index when results change
   useEffect(() => {
@@ -274,11 +279,12 @@ export function SearchAutocomplete({ onSelect, onSearch, placeholder = 'Searchâ€
 
   const triggerSearchAll = async () => {
     try {
-      const res = await onSearch('')
+      const res = await onSearchRef.current('')
       setResults(res)
       setShowDrop(true)
     } catch { }
   }
+
 
   const handleKeyDown = (e) => {
     if (!showDrop || results.length === 0) return

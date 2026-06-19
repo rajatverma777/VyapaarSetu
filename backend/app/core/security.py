@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Union
 from jose import JWTError, jwt
 import bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from app.core.config import settings
 from app.core.database import get_database
@@ -33,7 +33,16 @@ def create_refresh_token(data: dict) -> str:
     to_encode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
+import time
+
+_user_cache = {}
+USER_CACHE_TTL = 5.0 # seconds
+
+def invalidate_user_cache(username: str):
+    _user_cache.pop(username, None)
+
 async def get_current_user(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     db = Depends(get_database)
 ):
@@ -50,9 +59,25 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = await db.users.find_one({"username": username, "is_active": True})
+    if hasattr(request.state, "user"):
+        return request.state.user
+
+    # Check memory cache
+    now = time.time()
+    if username in _user_cache:
+        cached_user, cache_time = _user_cache[username]
+        if now - cache_time < USER_CACHE_TTL:
+            request.state.user = cached_user
+            return cached_user
+
+    # Query the database
+    from app.core.database import db_instance
+    user = await db_instance.db.users.find_one({"username": username, "is_active": True})
     if user is None:
         raise credentials_exception
+        
+    _user_cache[username] = (user, now)
+    request.state.user = user
     return user
 
 async def get_current_active_user(current_user = Depends(get_current_user)):
