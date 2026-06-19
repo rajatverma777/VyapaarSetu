@@ -9,6 +9,9 @@ from typing import Optional
 import io
 import re
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 ocr_lock = asyncio.Lock()
@@ -692,7 +695,15 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
             reader = pypdf.PdfReader(io.BytesIO(contents))
             text = ""
             for page in reader.pages:
-                text += page.extract_text() or ""
+                page_text = ""
+                try:
+                    page_text = page.extract_text(extraction_mode="layout") or ""
+                except Exception:
+                    pass
+                # Fallback if layout mode fails or returns empty/short text
+                if len(page_text.strip()) < 100:
+                    page_text = page.extract_text() or ""
+                text += page_text
             
             # If direct text extraction is empty/short, it's a scanned PDF:
             # Extract embedded images and run local OCR
@@ -1120,6 +1131,7 @@ async def import_product_image(
         except ValueError as ve:
             raise HTTPException(status_code=400, detail=str(ve))
         except Exception as e:
+            logger.exception("Failed to analyze invoice")
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to analyze invoice: {str(e)}"
