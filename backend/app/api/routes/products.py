@@ -706,9 +706,10 @@ async def import_product_image(
                             try:
                                 img_data = img_obj.data
                                 img = Image.open(io.BytesIO(img_data))
-                                # Preprocess image (Grayscale + 2x resize)
+                                # Preprocess image (Grayscale + conditional resize to save memory)
                                 img = img.convert('L')
-                                img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
+                                if img.width < 1500:
+                                    img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
                                 ocr_text_parts.append(pytesseract.image_to_string(img, config='--psm 6'))
                             except Exception as ocr_err:
                                 print(f"Failed to OCR PDF image object: {ocr_err}")
@@ -719,9 +720,10 @@ async def import_product_image(
         else:
             try:
                 img = Image.open(io.BytesIO(contents))
-                # Preprocess the image (Grayscale + 2x Resize using Lanczos)
+                # Preprocess the image (Grayscale + conditional resize to save memory)
                 img = img.convert('L')
-                img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
+                if img.width < 1500:
+                    img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
                 
                 # Run OCR
                 text = pytesseract.image_to_string(img, config='--psm 6')
