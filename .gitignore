@@ -1,0 +1,59 @@
+# Environments and secrets
+.env
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+backend/.env
+frontend/.env
+*.local
+
+# Python cache and testing
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / JS
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+frontend/dist/
+build/
+bin/
+obj/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temp and processed images
+backend/processed_temp.png
+
+# Generated static assets
+backend/static/backups/
+backend/static/invoices/
+*.pdf
+*.zip
+*.png
+*.webp
+*.jpg
+*.jpeg
+
