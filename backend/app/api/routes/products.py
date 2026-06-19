@@ -706,10 +706,8 @@ async def import_product_image(
                             try:
                                 img_data = img_obj.data
                                 img = Image.open(io.BytesIO(img_data))
-                                # Preprocess image (Grayscale + conditional resize to save memory)
+                                # Preprocess image (Grayscale only to save memory)
                                 img = img.convert('L')
-                                if img.width < 1500:
-                                    img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
                                 ocr_text_parts.append(pytesseract.image_to_string(img, config='--psm 6'))
                             except Exception as ocr_err:
                                 print(f"Failed to OCR PDF image object: {ocr_err}")
@@ -720,10 +718,8 @@ async def import_product_image(
         else:
             try:
                 img = Image.open(io.BytesIO(contents))
-                # Preprocess the image (Grayscale + conditional resize to save memory)
+                # Preprocess the image (Grayscale only to save memory)
                 img = img.convert('L')
-                if img.width < 1500:
-                    img = img.resize((img.width * 2, img.height * 2), Image.Resampling.LANCZOS)
                 
                 # Run OCR
                 text = pytesseract.image_to_string(img, config='--psm 6')
@@ -1061,6 +1057,8 @@ async def import_product_image(
             except Exception:
                 pass
                 
+        import gc
+        gc.collect()
         return products
     except Exception as e:
         raise HTTPException(
