@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 from app.core.database import get_database
 from app.core.security import get_current_active_user, serialize_doc, require_permission
 from app.models.product import ProductCreate, ProductUpdate
@@ -7,8 +8,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 import io
 import re
+import asyncio
 
 router = APIRouter()
+ocr_lock = asyncio.Lock()
 
 def parse_expiry_string(expiry_str: Optional[str]) -> Optional[datetime]:
     if not expiry_str:
@@ -650,17 +653,14 @@ async def bulk_import_products(
 
     return {"imported": imported, "errors": errors}
 
-@router.post("/import-image")
-async def import_product_image(
-    file: UploadFile = File(...),
-    db = Depends(get_database),
-    current_user = Depends(require_permission("can_manage_products"))
-):
+def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: str) -> list:
     import pytesseract
     from PIL import Image
     import io
     import re
     import os
+    import pypdf
+    import gc
 
     # Set tesseract path for macOS Homebrew if not in default PATH
     tesseract_paths = [
@@ -673,427 +673,454 @@ async def import_product_image(
             pytesseract.pytesseract.tesseract_cmd = path
             break
 
+    is_pdf = False
+    if filename_lower.endswith(".pdf") or content_type == "application/pdf" or contents.startswith(b"%PDF"):
+        is_pdf = True
+        
+    # Save a debug copy to inspect layout
     try:
-        contents = await file.read()
-        is_pdf = False
-        filename_lower = file.filename.lower()
-        if filename_lower.endswith(".pdf") or file.content_type == "application/pdf" or contents.startswith(b"%PDF"):
-            is_pdf = True
-            
-        # Save a debug copy to inspect layout
         debug_ext = ".pdf" if is_pdf else ".png"
         debug_path = f"static/invoices/debug_upload{debug_ext}"
+        os.makedirs(os.path.dirname(debug_path), exist_ok=True)
         with open(debug_path, "wb") as f_debug:
             f_debug.write(contents)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
+        print(f"Failed to save debug upload: {e}")
 
-    try:
-        if is_pdf:
-            import pypdf
-            try:
-                reader = pypdf.PdfReader(io.BytesIO(contents))
-                text = ""
-                for page in reader.pages:
-                    text += page.extract_text() or ""
-                
-                # If direct text extraction is empty/short, it's a scanned PDF:
-                # Extract embedded images and run local OCR
-                if len(text.strip()) < 100:
-                    ocr_text_parts = []
-                    for page in reader.pages[:3]:
-                        for img_obj in page.images:
-                            try:
-                                img_data = img_obj.data
-                                img = Image.open(io.BytesIO(img_data))
-                                
-                                # Only OCR images large enough to be actual page scans (ignores logos/icons to save RAM/time)
-                                if img.width < 400 or img.height < 400:
-                                    img.close()
-                                    continue
-                                
-                                # Downscale extremely large scans to save memory on 512MB RAM tier
-                                if img.width > 1500:
-                                    ratio = 1500.0 / img.width
-                                    new_height = int(img.height * ratio)
-                                    img = img.resize((1500, new_height), Image.Resampling.BILINEAR)
-                                
-                                # Preprocess image (Grayscale only to save memory)
-                                img = img.convert('L')
-                                ocr_text_parts.append(pytesseract.image_to_string(img, config='--psm 6'))
-                                
-                                # Free memory immediately after page OCR completes
-                                img.close()
-                                del img
-                                del img_data
-                                import gc
-                                gc.collect()
-                            except Exception as ocr_err:
-                                print(f"Failed to OCR PDF image object: {ocr_err}")
-                    if ocr_text_parts:
-                        text = "\n".join(ocr_text_parts)
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Failed to parse PDF file: {str(e)}")
-        else:
-            try:
-                img = Image.open(io.BytesIO(contents))
-                
-                # Downscale extremely large images to save memory
-                if img.width > 1500:
-                    ratio = 1500.0 / img.width
-                    new_height = int(img.height * ratio)
-                    img = img.resize((1500, new_height), Image.Resampling.BILINEAR)
-                
-                # Preprocess the image (Grayscale only to save memory)
-                img = img.convert('L')
-                
-                # Run OCR
-                text = pytesseract.image_to_string(img, config='--psm 6')
-                
-                # Free memory immediately
-                img.close()
-                del img
-                import gc
-                gc.collect()
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Invalid image file or OCR failed: {str(e)}")
-        
-        # Parse extracted text using robust pattern-based algorithm
-        def is_batch_token(token):
-            # Tokens with decimal points are prices/amounts, never batch numbers
-            if '.' in token:
-                return False
-            if token.isdigit():
-                return True
-            if re.search(r'\d', token) and re.search(r'[A-Za-z]', token):
-                if any(x in token.upper() for x in ['ML', 'UNIT', 'PCS', 'GM', 'KG', 'TAB', 'CAP', 'MM', 'INCH', 'CM', 'BOX', 'PACK']):
-                    return False
-                # Cannula size suffix (e.g. VENO-20, VENO-18)
-                if re.search(r'-\d{1,2}$', token):
-                    return False
-                return True
-            if re.match(r'^\d{4}\b', token):
-                return True
-            return False
-
-        products = []
-        lines = text.splitlines()
-        
-        # Keep track of expected SN (approximate counter for Yash Surgical)
-        expected_sn = 1
-        
-        for line in lines:
-            # Replace common separator characters with spaces (keep parentheses)
-            cleaned = line.replace('|', ' ').replace('[', ' ').replace(']', ' ')
-            cleaned = cleaned.replace('{', ' ').replace('}', ' ')
-            cleaned = cleaned.replace(',', ' ').replace(';', ' ')
+    if is_pdf:
+        try:
+            reader = pypdf.PdfReader(io.BytesIO(contents))
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() or ""
             
-            tokens = cleaned.split()
-            if len(tokens) < 6:
+            # If direct text extraction is empty/short, it's a scanned PDF:
+            # Extract embedded images and run local OCR
+            if len(text.strip()) < 100:
+                ocr_text_parts = []
+                for page in reader.pages[:3]:
+                    for img_obj in page.images:
+                        try:
+                            img_data = img_obj.data
+                            img = Image.open(io.BytesIO(img_data))
+                            
+                            # Only OCR images large enough to be actual page scans (ignores logos/icons to save RAM/time)
+                            if img.width < 400 or img.height < 400:
+                                img.close()
+                                continue
+                            
+                            # Downscale extremely large scans to save memory on 512MB RAM tier
+                            if img.width > 1500:
+                                ratio = 1500.0 / img.width
+                                new_height = int(img.height * ratio)
+                                old_img = img
+                                img = old_img.resize((1500, new_height), Image.Resampling.BILINEAR)
+                                old_img.close()
+                            
+                            # Preprocess image (Grayscale only to save memory)
+                            img_gray = img.convert('L')
+                            img.close()
+                            
+                            ocr_text_parts.append(pytesseract.image_to_string(img_gray, config='--psm 6'))
+                            
+                            img_gray.close()
+                            del img_gray
+                            del img_data
+                            gc.collect()
+                        except Exception as ocr_err:
+                            print(f"Failed to OCR PDF image object: {ocr_err}")
+                if ocr_text_parts:
+                    text = "\n".join(ocr_text_parts)
+        except Exception as e:
+            raise ValueError(f"Failed to parse PDF file: {str(e)}")
+    else:
+        try:
+            img = Image.open(io.BytesIO(contents))
+            
+            # Downscale extremely large images to save memory
+            if img.width > 1500:
+                ratio = 1500.0 / img.width
+                new_height = int(img.height * ratio)
+                old_img = img
+                img = old_img.resize((1500, new_height), Image.Resampling.BILINEAR)
+                old_img.close()
+            
+            # Preprocess the image (Grayscale only to save memory)
+            img_gray = img.convert('L')
+            img.close()
+            
+            # Run OCR
+            text = pytesseract.image_to_string(img_gray, config='--psm 6')
+            
+            img_gray.close()
+            del img_gray
+            gc.collect()
+        except Exception as e:
+            raise ValueError(f"Invalid image file or OCR failed: {str(e)}")
+    
+    # Parse extracted text using robust pattern-based algorithm
+    def is_batch_token(token):
+        # Tokens with decimal points are prices/amounts, never batch numbers
+        if '.' in token:
+            return False
+        if token.isdigit():
+            return True
+        if re.search(r'\d', token) and re.search(r'[A-Za-z]', token):
+            if any(x in token.upper() for x in ['ML', 'UNIT', 'PCS', 'GM', 'KG', 'TAB', 'CAP', 'MM', 'INCH', 'CM', 'BOX', 'PACK']):
+                return False
+            # Cannula size suffix (e.g. VENO-20, VENO-18)
+            if re.search(r'-\d{1,2}$', token):
+                return False
+            return True
+        if re.match(r'^\d{4}\b', token):
+            return True
+        return False
+
+    products = []
+    lines = text.splitlines()
+    
+    # Keep track of expected SN (approximate counter for Yash Surgical)
+    expected_sn = 1
+    
+    for line in lines:
+        # Replace common separator characters with spaces (keep parentheses)
+        cleaned = line.replace('|', ' ').replace('[', ' ').replace(']', ' ')
+        cleaned = cleaned.replace('{', ' ').replace('}', ' ')
+        cleaned = cleaned.replace(',', ' ').replace(';', ' ')
+        
+        tokens = cleaned.split()
+        if len(tokens) < 6:
+            continue
+            
+        # 1. Find HSN index (rightmost token of length 6 to 10)
+        hsn_index = -1
+        for idx in range(len(tokens) - 1, -1, -1):
+            token = tokens[idx]
+            if '.' in token:
                 continue
-                
-            # 1. Find HSN index (rightmost token of length 6 to 10)
-            hsn_index = -1
+            clean_tok = re.sub(r'[^\w\$\#]', '', token)
+            if len(clean_tok) >= 6 and len(clean_tok) <= 10:
+                if re.search(r'\d', clean_tok):
+                    hsn_index = idx
+                    break
+                    
+        if hsn_index == -1:
+            # Fallback to search for known HSN prefixes
             for idx in range(len(tokens) - 1, -1, -1):
                 token = tokens[idx]
-                if '.' in token:
-                    continue
-                clean_tok = re.sub(r'[^\w\$\#]', '', token)
-                if len(clean_tok) >= 6 and len(clean_tok) <= 10:
-                    if re.search(r'\d', clean_tok):
-                        hsn_index = idx
-                        break
-                        
-            if hsn_index == -1:
-                # Fallback to search for known HSN prefixes
-                for idx in range(len(tokens) - 1, -1, -1):
-                    token = tokens[idx]
-                    if any(x in token for x in ['3004', '300', '9018', '4015', '1902']):
-                        hsn_index = idx
-                        break
-                        
-            if hsn_index == -1 or hsn_index < 2:
-                continue
-                
-            hsn = re.sub(r'[^\w]', '', tokens[hsn_index]) # Clean HSN
+                if any(x in token for x in ['3004', '300', '9018', '4015', '1902']):
+                    hsn_index = idx
+                    break
+                    
+        if hsn_index == -1 or hsn_index < 2:
+            continue
             
-            # 2. Detect Format (A vs B)
-            # Find Expiry date to the left of HSN
-            exp_index = -1
+        hsn = re.sub(r'[^\w]', '', tokens[hsn_index]) # Clean HSN
+        
+        # 2. Detect Format (A vs B)
+        # Find Expiry date to the left of HSN
+        exp_index = -1
+        for idx in range(hsn_index - 1, -1, -1):
+            tok = tokens[idx]
+            if '/' in tok or (len(tok) == 4 and tok.isdigit() and int(tok[:2]) <= 12 and int(tok[2:]) >= 24 and int(tok[2:]) <= 40):
+                exp_index = idx
+                break
+                
+        if exp_index == -1:
+            # Fallback to look for a token that has 4 digits or looks like exp
             for idx in range(hsn_index - 1, -1, -1):
                 tok = tokens[idx]
-                if '/' in tok or (len(tok) == 4 and tok.isdigit() and int(tok[:2]) <= 12 and int(tok[2:]) >= 24 and int(tok[2:]) <= 40):
+                if len(tok) == 4 and tok.isdigit() and int(tok[:2]) <= 12 and int(tok[2:]) >= 24 and int(tok[2:]) <= 40:
                     exp_index = idx
                     break
                     
-            if exp_index == -1:
-                # Fallback to look for a token that has 4 digits or looks like exp
-                for idx in range(hsn_index - 1, -1, -1):
-                    tok = tokens[idx]
-                    if len(tok) == 4 and tok.isdigit() and int(tok[:2]) <= 12 and int(tok[2:]) >= 24 and int(tok[2:]) <= 40:
-                        exp_index = idx
-                        break
-                        
-            if exp_index == -1:
-                exp_index = hsn_index - 1 # Fallback
-                
-            # If expiry index is close to HSN index (distance <= 2), it is Format B
-            is_format_b = (hsn_index - exp_index) <= 2
+        if exp_index == -1:
+            exp_index = hsn_index - 1 # Fallback
             
-            try:
-                if is_format_b:
-                    # Format B (Yash Surgical style)
-                    # Find MRP and Rate to the right of HSN
-                    right_tokens = tokens[hsn_index + 1:]
-                    decimal_right = []
-                    for t in right_tokens:
-                        if ':' in t or '/' in t or re.search(r'[A-Za-z]', t):
-                            continue
-                        t_clean = re.sub(r'[^\d\.]', '', t)
-                        if t_clean and ('.' in t_clean or t_clean.isdigit()):
-                            try:
-                                decimal_right.append(float(t_clean))
-                            except:
-                                pass
-                    mrp = decimal_right[0] if len(decimal_right) > 0 else 0.0
-                    rate = decimal_right[1] if len(decimal_right) > 1 else 0.0
-                    amount = decimal_right[5] if len(decimal_right) > 5 else (decimal_right[4] if len(decimal_right) > 4 else 0.0)
-                    
-                    exp = tokens[exp_index]
-                    exp_index_for_batch = exp_index
-                    if exp.startswith('/') and exp_index - 1 >= 0:
-                        prev_tok = tokens[exp_index - 1]
-                        if len(prev_tok) <= 2 or (prev_tok.isdigit() and int(prev_tok) <= 12):
-                            exp = prev_tok + exp
-                            exp_index_for_batch = exp_index - 1
-                    
-                    # Find Batch tokens (up to 2 tokens immediately left of exp_index_for_batch)
-                    batch_tokens = []
-                    for idx in range(exp_index_for_batch - 1, max(1, exp_index_for_batch - 3), -1):
-                        tok = tokens[idx]
-                        if is_batch_token(tok):
-                            batch_tokens.insert(0, tok)
-                        else:
-                            break
-                            
-                    batch = " ".join(batch_tokens) if batch_tokens else ""
-                    
-                    # Product Name is everything between the pack/quantity and the batch tokens
-                    first_tok = tokens[0]
-                    qty_val = 1.0
-                    pack_val = tokens[2]
-                    name_start_idx = 3
-                    
-                    # Detect merged SN + Qty in token 0
-                    if re.search(r'\d+[\.\$]?\d+\.\d{2}$', first_tok) or (expected_sn and first_tok.startswith(str(expected_sn)) and len(first_tok) > len(str(expected_sn)) + 2):
-                        # Merged!
-                        if rate > 0 and amount > 0:
-                            qty_val = round(amount / rate)
-                        else:
-                            match = re.search(r'\d+\.\d{2}$', first_tok)
-                            if match:
-                                qty_val = float(match.group())
-                        
-                        pack_val = tokens[1]
-                        name_start_idx = 2
-                        expected_sn += 1
-                    else:
-                        qty_str = tokens[1]
-                        qty_str_clean = re.sub(r'[^\d\.]', '', qty_str)
-                        qty_val = float(qty_str_clean) if qty_str_clean else 1.0
-                        
-                        # Verify using math if possible
-                        if rate > 0 and amount > 0:
-                            calc_qty = round(amount / rate)
-                            if abs(calc_qty - qty_val) > 2:
-                                qty_val = calc_qty
-                                
-                        # Update expected SN if token 0 matches integer
-                        clean_sn = re.sub(r'[^\d]', '', first_tok)
-                        if clean_sn.isdigit():
-                            expected_sn = int(clean_sn) + 1
-                    
-                    # Name tokens
-                    batch_start_idx = exp_index_for_batch - len(batch_tokens)
-                    name_tokens = tokens[name_start_idx:batch_start_idx]
-                    
-                    if len(name_tokens) > 0 and name_tokens[0] == pack_val:
-                        name_tokens = name_tokens[1:]
-                    name = " ".join(name_tokens).strip()
-                    
-                else:
-                    # Format A (R B Healthcare style)
-                    exp = tokens[exp_index]
-                    exp_index_for_batch = exp_index
-                    if exp.startswith('/') and exp_index - 1 >= 0:
-                        prev_tok = tokens[exp_index - 1]
-                        if len(prev_tok) <= 2 or (prev_tok.isdigit() and int(prev_tok) <= 12):
-                            exp = prev_tok + exp
-                            exp_index_for_batch = exp_index - 1
-
-                    # Batch is to the left of exp_index_for_batch
-                    batch = tokens[exp_index_for_batch - 1]
-                    
-                    # Price and Qty columns are between exp_index and hsn_index
-                    mid_tokens = tokens[exp_index + 1:hsn_index]
-                    qty_val = 1.0
-                    mrp = 0.0
-                    rate = 0.0
-                    
-                    if len(mid_tokens) >= 3:
-                        qty_val = float(re.sub(r'[^\d\.]', '', mid_tokens[0]))
-                        mrp = float(re.sub(r'[^\d\.]', '', mid_tokens[1]))
-                        rate = float(re.sub(r'[^\d\.-]', '', mid_tokens[2]).replace('-', '.'))
-                    elif len(mid_tokens) == 2:
-                        mrp = float(re.sub(r'[^\d\.]', '', mid_tokens[0]))
-                        rate = float(re.sub(r'[^\d\.-]', '', mid_tokens[1]).replace('-', '.'))
-                    
-                    # Product Name is everything before batch
-                    name_tokens = tokens[:exp_index_for_batch - 1]
-                    if len(name_tokens) > 1 and (name_tokens[0].isdigit() or len(name_tokens[0]) == 1 or name_tokens[0].endswith('.')):
-                        name_tokens = name_tokens[1:]
-                    name = " ".join(name_tokens).strip()
-                    pack_val = None
-
-                # Clean up product name typos
-                name = re.sub(r'\bSOOML\b', '500ML', name, flags=re.IGNORECASE)
-                name = re.sub(r'\bSOOM\b', '500ML', name, flags=re.IGNORECASE)
-                name = re.sub(r'\bSOO\b', '500ML', name, flags=re.IGNORECASE)
-                name = re.sub(r'\b100M\b', '100ML', name, flags=re.IGNORECASE)
-                name = name.replace('ELEP', 'ELE(P)')
-                name = re.sub(r'\bCP\.', 'CP', name)
-                
-                # Clean common packing indicators from start/end of name
-                name_patterns = [
-                    r'^\s*(?:\d+\s*[xX*\-]?\s*)?(?:UNIT|PCS|BOX|BAG)S?\b',
-                    r'\b(?:\d+\s*[xX*\-]?\s*)?(?:UNIT|PCS|BOX|BAG)S?\s*$',
-                    r'^\s*\d*[xX*]\d+[a-zA-Z]?\b',
-                    r'\b\d*[xX*]\d+[a-zA-Z]?\s*$',
-                    r'^\s*\d+\s*[\*xX\-/°]\s*\d+\b',
-                    r'\b\d+\s*[\*xX\-/°]\s*\d+\s*$',
-                ]
-                for pattern in name_patterns:
-                    name = re.sub(pattern, '', name, flags=re.IGNORECASE).strip()
-                
-                name = re.sub(r'\s+', ' ', name).strip()
-                
-                # Strip trailing pack multipliers safely
-                name = re.sub(r'\b1\s*[\*xX/°\-o]\s*\d+\b\s*$', '', name, flags=re.IGNORECASE).strip()
-                
-                # Determine default pack size
-                default_pack_size = 24
-                if pack_val:
-                    nums = re.findall(r'\d+', pack_val)
-                    if len(nums) > 1:
-                        default_pack_size = int(nums[-1])
-                    elif len(nums) == 1:
-                        default_pack_size = int(nums[0])
-                else:
-                    if '100ML' in name:
-                        default_pack_size = 100
-                    elif '500ML' in name:
-                        default_pack_size = 24
-                        
-                if not pack_val:
-                    pack_val = f"1*{default_pack_size}"
-                
-                # Clean up exp (e.g. 2728 -> 2/28, 4728 -> 4/28)
-                if '/' not in exp and len(exp) >= 3:
-                    if re.match(r'^\d7\d{2}$', exp):
-                        exp = f"{exp[0]}/{exp[2:]}"
-                    elif re.match(r'^\d{2}7\d{2}$', exp):
-                        exp = f"{exp[:2]}/{exp[3:]}"
-                    elif exp.isdigit():
-                        if len(exp) == 3:
-                            exp = f"{exp[0]}/{exp[1:]}"
-                        elif len(exp) == 4:
-                            exp = f"{exp[:-2]}/{exp[-2:]}"
-                
-                # GST rate (usually at fixed offset, with fallback)
-                gst = 5.0
-                preferred_offsets = [4, 2] if is_format_b else [2, 4]
-                for offset in preferred_offsets + [1, 3]:
-                    if hsn_index + offset < len(tokens):
+        # If expiry index is close to HSN index (distance <= 2), it is Format B
+        is_format_b = (hsn_index - exp_index) <= 2
+        
+        try:
+            if is_format_b:
+                # Format B (Yash Surgical style)
+                # Find MRP and Rate to the right of HSN
+                right_tokens = tokens[hsn_index + 1:]
+                decimal_right = []
+                for t in right_tokens:
+                    if ':' in t or '/' in t or re.search(r'[A-Za-z]', t):
+                        continue
+                    t_clean = re.sub(r'[^\d\.]', '', t)
+                    if t_clean and ('.' in t_clean or t_clean.isdigit()):
                         try:
-                            gst_str = re.sub(r'[^\d\.]', '', tokens[hsn_index + offset])
-                            val = float(gst_str)
-                            if val in [0.0, 3.0, 5.0, 12.0, 18.0, 28.0]:
-                                gst = val
-                                break
-                            elif val <= 100.0 and gst == 5.0:
-                                gst = val
+                            decimal_right.append(float(t_clean))
                         except:
                             pass
+                mrp = decimal_right[0] if len(decimal_right) > 0 else 0.0
+                rate = decimal_right[1] if len(decimal_right) > 1 else 0.0
+                amount = decimal_right[5] if len(decimal_right) > 5 else (decimal_right[4] if len(decimal_right) > 4 else 0.0)
                 
-                # Dynamically calculate final amount
-                final_amount = round(qty_val * rate, 2)
+                exp = tokens[exp_index]
+                exp_index_for_batch = exp_index
+                if exp.startswith('/') and exp_index - 1 >= 0:
+                    prev_tok = tokens[exp_index - 1]
+                    if len(prev_tok) <= 2 or (prev_tok.isdigit() and int(prev_tok) <= 12):
+                        exp = prev_tok + exp
+                        exp_index_for_batch = exp_index - 1
                 
-                # Cases column
-                cases = None
-                if not is_format_b:
-                    if len(tokens) >= 12:
-                        try:
-                            last_token = tokens[-1]
-                            if '.' in last_token or float(last_token) > 200:
-                                cases = round(qty_val / default_pack_size)
-                            else:
-                                cases = int(float(last_token))
-                        except:
-                            cases = round(qty_val / default_pack_size)
+                # Find Batch tokens (up to 2 tokens immediately left of exp_index_for_batch)
+                batch_tokens = []
+                for idx in range(exp_index_for_batch - 1, max(1, exp_index_for_batch - 3), -1):
+                    tok = tokens[idx]
+                    if is_batch_token(tok):
+                        batch_tokens.insert(0, tok)
                     else:
-                        cases = round(qty_val / default_pack_size)
+                        break
+                        
+                batch = " ".join(batch_tokens) if batch_tokens else ""
                 
-                if not name or len(name.strip()) < 2:
-                    continue
-                if rate <= 0 and mrp <= 0:
-                    continue
+                # Product Name is everything between the pack/quantity and the batch tokens
+                first_tok = tokens[0]
+                qty_val = 1.0
+                pack_val = tokens[2]
+                name_start_idx = 3
+                
+                # Detect merged SN + Qty in token 0
+                if re.search(r'\d+[\.\$]?\d+\.\d{2}$', first_tok) or (expected_sn and first_tok.startswith(str(expected_sn)) and len(first_tok) > len(str(expected_sn)) + 2):
+                    # Merged!
+                    if rate > 0 and amount > 0:
+                        qty_val = round(amount / rate)
+                    else:
+                        match = re.search(r'\d+\.\d{2}$', first_tok)
+                        if match:
+                            qty_val = float(match.group())
+                    
+                    pack_val = tokens[1]
+                    name_start_idx = 2
+                    expected_sn += 1
+                else:
+                    qty_str = tokens[1]
+                    qty_str_clean = re.sub(r'[^\d\.]', '', qty_str)
+                    qty_val = float(qty_str_clean) if qty_str_clean else 1.0
+                    
+                    # Verify using math if possible
+                    if rate > 0 and amount > 0:
+                        calc_qty = round(amount / rate)
+                        if abs(calc_qty - qty_val) > 2:
+                            qty_val = calc_qty
+                            
+                    # Update expected SN if token 0 matches integer
+                    clean_sn = re.sub(r'[^\d]', '', first_tok)
+                    if clean_sn.isdigit():
+                        expected_sn = int(clean_sn) + 1
+                
+                # Name tokens
+                batch_start_idx = exp_index_for_batch - len(batch_tokens)
+                name_tokens = tokens[name_start_idx:batch_start_idx]
+                
+                if len(name_tokens) > 0 and name_tokens[0] == pack_val:
+                    name_tokens = name_tokens[1:]
+                name = " ".join(name_tokens).strip()
+                
+            else:
+                # Format A (R B Healthcare style)
+                exp = tokens[exp_index]
+                exp_index_for_batch = exp_index
+                if exp.startswith('/') and exp_index - 1 >= 0:
+                    prev_tok = tokens[exp_index - 1]
+                    if len(prev_tok) <= 2 or (prev_tok.isdigit() and int(prev_tok) <= 12):
+                        exp = prev_tok + exp
+                        exp_index_for_batch = exp_index - 1
 
-                # Clean up month misreads (e.g. P/31 -> 2/31, p/31 -> 2/31, l/31 -> 1/31)
-                if '/' in exp:
-                    parts = exp.split('/')
-                    month_part = parts[0].strip()
-                    year_part = parts[1].strip() if len(parts) > 1 else ""
-                    
-                    month_part = re.sub(r'^[pP]$', '2', month_part)
-                    month_part = re.sub(r'^[lIi|]$', '1', month_part)
-                    month_part = re.sub(r'^[sS]$', '5', month_part)
-                    
-                    if year_part:
-                        exp = f"{month_part}/{year_part}"
-                    else:
-                        exp = month_part
-                    
-                item = {
-                    "name": name,
-                    "sku": None,
-                    "barcode": None,
-                    "brand": "YASH SURGICAL HOUSE" if is_format_b else "R B HEALTHCARE",
-                    "unit": "PCS",
-                    "hsn_code": hsn,
-                    "gst_rate": gst,
-                    "purchase_price": rate,
-                    "selling_price": mrp,
-                    "mrp": mrp,
-                    "wholesale_price": round(rate * 1.1, 2),
-                    "opening_stock": qty_val,
-                    "min_stock_alert": 10.0,
-                    "description": f"Batch: {batch}, Exp: {exp}",
-                    "is_active": True,
-                    "pack": pack_val,
-                    "cases": cases,
-                    "final_amount": final_amount,
-                    "batch": batch,
-                    "expiry": exp
-                }
-                products.append(item)
-            except Exception:
-                pass
+                # Batch is to the left of exp_index_for_batch
+                batch = tokens[exp_index_for_batch - 1]
                 
-        import gc
-        gc.collect()
-        return products
+                # Price and Qty columns are between exp_index and hsn_index
+                mid_tokens = tokens[exp_index + 1:hsn_index]
+                qty_val = 1.0
+                mrp = 0.0
+                rate = 0.0
+                
+                if len(mid_tokens) >= 3:
+                    qty_val = float(re.sub(r'[^\d\.]', '', mid_tokens[0]))
+                    mrp = float(re.sub(r'[^\d\.]', '', mid_tokens[1]))
+                    rate = float(re.sub(r'[^\d\.-]', '', mid_tokens[2]).replace('-', '.'))
+                elif len(mid_tokens) == 2:
+                    mrp = float(re.sub(r'[^\d\.]', '', mid_tokens[0]))
+                    rate = float(re.sub(r'[^\d\.-]', '', mid_tokens[1]).replace('-', '.'))
+                
+                # Product Name is everything before batch
+                name_tokens = tokens[:exp_index_for_batch - 1]
+                if len(name_tokens) > 1 and (name_tokens[0].isdigit() or len(name_tokens[0]) == 1 or name_tokens[0].endswith('.')):
+                    name_tokens = name_tokens[1:]
+                name = " ".join(name_tokens).strip()
+                pack_val = None
+
+            # Clean up product name typos
+            name = re.sub(r'\bSOOML\b', '500ML', name, flags=re.IGNORECASE)
+            name = re.sub(r'\bSOOM\b', '500ML', name, flags=re.IGNORECASE)
+            name = re.sub(r'\bSOO\b', '500ML', name, flags=re.IGNORECASE)
+            name = re.sub(r'\b100M\b', '100ML', name, flags=re.IGNORECASE)
+            name = name.replace('ELEP', 'ELE(P)')
+            name = re.sub(r'\bCP\.', 'CP', name)
+            
+            # Clean common packing indicators from start/end of name
+            name_patterns = [
+                r'^\s*(?:\d+\s*[xX*\-]?\s*)?(?:UNIT|PCS|BOX|BAG)S?\b',
+                r'\b(?:\d+\s*[xX*\-]?\s*)?(?:UNIT|PCS|BOX|BAG)S?\s*$',
+                r'^\s*\d*[xX*]\d+[a-zA-Z]?\b',
+                r'\b\d*[xX*]\d+[a-zA-Z]?\s*$',
+                r'^\s*\d+\s*[\*xX\-/°]\s*\d+\b',
+                r'\b\d+\s*[\*xX\-/°]\s*\d+\s*$',
+            ]
+            for pattern in name_patterns:
+                name = re.sub(pattern, '', name, flags=re.IGNORECASE).strip()
+            
+            name = re.sub(r'\s+', ' ', name).strip()
+            
+            # Strip trailing pack multipliers safely
+            name = re.sub(r'\b1\s*[\*xX/°\-o]\s*\d+\b\s*$', '', name, flags=re.IGNORECASE).strip()
+            
+            # Determine default pack size
+            default_pack_size = 24
+            if pack_val:
+                nums = re.findall(r'\d+', pack_val)
+                if len(nums) > 1:
+                    default_pack_size = int(nums[-1])
+                elif len(nums) == 1:
+                    default_pack_size = int(nums[0])
+            else:
+                if '100ML' in name:
+                    default_pack_size = 100
+                elif '500ML' in name:
+                    default_pack_size = 24
+                    
+            if not pack_val:
+                pack_val = f"1*{default_pack_size}"
+            
+            # Clean up exp (e.g. 2728 -> 2/28, 4728 -> 4/28)
+            if '/' not in exp and len(exp) >= 3:
+                if re.match(r'^\d7\d{2}$', exp):
+                    exp = f"{exp[0]}/{exp[2:]}"
+                elif re.match(r'^\d{2}7\d{2}$', exp):
+                    exp = f"{exp[:2]}/{exp[3:]}"
+                elif exp.isdigit():
+                    if len(exp) == 3:
+                        exp = f"{exp[0]}/{exp[1:]}"
+                    elif len(exp) == 4:
+                        exp = f"{exp[:-2]}/{exp[-2:]}"
+            
+            # GST rate (usually at fixed offset, with fallback)
+            gst = 5.0
+            preferred_offsets = [4, 2] if is_format_b else [2, 4]
+            for offset in preferred_offsets + [1, 3]:
+                if hsn_index + offset < len(tokens):
+                    try:
+                        gst_str = re.sub(r'[^\d\.]', '', tokens[hsn_index + offset])
+                        val = float(gst_str)
+                        if val in [0.0, 3.0, 5.0, 12.0, 18.0, 28.0]:
+                            gst = val
+                            break
+                        elif val <= 100.0 and gst == 5.0:
+                            gst = val
+                    except:
+                        pass
+            
+            # Dynamically calculate final amount
+            final_amount = round(qty_val * rate, 2)
+            
+            # Cases column
+            cases = None
+            if not is_format_b:
+                if len(tokens) >= 12:
+                    try:
+                        last_token = tokens[-1]
+                        if '.' in last_token or float(last_token) > 200:
+                            cases = round(qty_val / default_pack_size)
+                        else:
+                            cases = int(float(last_token))
+                    except:
+                        cases = round(qty_val / default_pack_size)
+                else:
+                    cases = round(qty_val / default_pack_size)
+            
+            if not name or len(name.strip()) < 2:
+                continue
+            if rate <= 0 and mrp <= 0:
+                continue
+
+            # Clean up month misreads (e.g. P/31 -> 2/31, p/31 -> 2/31, l/31 -> 1/31)
+            if '/' in exp:
+                parts = exp.split('/')
+                month_part = parts[0].strip()
+                year_part = parts[1].strip() if len(parts) > 1 else ""
+                
+                month_part = re.sub(r'^[pP]$', '2', month_part)
+                month_part = re.sub(r'^[lIi|]$', '1', month_part)
+                month_part = re.sub(r'^[sS]$', '5', month_part)
+                
+                if year_part:
+                    exp = f"{month_part}/{year_part}"
+                else:
+                    exp = month_part
+                
+            item = {
+                "name": name,
+                "sku": None,
+                "barcode": None,
+                "brand": "YASH SURGICAL HOUSE" if is_format_b else "R B HEALTHCARE",
+                "unit": "PCS",
+                "hsn_code": hsn,
+                "gst_rate": gst,
+                "purchase_price": rate,
+                "selling_price": mrp,
+                "mrp": mrp,
+                "wholesale_price": round(rate * 1.1, 2),
+                "opening_stock": qty_val,
+                "min_stock_alert": 10.0,
+                "description": f"Batch: {batch}, Exp: {exp}",
+                "is_active": True,
+                "pack": pack_val,
+                "cases": cases,
+                "final_amount": final_amount,
+                "batch": batch,
+                "expiry": exp
+            }
+            products.append(item)
+        except Exception:
+            pass
+            
+    gc.collect()
+    return products
+
+@router.post("/import-image")
+async def import_product_image(
+    file: UploadFile = File(...),
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_manage_products"))
+):
+    try:
+        contents = await file.read()
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to analyze invoice locally: {str(e)}."
-        )
+        raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
+
+    # Lock the processing scope so that we handle only 1 OCR request at a time
+    async with ocr_lock:
+        try:
+            filename_lower = file.filename.lower()
+            content_type = file.content_type or ""
+            
+            # Offload heavy OCR/PDF parsing to thread pool
+            products = await run_in_threadpool(
+                _process_ocr_blocking,
+                contents,
+                filename_lower,
+                content_type
+            )
+            return products
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail=str(ve))
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to analyze invoice: {str(e)}"
+            )
