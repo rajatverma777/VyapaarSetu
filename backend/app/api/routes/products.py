@@ -154,20 +154,50 @@ async def search_products(
 ):
     """Fast product search for billing - returns minimal data."""
     import re
-    query = {"is_active": True}
-    if q:
-        escaped_q = re.escape(q)
-        query["$or"] = [
-            {"name": {"$regex": f"(^|\\s){escaped_q}", "$options": "i"}},
+    projection = {
+        "name": 1, "sku": 1, "barcode": 1, "selling_price": 1,
+        "wholesale_price": 1, "mrp": 1, "gst_rate": 1, "unit": 1,
+        "current_stock": 1, "hsn_code": 1, "purchase_price": 1
+    }
+
+    if not q:
+        # Return top active products if search query is empty
+        products = await db.products.find(
+            {"is_active": True},
+            projection
+        ).limit(limit).to_list(limit)
+        return [serialize_doc(p) for p in products]
+
+    escaped_q = re.escape(q)
+
+    # Stage 1: Prefix-anchored search (lightning fast index scan)
+    prefix_query = {
+        "is_active": True,
+        "$or": [
+            {"name": {"$regex": f"^{escaped_q}", "$options": "i"}},
             {"sku": {"$regex": f"^{escaped_q}", "$options": "i"}},
             {"barcode": {"$regex": f"^{escaped_q}", "$options": "i"}},
         ]
-    products = await db.products.find(
-        query,
-        {"name": 1, "sku": 1, "barcode": 1, "selling_price": 1,
-         "wholesale_price": 1, "mrp": 1, "gst_rate": 1, "unit": 1,
-         "current_stock": 1, "hsn_code": 1, "purchase_price": 1}
-    ).limit(limit).to_list(limit)
+    }
+    products = await db.products.find(prefix_query, projection).limit(limit).to_list(limit)
+    
+    # Stage 2: Fallback to substring search (only if we got fewer results than limit)
+    if len(products) < limit:
+        remaining = limit - len(products)
+        already_found_ids = {p["_id"] for p in products}
+        
+        substring_query = {
+            "is_active": True,
+            "_id": {"$nin": list(already_found_ids)},
+            "$or": [
+                {"name": {"$regex": f"(^|\\s){escaped_q}", "$options": "i"}},
+                {"sku": {"$regex": f"^{escaped_q}", "$options": "i"}},
+                {"barcode": {"$regex": f"^{escaped_q}", "$options": "i"}},
+            ]
+        }
+        fallback_products = await db.products.find(substring_query, projection).limit(remaining).to_list(remaining)
+        products.extend(fallback_products)
+
     return [serialize_doc(p) for p in products]
 
 @router.post("/bulk-delete")
