@@ -107,8 +107,8 @@ async def run_daily_backup_cron():
     while True:
         try:
             logger.info("Starting automated background daily backup...")
-            from app.core.database import get_database
-            db = get_database()
+            from app.core.database import db_instance
+            db = db_instance.db
             if db is None:
                 logger.warning("Database client not initialized, skipping backup.")
                 await asyncio.sleep(60)
