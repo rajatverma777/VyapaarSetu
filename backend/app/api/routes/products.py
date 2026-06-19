@@ -701,7 +701,7 @@ async def import_product_image(
                 # Extract embedded images and run local OCR
                 if len(text.strip()) < 100:
                     ocr_text_parts = []
-                    for page in reader.pages:
+                    for page in reader.pages[:3]:
                         for img_obj in page.images:
                             try:
                                 img_data = img_obj.data
