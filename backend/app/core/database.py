@@ -146,6 +146,15 @@ async def get_database(request: Request = None):
 
 async def create_indexes():
     db = db_instance.db
+    
+    # Create indexes on tenant_id for all multitenant collections to speed up filtering
+    collections_to_index = [
+        "products", "batches", "customers", "suppliers", "sales", 
+        "purchases", "payments", "ledger", "stock_logs", "categories"
+    ]
+    for col in collections_to_index:
+        await db[col].create_index("tenant_id")
+
     # Products indexes
     await db.products.create_index("sku", unique=True, sparse=True)
     await db.products.create_index("barcode", sparse=True)

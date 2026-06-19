@@ -260,31 +260,28 @@ export default function ProductsPage() {
 
   const handleSavePreviewItems = async () => {
     setImporting(true)
-    const toastId = toast.loading(`Saving products... 0/${importPreviewItems.length}`)
-    let successCount = 0
-    let failCount = 0
-    
-    for (let i = 0; i < importPreviewItems.length; i++) {
-      const item = importPreviewItems[i]
-      try {
-        toast.loading(`Saving products... ${i + 1}/${importPreviewItems.length}`, { id: toastId })
-        await productAPI.create(item)
-        successCount++
-      } catch (err) {
-        console.error('Failed to create product:', item.name, err)
-        failCount++
+    const toastId = toast.loading('Saving products...')
+    try {
+      const { data } = await productAPI.bulkCreate(importPreviewItems)
+      const successCount = data.results.length
+      const failCount = data.errors.length
+      
+      setImporting(false)
+      setShowPreviewModal(false)
+      setImportPreviewItems([])
+      load()
+      
+      if (failCount > 0) {
+        toast.success(`Imported ${successCount} products. ${failCount} failed.`, { id: toastId })
+        if (data.errors.length > 0) {
+          console.error('Some products failed to import:', data.errors)
+        }
+      } else {
+        toast.success(`Successfully imported all ${successCount} products!`, { id: toastId })
       }
-    }
-    
-    setImporting(false)
-    setShowPreviewModal(false)
-    setImportPreviewItems([])
-    load()
-    
-    if (failCount > 0) {
-      toast.success(`Imported ${successCount} products. ${failCount} failed.`, { id: toastId })
-    } else {
-      toast.success(`Successfully imported all ${successCount} products!`, { id: toastId })
+    } catch (err) {
+      setImporting(false)
+      toast.error(err.response?.data?.detail || 'Failed to save products in bulk', { id: toastId })
     }
   }
 

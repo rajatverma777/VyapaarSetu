@@ -219,11 +219,10 @@ async def get_product(
         doc["category_name"] = cat["name"] if cat else ""
     return doc
 
-@router.post("/")
-async def create_product(
+async def _create_product_internal(
     product_data: ProductCreate,
-    db = Depends(get_database),
-    current_user = Depends(require_permission("can_manage_products"))
+    db,
+    current_user
 ):
     import re
     
@@ -434,6 +433,34 @@ async def create_product(
         )
 
     return {"message": "Product created", "id": str(result.inserted_id)}
+
+@router.post("/")
+async def create_product(
+    product_data: ProductCreate,
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_manage_products"))
+):
+    return await _create_product_internal(product_data, db, current_user)
+
+@router.post("/bulk")
+async def create_products_bulk(
+    products_data: list[ProductCreate],
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_manage_products"))
+):
+    results = []
+    errors = []
+    for idx, item in enumerate(products_data):
+        try:
+            res = await _create_product_internal(item, db, current_user)
+            results.append({"index": idx, "name": item.name, "message": res.get("message", "Product created"), "id": res["id"]})
+        except HTTPException as he:
+            errors.append({"index": idx, "name": item.name, "error": he.detail})
+        except Exception as e:
+            errors.append({"index": idx, "name": item.name, "error": str(e)})
+            
+    return {"results": results, "errors": errors}
+
 
 @router.put("/{product_id}")
 async def update_product(

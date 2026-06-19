@@ -129,6 +129,7 @@ export const productAPI = {
   getById:    (id)     => api.get(`/products/${id}`),
   getByBarcode:(bc)    => api.get(`/products/barcode/${bc}`),
   create:     (data)   => api.post('/products/', data),
+  bulkCreate: (data)   => api.post('/products/bulk', data),
   update:     (id, d)  => api.put(`/products/${id}`, d),
   delete:     (id)     => api.delete(`/products/${id}`),
   bulkDelete: (ids)    => api.post('/products/bulk-delete', { ids }),
