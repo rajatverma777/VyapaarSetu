@@ -9,6 +9,40 @@ import { format } from 'date-fns'
 
 const TABS = ['profile', 'company', 'users', 'appearance', 'backup', 'password']
 
+const compressImage = (file, maxWidth, maxHeight, callback) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      let width = img.width
+      let height = img.height
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width)
+          width = maxWidth
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height)
+          height = maxHeight
+        }
+      }
+
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      
+      const compressedBase64 = canvas.toDataURL('image/png')
+      callback(compressedBase64)
+    }
+    img.src = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
 export default function SettingsPage() {
   const { user, isAdmin, updateUser } = useAuth()
   const { dark, toggle } = useTheme()
@@ -349,9 +383,9 @@ export default function SettingsPage() {
                         onChange={(e) => {
                           const file = e.target.files[0]
                           if (file) {
-                            const reader = new FileReader()
-                            reader.onloadend = () => setC('logo_base64', reader.result)
-                            reader.readAsDataURL(file)
+                            compressImage(file, 400, 400, (base64) => {
+                              setC('logo_base64', base64)
+                            })
                           }
                         }}
                       />
@@ -385,9 +419,9 @@ export default function SettingsPage() {
                         onChange={(e) => {
                           const file = e.target.files[0]
                           if (file) {
-                            const reader = new FileReader()
-                            reader.onloadend = () => setC('watermark_base64', reader.result)
-                            reader.readAsDataURL(file)
+                            compressImage(file, 800, 800, (base64) => {
+                              setC('watermark_base64', base64)
+                            })
                           }
                         }}
                       />
