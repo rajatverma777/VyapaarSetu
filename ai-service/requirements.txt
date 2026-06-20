@@ -1,0 +1,14 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+paddleocr>=2.7.0
+paddlepaddle>=2.5.0
+transformers>=4.35.0
+torch>=2.0.0
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.0
+pillow>=10.3.0
+numpy>=1.24.0
+httpx==0.27.0
+pydantic==2.7.1
+pydantic-settings==2.2.1

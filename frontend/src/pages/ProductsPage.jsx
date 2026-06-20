@@ -46,6 +46,60 @@ export default function ProductsPage() {
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [importing, setImporting] = useState(false)
 
+  // Product Autocomplete Matching States
+  const [searchResults, setSearchResults] = useState([])
+  const [activeSearchIdx, setActiveSearchIdx] = useState(null)
+
+  const handleSearchChange = async (idx, text) => {
+    const newItems = [...importPreviewItems]
+    newItems[idx].name = text
+    setImportPreviewItems(newItems)
+    
+    if (text.trim().length > 1) {
+      try {
+        const { data } = await productAPI.search(text)
+        setSearchResults(data || [])
+        setActiveSearchIdx(idx)
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      setSearchResults([])
+      setActiveSearchIdx(null)
+    }
+  }
+
+  const handleSelectProduct = (idx, prod) => {
+    const newItems = [...importPreviewItems]
+    newItems[idx].name = prod.name
+    newItems[idx].matched_product_id = prod.id
+    newItems[idx].matched_product_name = prod.name
+    newItems[idx].confidence = 1.0 // user mapped
+    if (newItems[idx].validation_errors) {
+      newItems[idx].validation_errors = newItems[idx].validation_errors.filter(
+        e => !e.includes("Unmapped") && !e.includes("confidence")
+      )
+    }
+    setImportPreviewItems(newItems)
+    setSearchResults([])
+    setActiveSearchIdx(null)
+  }
+
+  const handleSetNewProduct = (idx) => {
+    const newItems = [...importPreviewItems]
+    newItems[idx].matched_product_id = null
+    newItems[idx].matched_product_name = null
+    newItems[idx].confidence = 1.0
+    if (newItems[idx].validation_errors) {
+      newItems[idx].validation_errors = newItems[idx].validation_errors.filter(
+        e => !e.includes("Unmapped") && !e.includes("confidence")
+      )
+    }
+    setImportPreviewItems(newItems)
+    setSearchResults([])
+    setActiveSearchIdx(null)
+  }
+
   // Category Manager States
   const [showCategoryManager, setShowCategoryManager] = useState(false)
   const [newCatName, setNewCatName] = useState('')
@@ -107,6 +161,13 @@ export default function ProductsPage() {
 
   useEffect(() => { loadCategories() }, [])
   useEffect(() => { load() }, [search, catFilter, lowStock, page, sortBy, sortOrder])
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveSearchIdx(null)
+    }
+    document.addEventListener("click", handleGlobalClick)
+    return () => document.removeEventListener("click", handleGlobalClick)
+  }, [])
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -306,7 +367,11 @@ export default function ProductsPage() {
             
             if (task.status === 'completed') {
               clearInterval(pollInterval)
-              setImportPreviewItems(task.result || [])
+              const enrichedItems = (task.result || []).map(item => ({
+                ...item,
+                raw_name: item.raw_name || item.name
+              }))
+              setImportPreviewItems(enrichedItems)
               setShowPreviewModal(true)
               toast.success(isPdf ? 'PDF invoice analyzed successfully!' : 'Bill analyzed successfully!', { id: toastId })
             } else if (task.status === 'failed') {
@@ -348,7 +413,33 @@ export default function ProductsPage() {
         toast.loading(`Saving product ${idx + 1} of ${totalItems} (${item.name})...`, { id: toastId })
         
         try {
-          const { data } = await productAPI.create(item)
+          const cleanItem = {
+            name: item.name,
+            sku: item.sku || null,
+            barcode: item.barcode || null,
+            category_id: item.category_id || null,
+            brand: item.brand || null,
+            unit: item.unit || 'PCS',
+            hsn_code: item.hsn_code || null,
+            gst_rate: parseFloat(item.gst_rate) || 18.0,
+            purchase_price: parseFloat(item.purchase_price) || 0.0,
+            selling_price: parseFloat(item.selling_price) || 0.0,
+            mrp: item.mrp !== null && item.mrp !== undefined ? parseFloat(item.mrp) : null,
+            wholesale_price: item.wholesale_price !== null && item.wholesale_price !== undefined ? parseFloat(item.wholesale_price) : null,
+            min_price: item.min_price !== null && item.min_price !== undefined ? parseFloat(item.min_price) : null,
+            opening_stock: parseFloat(item.opening_stock) || 0.0,
+            min_stock_alert: parseFloat(item.min_stock_alert) || 10.0,
+            description: item.description || null,
+            is_active: item.is_active !== undefined ? item.is_active : true,
+            pack: item.pack || null,
+            cases: item.cases !== null && item.cases !== undefined ? parseFloat(item.cases) : null,
+            final_amount: item.final_amount !== null && item.final_amount !== undefined ? parseFloat(item.final_amount) : null,
+            batch: item.batch || null,
+            expiry: item.expiry || null,
+            matched_product_id: item.matched_product_id || null,
+            raw_name: item.raw_name || item.name || null
+          }
+          const { data } = await productAPI.create(cleanItem)
           results.push(data)
         } catch (err) {
           errors.push({
@@ -695,17 +786,69 @@ export default function ProductsPage() {
               <tbody>
                 {importPreviewItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                    <td className="p-2">
-                      <input
-                        type="text"
-                        className="input py-1 px-2 text-sm w-full font-medium"
-                        value={item.name}
-                        onChange={e => {
-                          const newItems = [...importPreviewItems]
-                          newItems[idx].name = e.target.value
-                          setImportPreviewItems(newItems)
-                        }}
-                      />
+                    <td className="p-2 relative" onClick={e => e.stopPropagation()}>
+                      <div className="flex flex-col">
+                        <input
+                          type="text"
+                          className={`input py-1 px-2 text-sm w-full font-medium ${item.validation_errors && item.validation_errors.length > 0 ? 'border-red-400 focus:border-red-500' : ''}`}
+                          value={item.name}
+                          onChange={e => handleSearchChange(idx, e.target.value)}
+                          onFocus={() => {
+                            if (item.name.trim().length > 1) {
+                              handleSearchChange(idx, item.name);
+                            }
+                          }}
+                        />
+                        
+                        {/* Autocomplete Search Dropdown */}
+                        {activeSearchIdx === idx && searchResults.length > 0 && (
+                          <div className="absolute left-2 right-2 top-11 z-50 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto text-xs text-left">
+                            <div 
+                              className="p-2 border-b dark:border-gray-700 font-semibold text-primary-600 dark:text-primary-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                              onClick={() => handleSetNewProduct(idx)}
+                            >
+                              🆕 Create as New Product: "{item.name}"
+                            </div>
+                            {searchResults.map(prod => (
+                              <div 
+                                key={prod.id} 
+                                className="p-2 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                                onClick={() => handleSelectProduct(idx, prod)}
+                              >
+                                🔗 Link to: <strong className="text-gray-800 dark:text-gray-200">{prod.name}</strong> 
+                                <span className="text-gray-400 dark:text-gray-500 text-[10px] ml-1 block">SKU: {prod.sku || 'N/A'} | Price: ₹{prod.selling_price}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Match Status Badge */}
+                        {item.matched_product_name ? (
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+                            <span>🔗 Linked:</span> 
+                            <span className="truncate max-w-[150px]">{item.matched_product_name}</span>
+                            {item.confidence !== undefined && (
+                              <span className="text-gray-400 dark:text-gray-500 font-normal">({Math.round(item.confidence * 100)}%)</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-amber-650 dark:text-amber-450 mt-1 font-medium">
+                            🆕 New product suggestion
+                          </div>
+                        )}
+
+                        {/* Validation Errors */}
+                        {item.validation_errors && item.validation_errors.length > 0 && (
+                          <div className="text-[10px] text-red-500 mt-1 font-normal leading-tight">
+                            {item.validation_errors.map((err, eIdx) => (
+                              <div key={eIdx} className="flex items-start gap-0.5">
+                                <span>⚠️</span>
+                                <span>{err}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="p-2">
                       <input

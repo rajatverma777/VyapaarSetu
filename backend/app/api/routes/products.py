@@ -272,12 +272,14 @@ async def _create_product_internal(
     cleaned_barcode = " ".join(product_data.barcode.split()).strip() if product_data.barcode else None
     
     # 2. Check for duplicate/existing matching records
-    # We check in this order:
-    #   - Name case-insensitive
-    #   - SKU
-    #   - Barcode
+    # Check explicit matched_product_id link first
     existing = None
-    
+    if product_data.matched_product_id:
+        try:
+            existing = await db.products.find_one({"_id": ObjectId(product_data.matched_product_id)})
+        except:
+            pass
+            
     # Match by Name (check active first, then inactive)
     if not existing and cleaned_name:
         name_regex = {"$regex": f"^{re.escape(cleaned_name)}$", "$options": "i"}
@@ -296,6 +298,27 @@ async def _create_product_internal(
         existing = await db.products.find_one({"barcode": cleaned_barcode, "is_active": True})
         if not existing:
             existing = await db.products.find_one({"barcode": cleaned_barcode, "is_active": False})
+            
+    # Save correction to dataset automatically if user corrected it
+    if product_data.raw_name and product_data.matched_product_id:
+        raw_clean = product_data.raw_name.strip().lower()
+        matched_prod = existing or await db.products.find_one({"_id": ObjectId(product_data.matched_product_id)})
+        if matched_prod and raw_clean and matched_prod["name"].lower() != raw_clean:
+            await db.corrections_dataset.update_one(
+                {"raw_name": raw_clean},
+                {
+                    "$set": {
+                        "raw_name": raw_clean,
+                        "matched_product_id": str(matched_prod["_id"]),
+                        "matched_product_name": matched_prod["name"],
+                        "updated_at": datetime.utcnow()
+                    },
+                    "$setOnInsert": {
+                        "created_at": datetime.utcnow()
+                    }
+                },
+                upsert=True
+            )
             
     if existing:
         # MERGE PRODUCT DETAILS AND STOCK
@@ -1258,6 +1281,62 @@ Verify all calculations:
         except (KeyError, IndexError, json.JSONDecodeError) as e:
             raise ValueError(f"Failed to parse Gemini API response: {str(e)}")
 
+def _validate_extracted_products(products: list) -> list:
+    for item in products:
+        errors = []
+        
+        # Math check: Qty * Rate = Amount
+        qty = item.get("opening_stock")
+        rate = item.get("purchase_price")
+        amt = item.get("final_amount")
+        
+        if qty is not None and rate is not None:
+            try:
+                expected_amt = round(float(qty) * float(rate), 2)
+                if amt is not None and abs(expected_amt - float(amt)) > 0.05:
+                    errors.append(f"Qty * Rate ({expected_amt}) does not match Final Amount ({amt})")
+            except:
+                pass
+                
+        # GST rate verification
+        gst = item.get("gst_rate")
+        if gst is not None:
+            try:
+                gst_val = float(gst)
+                if gst_val not in [0.0, 3.0, 5.0, 12.0, 18.0, 28.0]:
+                    errors.append(f"Non-standard GST rate: {gst}%")
+            except:
+                errors.append("Invalid GST rate value")
+                
+        # Expiry format validation (MM/YY or MM/YYYY)
+        exp = item.get("expiry")
+        if exp:
+            exp_str = str(exp).strip()
+            if not re.match(r'^\d{1,2}[/\-]\d{2,4}$', exp_str):
+                errors.append(f"Invalid expiry format: '{exp_str}' (Expected MM/YY or MM/YYYY)")
+                
+        # Batch verification
+        batch = item.get("batch")
+        if not batch or str(batch).strip() == "":
+            errors.append("Batch number is missing")
+            
+        # Match confidence verification
+        conf = item.get("confidence")
+        if conf is not None:
+            try:
+                conf_val = float(conf)
+                if conf_val < 0.6:
+                    errors.append(f"Low matching confidence ({round(conf_val*100)}%) - Review mapped product")
+            except:
+                pass
+        else:
+            # Tesseract or fallback which has no confidence score
+            if not item.get("matched_product_id"):
+                errors.append("Unmapped product - Review suggested name")
+            
+        item["validation_errors"] = errors
+    return products
+
 async def _run_ocr_background(
     task_id: str,
     contents: bytes,
@@ -1268,22 +1347,44 @@ async def _run_ocr_background(
     async with ocr_lock:
         try:
             products = None
-            gemini_used = False
+            ai_used = False
             
-            # Try Gemini if key is provided
-            if settings.GEMINI_API_KEY:
-                try:
-                    logger.info("Attempting invoice analysis using Gemini API...")
-                    products = await _analyze_invoice_with_gemini(contents, content_type)
-                    gemini_used = True
-                    logger.info("Gemini analysis succeeded!")
-                except Exception as ge:
-                    logger.warning(f"Gemini invoice analysis failed: {ge}. Falling back to local OCR...")
-            else:
-                logger.info("GEMINI_API_KEY not set. Using local OCR fallback...")
+            # Fetch active products and corrections for stateless AI matching
+            db_products = []
+            try:
+                db_products_cursor = db.products.find({"is_active": True}, {"_id": 1, "name": 1})
+                db_products = [{"id": str(p["_id"]), "name": p["name"]} for p in await db_products_cursor.to_list(10000)]
+            except Exception as dbe:
+                logger.error(f"Failed to fetch db_products for AI matching: {dbe}")
                 
-            # Local OCR Fallback
-            if not gemini_used or products is None:
+            corrections = []
+            try:
+                corrections_cursor = db.corrections_dataset.find({})
+                corrections = [{"raw_name": c["raw_name"], "matched_product_id": c["matched_product_id"]} for c in await corrections_cursor.to_list(1000)]
+            except Exception as ce:
+                logger.error(f"Failed to fetch corrections for AI matching: {ce}")
+
+            # Try self-hosted AI service if configured
+            if settings.AI_SERVICE_URL:
+                try:
+                    logger.info("Attempting invoice analysis using self-hosted AI Service...")
+                    files = {"file": (filename_lower, contents, content_type or "image/png")}
+                    data = {
+                        "db_products_str": json.dumps(db_products),
+                        "corrections_str": json.dumps(corrections)
+                    }
+                    async with httpx.AsyncClient(timeout=45.0) as client:
+                        resp = await client.post(f"{settings.AI_SERVICE_URL}/analyze-invoice", files=files, data=data)
+                        resp.raise_for_status()
+                        result_data = resp.json()
+                        products = result_data.get("products", [])
+                        ai_used = True
+                        logger.info("Self-hosted AI analysis succeeded!")
+                except Exception as ae:
+                    logger.warning(f"Self-hosted AI service failed: {ae}. Falling back to local OCR...")
+            
+            # Local Tesseract Fallback
+            if not ai_used or products is None:
                 # Offload heavy local OCR/PDF parsing to thread pool
                 products = await run_in_threadpool(
                     _process_ocr_blocking,
@@ -1291,6 +1392,33 @@ async def _run_ocr_background(
                     filename_lower,
                     content_type
                 )
+                
+                # Perform simple local matching for fallback results
+                for item in products:
+                    item_name_lower = item["name"].strip().lower()
+                    
+                    # Direct check against corrections
+                    matched_id = next((c["matched_product_id"] for c in corrections if c["raw_name"] == item_name_lower), None)
+                    if matched_id:
+                        matched_prod = next((p for p in db_products if p["id"] == matched_id), None)
+                        if matched_prod:
+                            item["matched_product_id"] = matched_prod["id"]
+                            item["matched_product_name"] = matched_prod["name"]
+                            item["confidence"] = 1.0
+                            continue
+                            
+                    # Local fallback case-insensitive exact or prefix match
+                    local_match = next((p for p in db_products if p["name"].lower() == item_name_lower or p["name"].lower().startswith(item_name_lower)), None)
+                    if local_match:
+                        item["matched_product_id"] = local_match["id"]
+                        item["matched_product_name"] = local_match["name"]
+                        item["confidence"] = 0.8
+                    else:
+                        item["matched_product_id"] = None
+                        item["confidence"] = 0.0
+
+            # Run validation checks on parsed products
+            products = _validate_extracted_products(products)
                 
             await db.ocr_tasks.update_one(
                 {"_id": ObjectId(task_id)},
@@ -1382,4 +1510,62 @@ async def get_import_task_status(
         "result": task.get("result"),
         "error": task.get("error")
     }
+
+@router.post("/corrections")
+async def save_correction(
+    payload: dict,
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_manage_products"))
+):
+    raw_name = payload.get("raw_name")
+    matched_product_id = payload.get("matched_product_id")
+    matched_product_name = payload.get("matched_product_name")
+    
+    if not raw_name or not matched_product_id:
+        raise HTTPException(status_code=400, detail="raw_name and matched_product_id are required")
+        
+    now = datetime.utcnow()
+    await db.corrections_dataset.update_one(
+        {"raw_name": raw_name.strip().lower()},
+        {
+            "$set": {
+                "raw_name": raw_name.strip().lower(),
+                "matched_product_id": matched_product_id,
+                "matched_product_name": matched_product_name,
+                "updated_at": now
+            },
+            "$setOnInsert": {
+                "created_at": now
+            }
+        },
+        upsert=True
+    )
+    return {"status": "success", "message": "Correction saved"}
+
+@router.post("/retrain-matching")
+async def trigger_retrain(
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_manage_products"))
+):
+    corrections_cursor = db.corrections_dataset.find({})
+    corrections = await corrections_cursor.to_list(1000)
+    
+    if len(corrections) < 5:
+        raise HTTPException(status_code=400, detail="Need at least 5 corrections to run training")
+        
+    dataset = []
+    for c in corrections:
+        dataset.append({
+            "anchor": c["raw_name"],
+            "positive": c["matched_product_name"]
+        })
+        
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(f"{settings.AI_SERVICE_URL}/retrain", json={"dataset": dataset})
+            resp.raise_for_status()
+            return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to trigger AI retraining: {str(e)}")
+
 

@@ -25,6 +25,8 @@ class ProductCreate(BaseModel):
     final_amount: Optional[float] = None
     batch: Optional[str] = None
     expiry: Optional[str] = None
+    matched_product_id: Optional[str] = None
+    raw_name: Optional[str] = None
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None

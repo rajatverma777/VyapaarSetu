@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # Gemini
     GEMINI_API_KEY: Optional[str] = None
 
+    # Self-Hosted AI Service
+    AI_SERVICE_URL: str = "http://localhost:8001"
+
     @model_validator(mode="after")
     def validate_secret_key(self) -> Self:
         if not self.DEBUG and self.SECRET_KEY == "your-super-secret-key-change-in-production-min-32-chars":
