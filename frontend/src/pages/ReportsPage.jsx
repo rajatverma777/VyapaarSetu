@@ -79,7 +79,7 @@ export default function ReportsPage() {
 
       {/* Date Filters */}
       {['sales', 'purchases', 'gst', 'profit-loss'].includes(tab) && (
-        <div className="card p-4 flex flex-wrap gap-3">
+        <div className="card p-4 flex flex-wrap gap-3 relative z-30">
           <div>
             <label className="label text-xs">From Date</label>
             <DatePicker className="w-36 flex-shrink-0" value={fromDate} onChange={setFromDate} />

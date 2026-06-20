@@ -80,7 +80,7 @@ export default function SalesPage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap gap-3">
+      <div className="card p-4 flex flex-wrap gap-3 relative z-30">
         <DatePicker className="w-36 flex-shrink-0" value={fromDate} onChange={v => { setFromDate(v); setPage(1) }} />
         <DatePicker className="w-36 flex-shrink-0" value={toDate} onChange={v => { setToDate(v); setPage(1) }} />
         <GlassSelect
