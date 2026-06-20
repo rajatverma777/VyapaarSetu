@@ -720,20 +720,26 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
                                 img.close()
                                 continue
                             
-                            # Downscale extremely large scans to save memory on 512MB RAM tier
-                            if img.width > 1500:
+                            # Resize image to exactly 1500 width to optimize OCR readability and keep memory low
+                            if img.width != 1500:
                                 ratio = 1500.0 / img.width
                                 new_height = int(img.height * ratio)
+                                resample_filter = Image.Resampling.LANCZOS if img.width < 1500 else Image.Resampling.BILINEAR
                                 old_img = img
-                                img = old_img.resize((1500, new_height), Image.Resampling.BILINEAR)
+                                img = old_img.resize((1500, new_height), resample_filter)
                                 old_img.close()
                             
-                            # Preprocess image (Grayscale only to save memory)
+                            # Preprocess image (Grayscale + Enhance Contrast to save memory and improve OCR)
                             img_gray = img.convert('L')
                             img.close()
                             
-                            ocr_text_parts.append(pytesseract.image_to_string(img_gray, config='--psm 6'))
+                            from PIL import ImageEnhance
+                            enhancer = ImageEnhance.Contrast(img_gray)
+                            img_enhanced = enhancer.enhance(2.0)
                             
+                            ocr_text_parts.append(pytesseract.image_to_string(img_enhanced, config='--psm 6'))
+                            
+                            img_enhanced.close()
                             img_gray.close()
                             del img_gray
                             del img_data
@@ -748,21 +754,27 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
         try:
             img = Image.open(io.BytesIO(contents))
             
-            # Downscale extremely large images to save memory
-            if img.width > 1500:
+            # Resize image to exactly 1500 width to optimize OCR readability and keep memory low
+            if img.width != 1500:
                 ratio = 1500.0 / img.width
                 new_height = int(img.height * ratio)
+                resample_filter = Image.Resampling.LANCZOS if img.width < 1500 else Image.Resampling.BILINEAR
                 old_img = img
-                img = old_img.resize((1500, new_height), Image.Resampling.BILINEAR)
+                img = old_img.resize((1500, new_height), resample_filter)
                 old_img.close()
             
-            # Preprocess the image (Grayscale only to save memory)
+            # Preprocess the image (Grayscale + Enhance Contrast to save memory and improve OCR)
             img_gray = img.convert('L')
             img.close()
             
-            # Run OCR
-            text = pytesseract.image_to_string(img_gray, config='--psm 6')
+            from PIL import ImageEnhance
+            enhancer = ImageEnhance.Contrast(img_gray)
+            img_enhanced = enhancer.enhance(2.0)
             
+            # Run OCR
+            text = pytesseract.image_to_string(img_enhanced, config='--psm 6')
+            
+            img_enhanced.close()
             img_gray.close()
             del img_gray
             gc.collect()
@@ -1100,6 +1112,11 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
         except Exception:
             pass
             
+    if not products:
+        raise ValueError(
+            "No products could be extracted. Please ensure the invoice is clear, "
+            "well-lit, and matches the supported formats (Yash Surgical / RB Healthcare)."
+        )
     gc.collect()
     return products
 
