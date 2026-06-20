@@ -508,15 +508,50 @@ export function DatePicker({ value, onChange, className = '' }) {
     const d = value ? new Date(value) : new Date()
     return isNaN(d.getTime()) ? new Date() : d
   })
-  const containerRef = useRef()
+  const triggerRef = useRef()
+  const panelRef = useRef()
+  const [panelStyle, setPanelStyle] = useState({})
+
+  const calcPosition = useCallback(() => {
+    if (!triggerRef.current) return
+    const r = triggerRef.current.getBoundingClientRect()
+    let left = r.left + window.scrollX
+    if (r.left + 288 > window.innerWidth) {
+      left = r.right + window.scrollX - 288
+    }
+    setPanelStyle({
+      position: 'absolute',
+      top:      r.bottom + window.scrollY + 6,
+      left:     left,
+      zIndex:   99999,
+    })
+  }, [])
 
   useEffect(() => {
+    if (!open) return
+    calcPosition()
+    const update = () => calcPosition()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [open, calcPosition])
+
+  useEffect(() => {
+    if (!open) return
     const handler = (e) => {
-      if (!containerRef.current?.contains(e.target)) setOpen(false)
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target) &&
+        panelRef.current   && !panelRef.current.contains(e.target)
+      ) {
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [open])
 
   useEffect(() => {
     if (value) {
@@ -591,8 +626,8 @@ export function DatePicker({ value, onChange, className = '' }) {
   }
 
   return (
-    <div className={`relative ${className}`} ref={containerRef}>
-      <div className="search-glass-wrap">
+    <div className={`relative ${className}`}>
+      <div className="search-glass-wrap" ref={triggerRef}>
         <svg className="search-glass-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
@@ -609,8 +644,8 @@ export function DatePicker({ value, onChange, className = '' }) {
         />
       </div>
 
-      {open && (
-        <div className="gls-panel absolute top-full mt-2 left-0 w-72 p-4 z-50">
+      {open && createPortal(
+        <div ref={panelRef} className="gls-panel w-72 p-4" style={panelStyle}>
           <div className="gls-panel-shine" aria-hidden="true" />
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -645,7 +680,8 @@ export function DatePicker({ value, onChange, className = '' }) {
           <div className="grid grid-cols-7 gap-1 text-center">
             {days}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

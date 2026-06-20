@@ -20,6 +20,8 @@ import InventoryPage  from './pages/InventoryPage'
 import ReportsPage    from './pages/ReportsPage'
 import PaymentsPage   from './pages/PaymentsPage'
 import SettingsPage   from './pages/SettingsPage'
+import ReturnsPage      from './pages/ReturnsPage'
+import TraceabilityPage from './pages/TraceabilityPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -45,6 +47,8 @@ const router = createBrowserRouter([
       { path: 'purchases', element: <PurchasesPage /> },
       { path: 'purchases/new', element: <NewPurchasePage /> },
       { path: 'inventory', element: <InventoryPage /> },
+      { path: 'returns', element: <ReturnsPage /> },
+      { path: 'traceability', element: <TraceabilityPage /> },
       { path: 'payments', element: <PaymentsPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'settings', element: <SettingsPage /> }

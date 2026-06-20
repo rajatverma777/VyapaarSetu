@@ -163,7 +163,7 @@ export default function NewPurchasePage() {
         <h1 className="page-title">New Purchase</h1>
         <div className="flex gap-2">
           <button onClick={handleCancel} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} disabled={saving || items.length === 0 || !supplier} className="btn-primary">
+          <button onClick={handleSave} disabled={saving} className="btn-primary">
             <Save size={16} />{saving ? 'Saving…' : 'Save Purchase'}
           </button>
         </div>
@@ -222,7 +222,7 @@ export default function NewPurchasePage() {
                 <button type="button" className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{p.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{p.unit} · GST {p.gst_rate}%</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{p.brand ? `${p.brand} · ` : ''}{p.unit} · GST {p.gst_rate}%</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-primary-600">₹{p.purchase_price?.toFixed(2)}</p>
@@ -365,7 +365,7 @@ export default function NewPurchasePage() {
             <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
 
-          <button onClick={handleSave} disabled={saving || items.length === 0 || !supplier}
+          <button onClick={handleSave} disabled={saving}
             className="btn-primary w-full justify-center py-3">
             <Save size={16} />{saving ? 'Saving…' : 'Save Purchase'}
           </button>

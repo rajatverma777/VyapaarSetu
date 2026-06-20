@@ -90,6 +90,23 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Recall Alerts Warning Banner */}
+      {data?.batch_recall_alerts?.length > 0 && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 flex items-start gap-3 text-red-800 dark:text-red-400 animate-pulse">
+          <AlertTriangle size={20} className="flex-shrink-0 mt-0.5 text-red-600" />
+          <div className="flex-1">
+            <p className="font-bold text-sm">CRITICAL ALERT: Active Batch Recalls</p>
+            <p className="text-xs mt-1">
+              The following batch(es) have been flagged for immediate recall: <b>{data.batch_recall_alerts.map(r => r.batch_no).join(', ')}</b>.
+              Please check the <b>Traceability</b> module to export the list of affected customers.
+            </p>
+          </div>
+          <button onClick={() => navigate('/traceability')} className="btn-primary bg-red-600 hover:bg-red-750 text-[10px] px-2.5 py-1">
+            View Recalls
+          </button>
+        </div>
+      )}
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -186,14 +203,92 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Brand Analytics Grid (NEW) */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Most Sold Brands & Most Profitable Brands */}
+        <div className="card p-5 space-y-4">
+          <h2 className="section-title flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400">
+            <TrendingUp size={16} /> Brand Sales &amp; Profit Margins
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Sold */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b pb-1">Top Volume Brands</p>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {(data?.most_sold_brands || []).map((b, idx) => (
+                  <div key={idx} className="py-2 flex justify-between text-xs">
+                    <span className="font-medium truncate max-w-[100px]">{b.brand}</span>
+                    <span className="font-bold text-indigo-600">{b.quantity} PCS</span>
+                  </div>
+                ))}
+                {!data?.most_sold_brands?.length && <p className="text-xs text-gray-400 py-3">No sales yet</p>}
+              </div>
+            </div>
+            {/* Profitable */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b pb-1">Top Profit Brands</p>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {(data?.most_profitable_brands || []).map((b, idx) => (
+                  <div key={idx} className="py-2 flex justify-between text-xs">
+                    <span className="font-medium truncate max-w-[100px]">{b.brand}</span>
+                    <span className="font-bold text-green-600">₹{b.profit?.toFixed(0)}</span>
+                  </div>
+                ))}
+                {!data?.most_profitable_brands?.length && <p className="text-xs text-gray-400 py-3">No profit data</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Most Returned Products & Movement History (NEW) */}
+        <div className="card p-5 space-y-4">
+          <h2 className="section-title flex items-center gap-1.5 text-red-650 dark:text-red-400">
+            <Package size={16} /> Stock Returns &amp; Movements
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Returned */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b pb-1">Top Returned Products</p>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {(data?.most_returned_products || []).map((p, idx) => (
+                  <div key={idx} className="py-2 flex justify-between text-xs">
+                    <span className="font-medium truncate max-w-[100px]" title={p.name}>{p.name}</span>
+                    <span className="font-bold text-red-500">{p.quantity} PCS</span>
+                  </div>
+                ))}
+                {!data?.most_returned_products?.length && <p className="text-xs text-gray-400 py-3">No returns logged</p>}
+              </div>
+            </div>
+            {/* Movement logs */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b pb-1">Recent Inventory Logs</p>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {(data?.product_movement_history || []).map((l, idx) => (
+                  <div key={idx} className="py-1.5 flex flex-col text-[11px] leading-tight">
+                    <div className="flex justify-between font-medium">
+                      <span className="truncate max-w-[90px]" title={l.product_name}>{l.product_name}</span>
+                      <span className={l.quantity > 0 ? 'text-green-600 font-bold' : 'text-red-500 font-bold'}>
+                        {l.quantity > 0 ? `+${l.quantity}` : l.quantity}
+                      </span>
+                    </div>
+                    <span className="text-[9px] text-gray-400 uppercase">{l.type?.replace('_', ' ')}</span>
+                  </div>
+                ))}
+                {!data?.product_movement_history?.length && <p className="text-xs text-gray-400 py-3">No stock logs</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="card p-5">
         <h2 className="section-title mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
           <button onClick={() => navigate('/sales/new')}    className="btn-primary">New Sale Invoice</button>
           <button onClick={() => navigate('/purchases/new')} className="btn-secondary">New Purchase</button>
-          <button onClick={() => navigate('/customers')}    className="btn-secondary">Add Customer</button>
-          <button onClick={() => navigate('/products')}     className="btn-secondary">Add Product</button>
+          <button onClick={() => navigate('/returns')}       className="btn-secondary">Returns Center</button>
+          <button onClick={() => navigate('/traceability')}  className="btn-secondary">Traceability Center</button>
           <button onClick={() => navigate('/reports')}      className="btn-secondary">GST Report</button>
         </div>
       </div>

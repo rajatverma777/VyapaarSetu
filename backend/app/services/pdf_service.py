@@ -1025,3 +1025,389 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
 
     doc.build(story)
     return filepath
+
+
+# ── Credit & Debit Note PDF Generator ──────────────────────────────────────────
+async def generate_return_note(ret: dict, company: dict) -> str:
+    os.makedirs(settings.INVOICE_DIR, exist_ok=True)
+    note_no  = ret.get("note_number", "CN-0001")
+    filename = f"{note_no.replace('/', '-')}.pdf"
+    filepath = os.path.join(settings.INVOICE_DIR, filename)
+
+    pagesize_landscape = landscape(A5)
+    W, H = pagesize_landscape
+    LM   = 6 * mm
+    RM   = 6 * mm
+    CW   = W - LM - RM   # 198mm
+
+    doc = BaseDocTemplate(
+        filepath, pagesize=pagesize_landscape,
+        leftMargin=LM, rightMargin=RM,
+        topMargin=4 * mm, bottomMargin=24 * mm
+    )
+
+    frame_first = Frame(
+        LM, 24 * mm, CW, H - 24 * mm - 4 * mm,
+        id="first_frame", topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0
+    )
+    frame_later = Frame(
+        LM, 24 * mm, CW, H - 24 * mm - 15 * mm,
+        id="later_frame", topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0
+    )
+
+    st    = _styles()
+    story = [NextPageTemplate("LaterPages")]
+    f, fb = _R(), _R(True)
+
+    company_name = company.get("company_name", "Care Pharma")
+    gstin        = company.get("gstin", "")
+    address      = company.get("address", "")
+    city         = company.get("city", "")
+    state        = company.get("state", "")
+    mobile       = company.get("mobile", "")
+    email_addr   = company.get("email", "")
+    drug_lic     = company.get("drug_license", "")
+
+    note_date = ret.get("date", "")
+    if isinstance(note_date, str) and note_date:
+        try:
+            note_date = datetime.fromisoformat(note_date.replace("Z", "")).strftime("%d-%m-%Y")
+        except:
+            pass
+    elif isinstance(note_date, datetime):
+        note_date = note_date.strftime("%d-%m-%Y")
+
+    party_name = ret.get("party_name", "Walk-in Customer")
+    party_gstin   = ret.get("party_gstin", "")
+    party_address = ret.get("party_address", "")
+    if isinstance(party_address, dict):
+        parts = [party_address.get(k) for k in ["street", "city", "state", "pincode"] if party_address.get(k)]
+        party_address = ", ".join(parts)
+    party_mobile  = ret.get("party_mobile", "")
+    is_igst   = ret.get("is_igst", False)
+
+    note_type_label = "CREDIT NOTE" if ret.get("type") == "customer" else "DEBIT NOTE"
+
+    def draw_first_page(canvas, doc_obj):
+        draw_page_decorations(canvas, doc_obj)
+
+    def draw_later_page(canvas, doc_obj):
+        draw_page_decorations(canvas, doc_obj)
+        canvas.saveState()
+        canvas.setFont(fb, 7.5)
+        canvas.setFillColor(NAVY)
+        canvas.drawString(LM, H - 10 * mm, company_name.upper())
+        canvas.setFont(f, 7.0)
+        canvas.setFillColor(GREY)
+        info_str = f"{note_type_label}  |  Note No: {note_no}  |  Date: {note_date}  |  Page {canvas.getPageNumber()}"
+        canvas.drawRightString(W - RM, H - 10 * mm, info_str)
+        canvas.setStrokeColor(GLASS_BORDER)
+        canvas.setLineWidth(0.5)
+        canvas.line(LM, H - 12 * mm, W - RM, H - 12 * mm)
+        canvas.restoreState()
+
+    template_first = PageTemplate(id="FirstPage", frames=frame_first, onPage=draw_first_page)
+    template_later = PageTemplate(id="LaterPages", frames=frame_later, onPage=draw_later_page)
+    doc.addPageTemplates([template_first, template_later])
+
+    addr_line = ", ".join([p for p in [address, city, state] if p])
+    contact_parts1 = [f"Ph: {mobile}"] if mobile else []
+    if email_addr:
+        contact_parts1.append(email_addr)
+    contact_line1 = "  |  ".join(contact_parts1)
+
+    contact_parts2 = [f"<font color='#14532d'><b>GSTIN: {gstin}</b></font>"] if gstin else []
+    if drug_lic:
+        contact_parts2.append(f"D.L.No.: {drug_lic}")
+    contact_line2 = "  |  ".join(contact_parts2)
+
+    logo_img = None
+    header_logo_path = LOGO_TRANS_PATH if os.path.exists(LOGO_TRANS_PATH) else LOGO_PATH
+    if os.path.exists(header_logo_path):
+        logo_img = Image(header_logo_path, width=13 * mm, height=13 * mm)
+
+    co_paragraphs = [
+        Paragraph(company_name.upper(), st["HdrCoName"]),
+        Paragraph(addr_line, st["HdrCoSub"])
+    ]
+    if contact_line1:
+        co_paragraphs.append(Paragraph(contact_line1, st["HdrCoSub"]))
+    if contact_line2:
+        co_paragraphs.append(Paragraph(contact_line2, st["HdrCoSub"]))
+
+    co_sub_table = Table([[p] for p in co_paragraphs], colWidths=[120 * mm])
+    co_sub_table.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0.5),
+    ]))
+
+    if logo_img:
+        logo_co_table = Table([[logo_img, co_sub_table]], colWidths=[13 * mm, 120 * mm])
+        logo_co_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("LEFTPADDING", (1, 0), (1, 0), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        left_cell = [logo_co_table]
+    else:
+        left_cell = [co_sub_table]
+
+    inv_table_data = [
+        [Paragraph(note_type_label, st["HdrTitle"])],
+        [Paragraph(f"#{note_no}", st["HdrSub"])],
+        [Paragraph(note_date, st["HdrDate"])],
+        [Paragraph(f"Original Ref: {ret.get('reference_id') or 'N/A'}", st["HdrStatus"])]
+    ]
+    inv_table = Table(inv_table_data, colWidths=[60 * mm - 12], rowHeights=[13, 8, 8, 8])
+    inv_table.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0.5),
+    ]))
+    inv_cell = [inv_table]
+
+    header_table = Table([[left_cell, inv_cell]], colWidths=[138 * mm, 60 * mm])
+    header_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+
+    hdr_container = Table([[header_table]], colWidths=[CW])
+    hdr_container.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.Color(248/255, 250/255, 252/255, 0.55)),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.5, GLASS_BORDER),
+    ]))
+    story.append(hdr_container)
+    story.append(Spacer(1, 4))
+
+    party_label = "BILL TO CUSTOMER" if ret.get("type") == "customer" else "RETURNED TO SUPPLIER"
+    party_details_html = (
+        f'<font face="{fb}" size="6.0" color="#4f46e5">{party_label}</font><br/>'
+        f'<font face="{fb}" size="8.5" color="#0f172a"><b>{party_name}</b></font>'
+    )
+    if party_address:
+        party_details_html += f'<br/><font face="{f}" size="7.0" color="#334155">{party_address}</font>'
+    if party_mobile:
+        party_details_html += f'<br/><font face="{f}" size="7.0" color="#334155">Ph: {party_mobile}</font>'
+    if party_gstin:
+        party_details_html += f'<br/><font face="{f}" size="7.0" color="#1e293b"><b>GSTIN: {party_gstin}</b></font>'
+
+    p_left = Paragraph(party_details_html, ParagraphStyle("PartyD", leading=9.0))
+    p_right = Paragraph(
+        f'<font face="{fb}" size="6.0" color="#64748b">NOTE TOTAL</font><br/>'
+        f'<font face="{fb}" size="11.0" color="#0f172a"><b>{_rupee(ret.get("total_amount", 0.0))}</b></font><br/>'
+        f'<font face="{f}" size="6.5" color="#dc2626"><b>Pending Adj: {_rupee(ret.get("balance_amount", 0.0))}</b></font>',
+        ParagraphStyle("TotalBrief", alignment=TA_RIGHT, leading=10.0)
+    )
+
+    bill_table = Table([[p_left, p_right]], colWidths=[130 * mm, 68 * mm])
+    bill_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+    ]))
+
+    bill_container = Table([[bill_table]], colWidths=[CW])
+    bill_container.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.Color(248/255, 250/255, 252/255, 0.4)),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(bill_container)
+    story.append(Spacer(1, 4))
+
+    ret_items = ret.get("items", [])
+    mapped_items = []
+    for item in ret_items:
+        copy_item = dict(item)
+        copy_item["product_name"] = f"{item.get('product_name')} ({item.get('reason', 'N/A')})"
+        mapped_items.append(copy_item)
+
+    if is_igst:
+        col_hdrs = ["#", "PRODUCT NAME (REASON)", "QTY", "UNIT", "RATE", "TAXABLE", "IGST%", "IGST Amt", "TOTAL"]
+        col_w    = [8*mm, 48*mm, 14*mm, 14*mm, 21*mm, 21*mm, 14*mm, 24*mm, 34*mm]
+    else:
+        col_hdrs = ["#", "PRODUCT NAME (REASON)", "QTY", "UNIT", "RATE", "TAXABLE", "GST%", "CGST", "SGST", "TOTAL"]
+        col_w    = [8*mm, 44*mm, 12*mm, 12*mm, 19*mm, 20*mm, 12*mm, 19*mm, 19*mm, 33*mm]
+
+    items_table_style = TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0), GLASS_HDR_BG),
+        ("TEXTCOLOR",     (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+        ("FONTNAME",      (0, 0), (-1, 0), fb),
+        ("FONTSIZE",      (0, 0), (-1, 0), 6.5),
+        ("VALIGN",        (0, 0), (-1, 0), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, 0), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 5),
+        ("LINEBELOW",     (0, 0), (-1, 0), 1.5, GLASS_ACCENT),
+        ("ALIGN",         (0, 0), (0, 0), "CENTER"),
+        ("ALIGN",         (1, 0), (1, 0), "LEFT"),
+        ("ALIGN",         (2, 0), (3, 0), "CENTER"),
+        ("ALIGN",         (4, 0), (5, 0), "RIGHT"),
+        ("ALIGN",         (6, 0), (6, 0), "CENTER"),
+        ("ALIGN",         (7, 0), (-1, 0), "RIGHT"),
+        ("FONTNAME",      (0, 1), (-1, -1), f),
+        ("FONTSIZE",      (0, 1), (-1, -1), 6.5),
+        ("VALIGN",        (0, 1), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 1), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 1), (-1, -1), 3),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [WHITE_GLAZED, ROW_ALT_GLAZED]),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 3),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 3),
+        ("LEFTPADDING",   (0, 0), (0, -1), 8),
+        ("RIGHTPADDING",  (-1, 0), (-1, -1), 8),
+        ("LINEBELOW",     (0, 1), (-1, -1), 0.3, GLASS_BORDER),
+        ("BACKGROUND",    (-1, 1), (-1, -1), TOTAL_COL_GLAZED),
+    ])
+
+    subtotal       = ret.get("subtotal", 0)
+    taxable_amt    = ret.get("taxable_amount", subtotal)
+    total_cgst     = ret.get("total_cgst", 0)
+    total_sgst     = ret.get("total_sgst", 0)
+    total_igst     = ret.get("total_igst", 0)
+    total_tax      = ret.get("total_tax", 0)
+    total_amount   = ret.get("total_amount", 0)
+    paid_amount    = ret.get("paid_amount", 0)
+    balance_amount = ret.get("balance_amount", 0)
+
+    summary_cols = []
+    summary_cols.append(("Taxable Amt", _rupee(taxable_amt), False, False))
+    if not is_igst:
+        summary_cols.append(("CGST & SGST", f"{_rupee(total_cgst)} + {_rupee(total_sgst)}", False, False))
+    else:
+        summary_cols.append(("IGST", _rupee(total_igst), False, False))
+    summary_cols.append(("Total Tax", _rupee(total_tax), False, False))
+    summary_cols.append(("Paid/Refunded", _rupee(paid_amount), False, False))
+    summary_cols.append(("Balance Adj", _rupee(balance_amount), False, False))
+    summary_cols.append(("Grand Total", _rupee(total_amount), True, False))
+
+    summary_cells = []
+    for i, (label, val, is_grand, is_red) in enumerate(summary_cols):
+        lbl_fn = fb
+        val_fn = fb if is_grand else f
+        lbl_size = 5.0
+        val_size = 7.0 if is_grand else 6.0
+        lbl_color = "#4f46e5" if is_grand else "#64748b"
+        val_color = "#312e81" if is_grand else ("#dc2626" if is_red else "#0d1b3e")
+        display_label = label.replace('&', '&amp;')
+        cell_html = (
+            f'<font face="{lbl_fn}" size="{lbl_size}" color="{lbl_color}">{display_label.upper()}</font><br/>'
+            f'<font face="{val_fn}" size="{val_size}" color="{val_color}"><b>{val}</b></font>'
+        )
+        style_name = f"RetCol_{label.replace(' ', '_')}_{i}"
+        p = Paragraph(cell_html, ParagraphStyle(style_name, alignment=TA_CENTER, leading=val_size * 1.15))
+        if is_grand:
+            summary_cells.append(GrandTotalCell(p, bg_color=colors.Color(224/255, 231/255, 255/255, 0.9), border_color=colors.HexColor("#6366f1"), radius=1.5 * mm))
+        else:
+            summary_cells.append(p)
+
+    base_widths = {
+        "Taxable Amt": 28 * mm,
+        "CGST & SGST": 38 * mm,
+        "IGST": 28 * mm,
+        "Total Tax": 24 * mm,
+        "Paid/Refunded": 28 * mm,
+        "Balance Adj": 28 * mm,
+        "Grand Total": 32 * mm,
+    }
+    active_labels = [col[0] for col in summary_cols]
+    sum_base = sum(base_widths.get(lbl, 24 * mm) for lbl in active_labels)
+    scale = CW / sum_base
+    col_widths = [base_widths.get(lbl, 24 * mm) * scale for lbl in active_labels]
+
+    summary_table = Table([summary_cells], colWidths=col_widths)
+    summary_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+        ("TOPPADDING", (0, 0), (-1, -1), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+    ]))
+
+    chunks = [mapped_items[i:i + 10] for i in range(0, len(mapped_items), 10)] if mapped_items else [[]]
+    for idx, chunk in enumerate(chunks):
+        is_last = (idx == len(chunks) - 1)
+        box = UnifiedInvoiceBox(
+            items=chunk,
+            summary_table=summary_table,
+            is_igst=is_igst,
+            col_w=col_w,
+            col_hdrs=col_hdrs,
+            table_style=items_table_style,
+            bg_color=GLASS_BG,
+            border_color=GLASS_BORDER,
+            border_width=0.5,
+            radius=3 * mm,
+            is_last_page=is_last,
+            start_idx=idx * 10 + 1
+        )
+        story.append(box)
+        if not is_last:
+            story.append(PageBreak())
+
+    def draw_page_decorations(canvas, doc_obj):
+        default_path = CREST_PATH if os.path.exists(CREST_PATH) else LOGO_PATH
+        if os.path.exists(default_path):
+            from reportlab.lib.utils import ImageReader
+            watermark_img = ImageReader(default_path)
+            canvas.saveState()
+            canvas.setFillAlpha(0.12)
+            canvas.setStrokeAlpha(0.12)
+            w_width, w_height = 55 * mm, 55 * mm
+            x = (W - w_width) / 2
+            y = (H - w_height) / 2
+            canvas.drawImage(watermark_img, x, y, width=w_width, height=w_height, mask='auto')
+            canvas.restoreState()
+
+        canvas.saveState()
+        canvas.setStrokeColor(GLASS_BORDER)
+        canvas.setLineWidth(0.5)
+        canvas.line(LM, 20 * mm, W - RM, 20 * mm)
+
+        footer_text = company.get("invoice_footer") or "Thank you for your business!"
+        ft_style = ParagraphStyle("FT3_canvas_ret", fontName=fb, fontSize=7.5, textColor=NAVY, alignment=TA_CENTER)
+        ft_p = Paragraph(footer_text, ft_style)
+        ft_p.wrap(70 * mm, 12)
+        ft_p.drawOn(canvas, (W - 70 * mm) / 2, 10 * mm)
+
+        sig_p = Paragraph(
+            f'<font face="{f}" size="7.0" color="#475569">Authorised Signatory</font><br/>'
+            f'<font face="{fb}" size="7.0" color="#1e293b">{company_name}</font>',
+            ParagraphStyle("SigText_canvas_ret", alignment=TA_RIGHT, leading=9.5)
+        )
+        sig_p.wrap(60 * mm, 15 * mm)
+        sig_p.drawOn(canvas, W - RM - 60 * mm, 4.0 * mm)
+
+        grad = GradientRect(CW, 2.0, GLASS_ACCENT, TEAL)
+        grad.wrap(CW, 2.0)
+        grad.drawOn(canvas, LM, 1.0 * mm)
+
+        cg_p = Paragraph(
+            f"Computer generated return document | {datetime.now().strftime('%d-%m-%Y %H:%M')}",
+            ParagraphStyle("GN_canvas_ret", fontName=f, fontSize=5.5, textColor=SILVER, alignment=TA_CENTER)
+        )
+        cg_p.wrap(CW, 8)
+        cg_p.drawOn(canvas, LM, 5.0 * mm)
+        canvas.restoreState()
+
+    doc.build(story)
+    return filepath

@@ -292,7 +292,7 @@ export default function NewSalePage() {
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{p.name}</p>
-                    <p className="text-xs text-gray-500">{p.sku || p.barcode || ''} · {p.unit} · GST {p.gst_rate}%</p>
+                    <p className="text-xs text-gray-500">{p.brand ? `${p.brand} · ` : ''}{p.sku || p.barcode ? `${p.sku || p.barcode} · ` : ''}{p.unit} · GST {p.gst_rate}%</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-semibold text-primary-600">₹{p.selling_price?.toFixed(2)}</p>

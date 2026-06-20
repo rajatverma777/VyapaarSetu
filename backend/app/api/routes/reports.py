@@ -100,13 +100,85 @@ async def dashboard_summary(
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}, "count": {"$sum": 1}}}
     ]
 
+    # 1. Most sold brands
+    brand_sales_pipe = [
+        {"$match": {"sale_type": "sale"}},
+        {"$unwind": "$items"},
+        {"$addFields": {"items.product_id_obj": {"$toObjectId": "$items.product_id"}}},
+        {"$lookup": {
+            "from": "products",
+            "localField": "items.product_id_obj",
+            "foreignField": "_id",
+            "as": "prod_info"
+        }},
+        {"$unwind": {"path": "$prod_info", "preserveNullAndEmptyArrays": True}},
+        {"$addFields": {"brand": {"$ifNull": ["$prod_info.brand", "Unknown"]}}},
+        {"$group": {
+            "_id": "$brand",
+            "revenue": {"$sum": "$items.total_amount"},
+            "quantity": {"$sum": "$items.quantity"}
+        }},
+        {"$sort": {"quantity": -1}},
+        {"$limit": 5}
+    ]
+
+    # 2. Most returned products
+    returned_prod_pipe = [
+        {"$match": {"type": "customer"}},
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.product_id",
+            "name": {"$first": "$items.product_name"},
+            "quantity": {"$sum": "$items.quantity"},
+            "value": {"$sum": "$items.total_amount"}
+        }},
+        {"$sort": {"quantity": -1}},
+        {"$limit": 5}
+    ]
+
+    # 3. Most profitable brands
+    profit_brand_pipe = [
+        {"$match": {"sale_type": "sale"}},
+        {"$unwind": "$items"},
+        {"$addFields": {"items.product_id_obj": {"$toObjectId": "$items.product_id"}}},
+        {"$lookup": {
+            "from": "products",
+            "localField": "items.product_id_obj",
+            "foreignField": "_id",
+            "as": "prod_info"
+        }},
+        {"$unwind": {"path": "$prod_info", "preserveNullAndEmptyArrays": True}},
+        {"$addFields": {
+            "brand": {"$ifNull": ["$prod_info.brand", "Unknown"]},
+            "purchase_price": {"$ifNull": ["$prod_info.purchase_price", 0.0]}
+        }},
+        {"$group": {
+            "_id": "$brand",
+            "revenue": {"$sum": "$items.total_amount"},
+            "cost": {"$sum": {"$multiply": ["$items.quantity", "$purchase_price"]}}
+        }},
+        {"$project": {
+            "brand": "$_id",
+            "revenue": 1,
+            "cost": 1,
+            "profit": {"$subtract": ["$revenue", "$cost"]}
+        }},
+        {"$sort": {"profit": -1}},
+        {"$limit": 5}
+    ]
+
     # Execute all database operations concurrently
-    sales_res, customers_res, suppliers_res, products_res, purchases_res = await asyncio.gather(
+    sales_res, customers_res, suppliers_res, products_res, purchases_res, brand_res, returned_res, profit_res, recalls_res, movement_res = await asyncio.gather(
         db.sales.aggregate(sales_pipeline).to_list(1),
         db.customers.aggregate(customers_pipeline).to_list(1),
         db.suppliers.aggregate(suppliers_pipeline).to_list(1),
         db.products.aggregate(products_pipeline).to_list(1),
-        db.purchases.aggregate(pur_pipe).to_list(1)
+        db.purchases.aggregate(pur_pipe).to_list(1),
+        db.sales.aggregate(brand_sales_pipe).to_list(5),
+        db.returns.aggregate(returned_prod_pipe).to_list(5),
+        db.sales.aggregate(profit_brand_pipe).to_list(5),
+        db.recalls.find({"status": "active"}).sort("date", -1).limit(10).to_list(10),
+        db.stock_logs.find().sort("created_at", -1).limit(5).to_list(5)
     )
 
     # Unpack Sales
@@ -150,7 +222,12 @@ async def dashboard_summary(
         "supplier_outstanding": round(supplier_outstanding, 2),
         "low_stock_count": low_stock,
         "recent_sales": [serialize_doc(s) for s in recent_sales],
-        "sales_chart": chart_data
+        "sales_chart": chart_data,
+        "most_sold_brands": [{"brand": b["_id"], "revenue": b["revenue"], "quantity": b["quantity"]} for b in brand_res],
+        "most_returned_products": [{"id": p["_id"], "name": p["name"], "quantity": p["quantity"], "value": p["value"]} for p in returned_res],
+        "most_profitable_brands": [{"brand": b["brand"], "revenue": b["revenue"], "profit": b["profit"]} for b in profit_res],
+        "batch_recall_alerts": [serialize_doc(r) for r in recalls_res],
+        "product_movement_history": [serialize_doc(l) for l in movement_res]
     }
 
 @router.get("/sales")

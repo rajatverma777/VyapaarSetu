@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, Users, Truck, ShoppingCart,
   ShoppingBag, Warehouse, FileText, CreditCard,
   BarChart3, Settings, X, Building2, TrendingUp, LogOut,
-  Sun, Moon, ChevronUp
+  Sun, Moon, ChevronUp, RotateCcw, Activity
 } from 'lucide-react'
 
 
@@ -24,6 +24,8 @@ const NAV_ITEMS = [
   { to: '/payments',   icon: CreditCard,      label: 'Payments' },
   { divider: true, label: 'MANAGEMENT' },
   { to: '/inventory',  icon: Warehouse,       label: 'Inventory' },
+  { to: '/returns',    icon: RotateCcw,       label: 'Returns' },
+  { to: '/traceability', icon: Activity,      label: 'Traceability' },
   { to: '/reports',    icon: BarChart3,       label: 'Reports' },
   { to: '/settings',   icon: Settings,        label: 'Settings' },
 ]

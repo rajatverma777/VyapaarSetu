@@ -252,3 +252,31 @@ export const userAPI = {
 export const healthAPI = {
   check: () => api.get('/health', { timeout: 5000 }),
 }
+
+// ── Returns ──────────────────────────────────────────────────────────────────
+export const returnAPI = {
+  list:           (params) => api.get('/returns/', { params }),
+  getById:        (id)     => api.get(`/returns/${id}`),
+  createCustomer: (data)   => api.post('/returns/customer', data),
+  createSupplier: (data)   => api.post('/returns/supplier', data),
+  analytics:      (params) => api.get('/returns/analytics', { params }),
+  getPdfBlob: async (id) => {
+    const token = localStorage.getItem('token')
+    const resp = await fetch(`${apiURL}/returns/${id}/pdf`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!resp.ok) throw new Error('Failed to fetch credit/debit note PDF')
+    const blob = await resp.blob()
+    return URL.createObjectURL(blob)
+  }
+}
+
+// ── Traceability ─────────────────────────────────────────────────────────────
+export const traceabilityAPI = {
+  brandAnalytics:      ()       => api.get('/traceability/brand'),
+  productTraceability: (id)     => api.get(`/traceability/product/${id}`),
+  batchTraceability:   (batch)  => api.get(`/traceability/batch/${batch}`),
+  listRecalls:         ()       => api.get('/traceability/recalls'),
+  createRecall:        (data)   => api.post('/traceability/recall', data),
+  brandSales:          (brand)  => api.get('/traceability/brand/sales', { params: { brand } }),
+}

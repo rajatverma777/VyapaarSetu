@@ -167,7 +167,8 @@ async def search_products(
     projection = {
         "name": 1, "sku": 1, "barcode": 1, "selling_price": 1,
         "wholesale_price": 1, "mrp": 1, "gst_rate": 1, "unit": 1,
-        "current_stock": 1, "hsn_code": 1, "purchase_price": 1
+        "current_stock": 1, "hsn_code": 1, "purchase_price": 1,
+        "brand": 1
     }
 
     if not q:
