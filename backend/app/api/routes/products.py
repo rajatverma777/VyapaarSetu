@@ -730,13 +730,13 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
                                 img.close()
                                 continue
                             
-                            # Resize image to exactly 1200 width to optimize OCR readability and keep memory low
-                            if img.width != 1200:
-                                ratio = 1200.0 / img.width
+                            # Resize image to exactly 1000 width to optimize OCR readability and keep memory low
+                            if img.width != 1000:
+                                ratio = 1000.0 / img.width
                                 new_height = int(img.height * ratio)
-                                resample_filter = Image.Resampling.LANCZOS if img.width < 1200 else Image.Resampling.BILINEAR
+                                resample_filter = Image.Resampling.LANCZOS if img.width < 1000 else Image.Resampling.BILINEAR
                                 old_img = img
-                                img = old_img.resize((1200, new_height), resample_filter)
+                                img = old_img.resize((1000, new_height), resample_filter)
                                 old_img.close()
                             
                             # Preprocess image (Grayscale + Enhance Contrast to save memory and improve OCR)
@@ -764,13 +764,13 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
         try:
             img = Image.open(io.BytesIO(contents))
             
-            # Resize image to exactly 1200 width to optimize OCR readability and keep memory low
-            if img.width != 1200:
-                ratio = 1200.0 / img.width
+            # Resize image to exactly 1000 width to optimize OCR readability and keep memory low
+            if img.width != 1000:
+                ratio = 1000.0 / img.width
                 new_height = int(img.height * ratio)
-                resample_filter = Image.Resampling.LANCZOS if img.width < 1200 else Image.Resampling.BILINEAR
+                resample_filter = Image.Resampling.LANCZOS if img.width < 1000 else Image.Resampling.BILINEAR
                 old_img = img
-                img = old_img.resize((1200, new_height), resample_filter)
+                img = old_img.resize((1000, new_height), resample_filter)
                 old_img.close()
             
             # Preprocess the image (Grayscale + Enhance Contrast to save memory and improve OCR)

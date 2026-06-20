@@ -232,23 +232,74 @@ export default function ProductsPage() {
     }
   }
 
+  const resizeImage = (file) => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        resolve(file); // Don't try to resize PDFs
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1000;
+          if (img.width <= maxW) {
+            resolve(file);
+            return;
+          }
+          const scale = maxW / img.width;
+          const canvas = document.createElement('canvas');
+          canvas.width = maxW;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            const resizedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(resizedFile);
+          }, 'image/jpeg', 0.85); // 85% JPEG quality
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleBulkImport = async (e) => {
-    const file = e.target.files[0]
+    let file = e.target.files[0]
     if (!file) return
 
     const isImageOrPdf = file.type.startsWith('image/') || file.type === 'application/pdf' || /\.(png|jpe?g|webp|pdf)$/i.test(file.name)
     
     if (isImageOrPdf) {
       const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
-      const toastId = toast.loading(isPdf ? 'Uploading and preparing PDF invoice...' : 'Uploading and preparing bill image...')
+      const toastId = toast.loading(isPdf ? 'Uploading and preparing PDF invoice...' : 'Compressing and resizing bill image locally...')
       try {
+        if (!isPdf) {
+          // Downscale the image locally in the browser before upload to prevent server OOM and network timeouts
+          file = await resizeImage(file)
+        }
+        
+        toast.loading(isPdf ? 'Uploading PDF invoice...' : 'Uploading resized bill image...', { id: toastId })
         const { data } = await productAPI.importImage(file)
         const taskId = data.task_id
         
-        toast.loading(isPdf ? 'Analyzing PDF layout and content...' : 'Analyzing bill text via background worker...', { id: toastId })
+        let elapsedSeconds = 0
+        const getProgressMessage = () => {
+          return isPdf
+            ? `Analyzing PDF layout and content (${elapsedSeconds}s)...`
+            : `Analyzing bill text via background worker (${elapsedSeconds}s)...`
+        }
+        
+        toast.loading(getProgressMessage(), { id: toastId })
         
         // Start polling status
         const pollInterval = setInterval(async () => {
+          elapsedSeconds += 2
+          toast.loading(getProgressMessage(), { id: toastId })
+          
           try {
             const statusRes = await productAPI.getImportTaskStatus(taskId)
             const task = statusRes.data
@@ -266,7 +317,7 @@ export default function ProductsPage() {
             clearInterval(pollInterval)
             toast.error('Connection interrupted while monitoring task status', { id: toastId })
           }
-        }, 1500)
+        }, 2000)
         
       } catch (err) {
         toast.error(err.response?.data?.detail || (isPdf ? 'Failed to analyze PDF invoice' : 'Failed to analyze bill image'), { id: toastId })
