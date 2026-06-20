@@ -656,6 +656,37 @@ async def bulk_import_products(
 
     return {"imported": imported, "errors": errors}
 
+def _analyze_image_google_vision_sync(contents: bytes, api_key: str) -> str:
+    import base64
+    import httpx
+    
+    image_base64 = base64.b64encode(contents).decode("utf-8")
+    url = f"https://vision.googleapis.com/v1/images:annotate?key={api_key}"
+    payload = {
+        "requests": [
+            {
+                "image": {"content": image_base64},
+                "features": [{"type": "DOCUMENT_TEXT_DETECTION"}]
+            }
+        ]
+    }
+    
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        
+        responses = data.get("responses", [])
+        if not responses:
+            return ""
+        
+        if responses[0].get("error"):
+            error_details = responses[0]["error"]
+            raise ValueError(f"Google Vision API Error: {error_details.get('message', 'Unknown error')}")
+            
+        full_text_annotation = responses[0].get("fullTextAnnotation", {})
+        return full_text_annotation.get("text", "")
+
 def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: str) -> list:
     import pytesseract
     from PIL import Image
@@ -685,6 +716,9 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
             LANCZOS = getattr(Image, 'LANCZOS', getattr(Image, 'ANTIALIAS', 1))
             BILINEAR = getattr(Image, 'BILINEAR', 2)
         Image.Resampling = DummyResampling
+
+    # Read Google Vision key from environment variables
+    google_api_key = os.getenv("GOOGLE_VISION_API_KEY")
 
     is_pdf = False
     if filename_lower.endswith(".pdf") or content_type == "application/pdf" or contents.startswith(b"%PDF"):
@@ -716,13 +750,25 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
                 text += page_text
             
             # If direct text extraction is empty/short, it's a scanned PDF:
-            # Extract embedded images and run local OCR
+            # Extract embedded images and run OCR (Google Vision with Tesseract fallback)
             if len(text.strip()) < 100:
                 ocr_text_parts = []
                 for page in reader.pages[:3]:
                     for img_obj in page.images:
                         try:
                             img_data = img_obj.data
+                            
+                            # Attempt Google Vision OCR if API Key is configured
+                            if google_api_key:
+                                try:
+                                    page_ocr_text = _analyze_image_google_vision_sync(img_data, google_api_key)
+                                    if page_ocr_text:
+                                        ocr_text_parts.append(page_ocr_text)
+                                        continue
+                                except Exception as vision_err:
+                                    print(f"Google Vision failed for PDF image, falling back to local Tesseract: {vision_err}")
+                            
+                            # Local Tesseract Fallback
                             img = Image.open(io.BytesIO(img_data))
                             
                             # Only OCR images large enough to be actual page scans (ignores logos/icons to save RAM/time)
@@ -761,35 +807,45 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
         except Exception as e:
             raise ValueError(f"Failed to parse PDF file: {str(e)}")
     else:
-        try:
-            img = Image.open(io.BytesIO(contents))
-            
-            # Resize image to exactly 1200 width to optimize OCR readability and keep memory low
-            if img.width != 1200:
-                ratio = 1200.0 / img.width
-                new_height = int(img.height * ratio)
-                resample_filter = Image.Resampling.LANCZOS if img.width < 1200 else Image.Resampling.BILINEAR
-                old_img = img
-                img = old_img.resize((1200, new_height), resample_filter)
-                old_img.close()
-            
-            # Preprocess the image (Grayscale + Enhance Contrast to save memory and improve OCR)
-            img_gray = img.convert('L')
-            img.close()
-            
-            from PIL import ImageEnhance
-            enhancer = ImageEnhance.Contrast(img_gray)
-            img_enhanced = enhancer.enhance(2.0)
-            
-            # Run OCR
-            text = pytesseract.image_to_string(img_enhanced, config='--psm 6')
-            
-            img_enhanced.close()
-            img_gray.close()
-            del img_gray
-            gc.collect()
-        except Exception as e:
-            raise ValueError(f"Invalid image file or OCR failed: {str(e)}")
+        # Standard image/photo upload
+        use_fallback = True
+        if google_api_key:
+            try:
+                text = _analyze_image_google_vision_sync(contents, google_api_key)
+                use_fallback = False
+            except Exception as vision_err:
+                print(f"Google Vision failed for standard image, falling back to local Tesseract: {vision_err}")
+        
+        if use_fallback:
+            try:
+                img = Image.open(io.BytesIO(contents))
+                
+                # Resize image to exactly 1200 width to optimize OCR readability and keep memory low
+                if img.width != 1200:
+                    ratio = 1200.0 / img.width
+                    new_height = int(img.height * ratio)
+                    resample_filter = Image.Resampling.LANCZOS if img.width < 1200 else Image.Resampling.BILINEAR
+                    old_img = img
+                    img = old_img.resize((1200, new_height), resample_filter)
+                    old_img.close()
+                
+                # Preprocess the image (Grayscale + Enhance Contrast to save memory and improve OCR)
+                img_gray = img.convert('L')
+                img.close()
+                
+                from PIL import ImageEnhance
+                enhancer = ImageEnhance.Contrast(img_gray)
+                img_enhanced = enhancer.enhance(2.0)
+                
+                # Run OCR
+                text = pytesseract.image_to_string(img_enhanced, config='--psm 6')
+                
+                img_enhanced.close()
+                img_gray.close()
+                del img_gray
+                gc.collect()
+            except Exception as e:
+                raise ValueError(f"Invalid image file or OCR failed: {str(e)}")
     
     # Parse extracted text using robust pattern-based algorithm
     def is_batch_token(token):
