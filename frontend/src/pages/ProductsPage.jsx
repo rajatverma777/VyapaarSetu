@@ -336,28 +336,45 @@ export default function ProductsPage() {
 
   const handleSavePreviewItems = async () => {
     setImporting(true)
-    const toastId = toast.loading('Saving products...')
+    const totalItems = importPreviewItems.length
+    const toastId = toast.loading(`Saving products: 0 / ${totalItems}...`)
+    
+    const results = []
+    const errors = []
+    
     try {
-      const { data } = await productAPI.bulkCreate(importPreviewItems)
-      const successCount = data.results.length
-      const failCount = data.errors.length
+      for (let idx = 0; idx < totalItems; idx++) {
+        const item = importPreviewItems[idx]
+        toast.loading(`Saving product ${idx + 1} of ${totalItems} (${item.name})...`, { id: toastId })
+        
+        try {
+          const { data } = await productAPI.create(item)
+          results.push(data)
+        } catch (err) {
+          errors.push({
+            name: item.name,
+            error: err.response?.data?.detail || err.message || 'Validation error'
+          })
+        }
+      }
       
       setImporting(false)
       setShowPreviewModal(false)
       setImportPreviewItems([])
       load()
       
+      const successCount = results.length
+      const failCount = errors.length
+      
       if (failCount > 0) {
-        toast.success(`Imported ${successCount} products. ${failCount} failed.`, { id: toastId })
-        if (data.errors.length > 0) {
-          console.error('Some products failed to import:', data.errors)
-        }
+        toast.success(`Saved ${successCount} products. ${failCount} failed to import.`, { id: toastId })
+        console.error('Some products failed to import:', errors)
       } else {
-        toast.success(`Successfully imported all ${successCount} products!`, { id: toastId })
+        toast.success(`Successfully saved all ${successCount} products!`, { id: toastId })
       }
     } catch (err) {
       setImporting(false)
-      toast.error(err.response?.data?.detail || 'Failed to save products in bulk', { id: toastId })
+      toast.error('An unexpected error occurred while saving products', { id: toastId })
     }
   }
 
