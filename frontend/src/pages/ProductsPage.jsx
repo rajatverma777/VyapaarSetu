@@ -39,7 +39,10 @@ export default function ProductsPage() {
   const [saving, setSaving]             = useState(false)
   const [form, setForm]                 = useState(EMPTY_PRODUCT)
   const fileRef = useRef()
-  const [importPreviewItems, setImportPreviewItems] = useState([])
+  const [importPreviewItems, _setImportPreviewItems] = useState([])
+  const setImportPreviewItems = (val) => {
+    _setImportPreviewItems(Array.isArray(val) ? val : [])
+  }
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [importing, setImporting] = useState(false)
 
