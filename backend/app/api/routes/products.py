@@ -1084,7 +1084,29 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
                             gst = val
                     except:
                         pass
+            # Parse final amount from the end of the tokens list (before Cases)
+            parsed_amount = None
+            for offset in [-2, -1, -3]:
+                if len(tokens) + offset >= 0:
+                    tok = tokens[offset]
+                    if '.' in tok:
+                        try:
+                            clean_tok = re.sub(r'[^\d\.]', '', tok)
+                            val = float(clean_tok)
+                            if val > 100.0 or parsed_amount is None:
+                                parsed_amount = val
+                        except:
+                            pass
             
+            # If we got a valid parsed amount, run mathematical self-correction
+            if rate > 0 and parsed_amount is not None:
+                try:
+                    calculated_qty = round(parsed_amount / rate, 2)
+                    if qty_val == 1.0 or abs(qty_val - calculated_qty) > 5.0:
+                        qty_val = calculated_qty
+                except:
+                    pass
+
             # Dynamically calculate final amount
             final_amount = round(qty_val * rate, 2)
             
