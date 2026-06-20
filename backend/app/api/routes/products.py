@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, 
 from fastapi.concurrency import run_in_threadpool
 from app.core.database import get_database
 from app.core.security import get_current_active_user, serialize_doc, require_permission
+from app.core.config import settings
 from app.models.product import ProductCreate, ProductUpdate
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -10,6 +11,9 @@ import io
 import re
 import asyncio
 import logging
+import base64
+import json
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -1130,6 +1134,130 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
     gc.collect()
     return products
 
+async def _analyze_invoice_with_gemini(contents: bytes, content_type: str) -> list:
+    if not settings.GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY is not set")
+    
+    # Map common extensions to standard mime types if content_type is generic/missing
+    if not content_type or content_type == "application/octet-stream":
+        content_type = "image/png"  # Default fallback
+        
+    encoded_image = base64.b64encode(contents).decode("utf-8")
+    
+    prompt = """You are an expert invoice processing assistant for a wholesale ERP.
+Analyze the provided invoice image or PDF and extract the list of products/items being purchased.
+For each item, extract and compute the following fields:
+- name: The product name (e.g. "Veno-20 Cannula", "500ML Normal Saline"). Clean up obvious scan/OCR errors and typos, standardizing formatting (e.g. "SOOML" -> "500ML").
+- sku: Product SKU if visible, otherwise null.
+- barcode: Product barcode if visible, otherwise null.
+- brand: The distributor/seller name at the top of the invoice (e.g. "YASH SURGICAL HOUSE", "R B HEALTHCARE", or others).
+- unit: The unit of measurement (usually "PCS").
+- hsn_code: The HSN code for the item.
+- gst_rate: The GST percentage rate applied (e.g. 5.0, 12.0, 18.0, 28.0).
+- purchase_price: The rate or purchase price per unit.
+- selling_price: The MRP or selling price.
+- mrp: The Maximum Retail Price (MRP).
+- wholesale_price: The wholesale price, calculated as purchase_price * 1.1, rounded to 2 decimal places.
+- opening_stock: The quantity purchased in this invoice.
+- min_stock_alert: 10.0 (default value).
+- pack: The packing size (e.g. "1*24", "1*100").
+- cases: The number of cases (usually opening_stock divided by the packing size multiplier, e.g. if opening_stock is 240 and pack is 1*24, cases is 10).
+- final_amount: The total purchase price for this item (opening_stock * purchase_price). Ensure the math is corrected if decimal points are missing or misread in the raw text (e.g., if Rate is 15.20 and Qty is 100, the amount is 1520.00).
+- batch: The batch number of the item.
+- expiry: The expiry date in format MM/YY or MM/YYYY (e.g. "05/28"). If raw date is like "P/31" or "0528", correct it to a valid date format.
+- description: "Batch: {batch}, Exp: {expiry}"
+- is_active: true (default value).
+
+Verify all calculations:
+1. Check that opening_stock * purchase_price matches final_amount within a reasonable margin. If there's a discrepancy, correct any misparsed decimal points (e.g., if rate is parsed as 1520 but amount is 1520.00 and quantity is 100, then rate should be corrected to 15.20).
+2. If packing size is e.g. "1*24", make sure opening_stock is a multiple of 24 (or close to it) and matches the cases column correctly.
+"""
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inlineData": {
+                            "mimeType": content_type,
+                            "data": encoded_image
+                        }
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "name": {"type": "STRING"},
+                        "sku": {"type": "STRING", "nullable": True},
+                        "barcode": {"type": "STRING", "nullable": True},
+                        "brand": {"type": "STRING"},
+                        "unit": {"type": "STRING"},
+                        "hsn_code": {"type": "STRING"},
+                        "gst_rate": {"type": "NUMBER"},
+                        "purchase_price": {"type": "NUMBER"},
+                        "selling_price": {"type": "NUMBER"},
+                        "mrp": {"type": "NUMBER"},
+                        "wholesale_price": {"type": "NUMBER"},
+                        "opening_stock": {"type": "NUMBER"},
+                        "min_stock_alert": {"type": "NUMBER"},
+                        "pack": {"type": "STRING"},
+                        "cases": {"type": "NUMBER", "nullable": True},
+                        "final_amount": {"type": "NUMBER"},
+                        "batch": {"type": "STRING"},
+                        "expiry": {"type": "STRING"},
+                        "description": {"type": "STRING"},
+                        "is_active": {"type": "BOOLEAN"}
+                    },
+                    "required": [
+                        "name", "brand", "unit", "hsn_code", "gst_rate", 
+                        "purchase_price", "selling_price", "mrp", 
+                        "wholesale_price", "opening_stock", "min_stock_alert", 
+                        "pack", "final_amount", "batch", "expiry", 
+                        "description", "is_active"
+                    ]
+                }
+            }
+        }
+    }
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(url, json=payload)
+        response.raise_for_status()
+        resp_json = response.json()
+        
+        try:
+            candidates = resp_json.get("candidates", [])
+            if not candidates:
+                raise ValueError("No candidates returned from Gemini API")
+            text_response = candidates[0]["content"]["parts"][0]["text"]
+            products = json.loads(text_response)
+            
+            validated_products = []
+            for item in products:
+                batch = item.get("batch") or ""
+                expiry = item.get("expiry") or ""
+                if not item.get("description"):
+                    item["description"] = f"Batch: {batch}, Exp: {expiry}"
+                
+                item["sku"] = item.get("sku") or None
+                item["barcode"] = item.get("barcode") or None
+                item["cases"] = item.get("cases") or None
+                
+                validated_products.append(item)
+                
+            return validated_products
+        except (KeyError, IndexError, json.JSONDecodeError) as e:
+            raise ValueError(f"Failed to parse Gemini API response: {str(e)}")
+
 async def _run_ocr_background(
     task_id: str,
     contents: bytes,
@@ -1139,13 +1267,31 @@ async def _run_ocr_background(
 ):
     async with ocr_lock:
         try:
-            # Offload heavy OCR/PDF parsing to thread pool
-            products = await run_in_threadpool(
-                _process_ocr_blocking,
-                contents,
-                filename_lower,
-                content_type
-            )
+            products = None
+            gemini_used = False
+            
+            # Try Gemini if key is provided
+            if settings.GEMINI_API_KEY:
+                try:
+                    logger.info("Attempting invoice analysis using Gemini API...")
+                    products = await _analyze_invoice_with_gemini(contents, content_type)
+                    gemini_used = True
+                    logger.info("Gemini analysis succeeded!")
+                except Exception as ge:
+                    logger.warning(f"Gemini invoice analysis failed: {ge}. Falling back to local OCR...")
+            else:
+                logger.info("GEMINI_API_KEY not set. Using local OCR fallback...")
+                
+            # Local OCR Fallback
+            if not gemini_used or products is None:
+                # Offload heavy local OCR/PDF parsing to thread pool
+                products = await run_in_threadpool(
+                    _process_ocr_blocking,
+                    contents,
+                    filename_lower,
+                    content_type
+                )
+                
             await db.ocr_tasks.update_one(
                 {"_id": ObjectId(task_id)},
                 {

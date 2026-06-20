@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     EXPORT_DIR: str = "static/exports"
     BACKUP_DIR: str = "static/backups"
 
+    # Gemini
+    GEMINI_API_KEY: Optional[str] = None
+
     @model_validator(mode="after")
     def validate_secret_key(self) -> Self:
         if not self.DEBUG and self.SECRET_KEY == "your-super-secret-key-change-in-production-min-32-chars":
