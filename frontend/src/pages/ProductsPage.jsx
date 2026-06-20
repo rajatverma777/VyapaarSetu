@@ -237,14 +237,36 @@ export default function ProductsPage() {
     
     if (isImageOrPdf) {
       const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
-      const toastId = toast.loading(isPdf ? 'Analyzing your PDF invoice locally...' : 'Analyzing your bill image locally...')
+      const toastId = toast.loading(isPdf ? 'Uploading and preparing PDF invoice...' : 'Uploading and preparing bill image...')
       try {
         const { data } = await productAPI.importImage(file)
-        setImportPreviewItems(data)
-        setShowPreviewModal(true)
-        toast.success(isPdf ? 'PDF invoice analyzed successfully locally!' : 'Bill analyzed successfully locally!', { id: toastId })
+        const taskId = data.task_id
+        
+        toast.loading(isPdf ? 'Analyzing PDF layout and content...' : 'Analyzing bill text via background worker...', { id: toastId })
+        
+        // Start polling status
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await productAPI.getImportTaskStatus(taskId)
+            const task = statusRes.data
+            
+            if (task.status === 'completed') {
+              clearInterval(pollInterval)
+              setImportPreviewItems(task.result || [])
+              setShowPreviewModal(true)
+              toast.success(isPdf ? 'PDF invoice analyzed successfully!' : 'Bill analyzed successfully!', { id: toastId })
+            } else if (task.status === 'failed') {
+              clearInterval(pollInterval)
+              toast.error(task.error || (isPdf ? 'Failed to analyze PDF invoice' : 'Failed to analyze bill image'), { id: toastId })
+            }
+          } catch (err) {
+            clearInterval(pollInterval)
+            toast.error('Connection interrupted while monitoring task status', { id: toastId })
+          }
+        }, 1500)
+        
       } catch (err) {
-        toast.error(err.response?.data?.detail || (isPdf ? 'Failed to analyze PDF invoice locally' : 'Failed to analyze bill image locally'), { id: toastId })
+        toast.error(err.response?.data?.detail || (isPdf ? 'Failed to analyze PDF invoice' : 'Failed to analyze bill image'), { id: toastId })
       }
     } else {
       const toastId = toast.loading('Importing products…')

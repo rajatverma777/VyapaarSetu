@@ -163,7 +163,8 @@ async def create_indexes():
     # Create indexes on tenant_id for all multitenant collections to speed up filtering
     collections_to_index = [
         "products", "batches", "customers", "suppliers", "sales", 
-        "purchases", "payments", "ledger", "stock_logs", "categories"
+        "purchases", "payments", "ledger", "stock_logs", "categories",
+        "ocr_tasks"
     ]
     for col in collections_to_index:
         await db[col].create_index("tenant_id")

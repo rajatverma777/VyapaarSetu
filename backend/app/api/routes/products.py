@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, BackgroundTasks
 from fastapi.concurrency import run_in_threadpool
 from app.core.database import get_database
 from app.core.security import get_current_active_user, serialize_doc, require_permission
@@ -656,37 +656,6 @@ async def bulk_import_products(
 
     return {"imported": imported, "errors": errors}
 
-def _analyze_image_google_vision_sync(contents: bytes, api_key: str) -> str:
-    import base64
-    import httpx
-    
-    image_base64 = base64.b64encode(contents).decode("utf-8")
-    url = f"https://vision.googleapis.com/v1/images:annotate?key={api_key}"
-    payload = {
-        "requests": [
-            {
-                "image": {"content": image_base64},
-                "features": [{"type": "DOCUMENT_TEXT_DETECTION"}]
-            }
-        ]
-    }
-    
-    with httpx.Client(timeout=30.0) as client:
-        response = client.post(url, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        
-        responses = data.get("responses", [])
-        if not responses:
-            return ""
-        
-        if responses[0].get("error"):
-            error_details = responses[0]["error"]
-            raise ValueError(f"Google Vision API Error: {error_details.get('message', 'Unknown error')}")
-            
-        full_text_annotation = responses[0].get("fullTextAnnotation", {})
-        return full_text_annotation.get("text", "")
-
 def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: str) -> list:
     import pytesseract
     from PIL import Image
@@ -716,9 +685,6 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
             LANCZOS = getattr(Image, 'LANCZOS', getattr(Image, 'ANTIALIAS', 1))
             BILINEAR = getattr(Image, 'BILINEAR', 2)
         Image.Resampling = DummyResampling
-
-    # Read Google Vision key from environment variables
-    google_api_key = os.getenv("GOOGLE_VISION_API_KEY")
 
     is_pdf = False
     if filename_lower.endswith(".pdf") or content_type == "application/pdf" or contents.startswith(b"%PDF"):
@@ -750,25 +716,13 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
                 text += page_text
             
             # If direct text extraction is empty/short, it's a scanned PDF:
-            # Extract embedded images and run OCR (Google Vision with Tesseract fallback)
+            # Extract embedded images and run local OCR
             if len(text.strip()) < 100:
                 ocr_text_parts = []
                 for page in reader.pages[:3]:
                     for img_obj in page.images:
                         try:
                             img_data = img_obj.data
-                            
-                            # Attempt Google Vision OCR if API Key is configured
-                            if google_api_key:
-                                try:
-                                    page_ocr_text = _analyze_image_google_vision_sync(img_data, google_api_key)
-                                    if page_ocr_text:
-                                        ocr_text_parts.append(page_ocr_text)
-                                        continue
-                                except Exception as vision_err:
-                                    print(f"Google Vision failed for PDF image, falling back to local Tesseract: {vision_err}")
-                            
-                            # Local Tesseract Fallback
                             img = Image.open(io.BytesIO(img_data))
                             
                             # Only OCR images large enough to be actual page scans (ignores logos/icons to save RAM/time)
@@ -807,45 +761,35 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
         except Exception as e:
             raise ValueError(f"Failed to parse PDF file: {str(e)}")
     else:
-        # Standard image/photo upload
-        use_fallback = True
-        if google_api_key:
-            try:
-                text = _analyze_image_google_vision_sync(contents, google_api_key)
-                use_fallback = False
-            except Exception as vision_err:
-                print(f"Google Vision failed for standard image, falling back to local Tesseract: {vision_err}")
-        
-        if use_fallback:
-            try:
-                img = Image.open(io.BytesIO(contents))
-                
-                # Resize image to exactly 1200 width to optimize OCR readability and keep memory low
-                if img.width != 1200:
-                    ratio = 1200.0 / img.width
-                    new_height = int(img.height * ratio)
-                    resample_filter = Image.Resampling.LANCZOS if img.width < 1200 else Image.Resampling.BILINEAR
-                    old_img = img
-                    img = old_img.resize((1200, new_height), resample_filter)
-                    old_img.close()
-                
-                # Preprocess the image (Grayscale + Enhance Contrast to save memory and improve OCR)
-                img_gray = img.convert('L')
-                img.close()
-                
-                from PIL import ImageEnhance
-                enhancer = ImageEnhance.Contrast(img_gray)
-                img_enhanced = enhancer.enhance(2.0)
-                
-                # Run OCR
-                text = pytesseract.image_to_string(img_enhanced, config='--psm 6')
-                
-                img_enhanced.close()
-                img_gray.close()
-                del img_gray
-                gc.collect()
-            except Exception as e:
-                raise ValueError(f"Invalid image file or OCR failed: {str(e)}")
+        try:
+            img = Image.open(io.BytesIO(contents))
+            
+            # Resize image to exactly 1200 width to optimize OCR readability and keep memory low
+            if img.width != 1200:
+                ratio = 1200.0 / img.width
+                new_height = int(img.height * ratio)
+                resample_filter = Image.Resampling.LANCZOS if img.width < 1200 else Image.Resampling.BILINEAR
+                old_img = img
+                img = old_img.resize((1200, new_height), resample_filter)
+                old_img.close()
+            
+            # Preprocess the image (Grayscale + Enhance Contrast to save memory and improve OCR)
+            img_gray = img.convert('L')
+            img.close()
+            
+            from PIL import ImageEnhance
+            enhancer = ImageEnhance.Contrast(img_gray)
+            img_enhanced = enhancer.enhance(2.0)
+            
+            # Run OCR
+            text = pytesseract.image_to_string(img_enhanced, config='--psm 6')
+            
+            img_enhanced.close()
+            img_gray.close()
+            del img_gray
+            gc.collect()
+        except Exception as e:
+            raise ValueError(f"Invalid image file or OCR failed: {str(e)}")
     
     # Parse extracted text using robust pattern-based algorithm
     def is_batch_token(token):
@@ -1186,8 +1130,59 @@ def _process_ocr_blocking(contents: bytes, filename_lower: str, content_type: st
     gc.collect()
     return products
 
+async def _run_ocr_background(
+    task_id: str,
+    contents: bytes,
+    filename_lower: str,
+    content_type: str,
+    db
+):
+    async with ocr_lock:
+        try:
+            # Offload heavy OCR/PDF parsing to thread pool
+            products = await run_in_threadpool(
+                _process_ocr_blocking,
+                contents,
+                filename_lower,
+                content_type
+            )
+            await db.ocr_tasks.update_one(
+                {"_id": ObjectId(task_id)},
+                {
+                    "$set": {
+                        "status": "completed",
+                        "result": products,
+                        "completed_at": datetime.utcnow()
+                    }
+                }
+            )
+        except ValueError as ve:
+            await db.ocr_tasks.update_one(
+                {"_id": ObjectId(task_id)},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error": str(ve),
+                        "completed_at": datetime.utcnow()
+                    }
+                }
+            )
+        except Exception as e:
+            logger.exception("Failed to analyze invoice in background")
+            await db.ocr_tasks.update_one(
+                {"_id": ObjectId(task_id)},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error": f"Internal error: {str(e)}",
+                        "completed_at": datetime.utcnow()
+                    }
+                }
+            )
+
 @router.post("/import-image")
 async def import_product_image(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db = Depends(get_database),
     current_user = Depends(require_permission("can_manage_products"))
@@ -1197,25 +1192,48 @@ async def import_product_image(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
 
-    # Lock the processing scope so that we handle only 1 OCR request at a time
-    async with ocr_lock:
-        try:
-            filename_lower = file.filename.lower()
-            content_type = file.content_type or ""
-            
-            # Offload heavy OCR/PDF parsing to thread pool
-            products = await run_in_threadpool(
-                _process_ocr_blocking,
-                contents,
-                filename_lower,
-                content_type
-            )
-            return products
-        except ValueError as ve:
-            raise HTTPException(status_code=400, detail=str(ve))
-        except Exception as e:
-            logger.exception("Failed to analyze invoice")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to analyze invoice: {str(e)}"
-            )
+    filename_lower = file.filename.lower()
+    content_type = file.content_type or ""
+    
+    # Generate task ID
+    task_id = str(ObjectId())
+    
+    # Create task record in MongoDB
+    task_doc = {
+        "_id": ObjectId(task_id),
+        "status": "processing",
+        "created_at": datetime.utcnow()
+    }
+    await db.ocr_tasks.insert_one(task_doc)
+    
+    # Register background task
+    background_tasks.add_task(
+        _run_ocr_background,
+        task_id,
+        contents,
+        filename_lower,
+        content_type,
+        db
+    )
+    
+    return {"task_id": task_id, "status": "processing"}
+
+@router.get("/import-image/task/{task_id}")
+async def get_import_task_status(
+    task_id: str,
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_manage_products"))
+):
+    if not ObjectId.is_valid(task_id):
+        raise HTTPException(status_code=400, detail="Invalid task ID")
+        
+    task = await db.ocr_tasks.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    return {
+        "status": task.get("status"),
+        "result": task.get("result"),
+        "error": task.get("error")
+    }
+

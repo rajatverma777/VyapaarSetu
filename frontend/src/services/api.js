@@ -135,6 +135,7 @@ export const productAPI = {
   bulkDelete: (ids)    => api.post('/products/bulk-delete', { ids }),
   bulkImport: (file)   => { const fd = new FormData(); fd.append('file', file); return api.post('/products/bulk-import', fd) },
   importImage: (file)  => { const fd = new FormData(); fd.append('file', file); return api.post('/products/import-image', fd) },
+  getImportTaskStatus: (id) => api.get(`/products/import-image/task/${id}`),
 }
 
 // ── Categories ───────────────────────────────────────────────────────────────
