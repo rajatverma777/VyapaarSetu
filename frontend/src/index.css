@@ -1187,25 +1187,25 @@ input[type=number] {
 /* Dark mode — crystal clear on dark bg */
 .dark .search-glass-input {
   color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(99, 102, 241, 0.04);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(99, 102, 241, 0.28);
   box-shadow:
-    0 2px 10px rgba(0,0,0,0.18),
-    inset 0 2px 1.5px rgba(255, 255, 255, 0.28),
-    inset 0 -1px 1px rgba(0,0,0,0.08);
+    0 4px 14px rgba(0, 0, 0, 0.25),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(99, 102, 241, 0.05);
 }
 .dark .search-glass-input::placeholder {
   color: rgba(200, 210, 230, 0.45);
 }
 .dark .search-glass-input:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(99, 102, 241, 0.45);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.48);
   box-shadow:
-    0 4px 20px rgba(0,0,0,0.22),
-    inset 0 2px 1.5px rgba(255, 255, 255, 0.38),
-    inset 0 -1px 1px rgba(0,0,0,0.06);
+    0 6px 20px rgba(0, 0, 0, 0.30),
+    0 0 0 3px rgba(99, 102, 241, 0.25),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.22);
 }
 
 /* Search icon — always neutral gray */
@@ -1434,31 +1434,31 @@ input[type=number] {
 }
 
 .dark .gls-trigger {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(99, 102, 241, 0.04);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(99, 102, 241, 0.28);
   box-shadow:
-    0 2px 10px rgba(0,0,0,0.22),
-    inset 0 2px 1.5px rgba(255, 255, 255, 0.28),
-    inset 0 -1px 1px rgba(0,0,0,0.10);
+    0 4px 14px rgba(0, 0, 0, 0.25),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(99, 102, 241, 0.05);
 }
 .dark .gls-trigger:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.40);
   box-shadow:
-    0 4px 16px rgba(0,0,0,0.28),
-    inset 0 2px 1.5px rgba(255, 255, 255, 0.34);
+    0 4px 16px rgba(0, 0, 0, 0.28),
+    inset 0 2.5px 2px rgba(255, 255, 255, 0.18);
 }
 .dark .gls-trigger:focus-visible {
-  border-color: rgba(99, 102, 241, 0.45);
+  border-color: rgba(99, 102, 241, 0.48);
   box-shadow:
-    0 0 0 3px rgba(99,102,241,0.40),
-    inset 0 2px 1.5px rgba(255,255,255,0.28);
+    0 0 0 3px rgba(99, 102, 241, 0.25),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.18);
 }
 .dark .gls-trigger--open {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.40);
 }
 
 /* ── Trigger label ── */
