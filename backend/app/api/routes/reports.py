@@ -87,7 +87,7 @@ async def dashboard_summary(
             "low_stock_count": [
                 {"$match": {
                     "is_active": True,
-                    "$expr": {"$lte": ["$current_stock", "$min_stock_alert"]}
+                    "$expr": {"$lte": ["$current_stock", {"$ifNull": ["$min_stock_alert", 10.0]}]}
                 }},
                 {"$count": "count"}
             ]
@@ -483,7 +483,7 @@ async def stock_report(
     if category_id:
         match["category_id"] = category_id
     if low_stock_only:
-        match["$expr"] = {"$lte": ["$current_stock", "$min_stock_alert"]}
+        match["$expr"] = {"$lte": ["$current_stock", {"$ifNull": ["$min_stock_alert", 10.0]}]}
 
     pipeline = [
         {"$match": match},

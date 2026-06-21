@@ -22,7 +22,7 @@ async def get_stock_status(
     total_products = await db.products.count_documents({"is_active": True})
     low_stock = await db.products.count_documents({
         "is_active": True,
-        "$expr": {"$lte": ["$current_stock", "$min_stock_alert"]}
+        "$expr": {"$lte": ["$current_stock", {"$ifNull": ["$min_stock_alert", 10.0]}]}
     })
     out_of_stock = await db.products.count_documents({"is_active": True, "current_stock": {"$lte": 0}})
     pipeline = [
@@ -50,7 +50,7 @@ async def get_low_stock_products(
 ):
     products = await db.products.find({
         "is_active": True,
-        "$expr": {"$lte": ["$current_stock", "$min_stock_alert"]}
+        "$expr": {"$lte": ["$current_stock", {"$ifNull": ["$min_stock_alert", 10.0]}]}
     }).sort("current_stock", 1).limit(limit).to_list(limit)
     return [serialize_doc(p) for p in products]
 

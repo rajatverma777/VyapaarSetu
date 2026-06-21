@@ -208,6 +208,7 @@ async def submit_ai_import(
                     "pack": item.pack,
                     "hsn_code": item.hsn_code,
                     "gst_rate": item.gst,
+                    "min_stock_alert": 10.0,
                     "batch": batch_no,
                     "expiry": item.expiry_date,
                     "is_active": True,

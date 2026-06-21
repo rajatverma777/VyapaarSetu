@@ -129,7 +129,7 @@ async def list_products(
             {"brand": {"$regex": f"(^|\\s){escaped_search}", "$options": "i"}}
         ]
     if low_stock:
-        query["$expr"] = {"$lte": ["$current_stock", "$min_stock_alert"]}
+        query["$expr"] = {"$lte": ["$current_stock", {"$ifNull": ["$min_stock_alert", 10.0]}]}
 
     sort_field = "name"
     if sort_by == "stock":
