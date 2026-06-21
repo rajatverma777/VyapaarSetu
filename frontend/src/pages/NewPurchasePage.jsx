@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Trash2, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { purchaseAPI, supplierAPI, productAPI } from '../services/api'
+import { purchaseAPI, supplierAPI, productAPI, settingsAPI } from '../services/api'
 import { Amount, SearchAutocomplete, DatePicker, GlassSelect } from '../components/ui'
+import { INDIAN_STATES } from '../services/constants'
 
 const PAYMENT_MODES = ['credit','cash','upi','card','cheque','neft']
 
@@ -40,6 +41,38 @@ export default function NewPurchasePage() {
   const [paidAmt, setPaidAmt]         = useState(() => sessionStorage.getItem('pending_purchase_paidAmt') || '0')
   const [saving, setSaving]           = useState(false)
   const [notes, setNotes]             = useState(() => sessionStorage.getItem('pending_purchase_notes') || '')
+  const [company, setCompany]         = useState(null)
+
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        const { data } = await settingsAPI.getCompany()
+        setCompany(data)
+      } catch (err) {
+        console.error('Failed to load company settings:', err)
+      }
+    }
+    fetchCompany()
+  }, [])
+
+  // Auto-fill isIgst based on supplier state vs company state
+  useEffect(() => {
+    if (supplier && company) {
+      let supplierStateCode = ''
+      if (supplier.gstin && supplier.gstin.length >= 2) {
+        supplierStateCode = supplier.gstin.slice(0, 2)
+      } else if (supplier.address?.state) {
+        const matched = INDIAN_STATES.find(s => s.name === supplier.address.state)
+        if (matched) supplierStateCode = matched.code
+      }
+      
+      const companyStateCode = company.state_code || ''
+      if (supplierStateCode && companyStateCode) {
+        const isInterstate = supplierStateCode !== companyStateCode
+        setIsIgst(isInterstate)
+      }
+    }
+  }, [supplier, company])
 
   useEffect(() => {
     sessionStorage.setItem('pending_purchase_supplier', supplier ? JSON.stringify(supplier) : '')

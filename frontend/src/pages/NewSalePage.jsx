@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Trash2, Printer, Save, User, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { salesAPI, customerAPI, productAPI } from '../services/api'
+import { salesAPI, customerAPI, productAPI, settingsAPI } from '../services/api'
 import { Amount, SearchAutocomplete, GlassSelect } from '../components/ui'
+import { INDIAN_STATES } from '../services/constants'
 
 const PAYMENT_MODES = ['cash','credit','upi','card','cheque','neft']
 
@@ -38,6 +39,38 @@ export default function NewSalePage() {
   const [paidAmt, setPaidAmt]     = useState(() => sessionStorage.getItem('pending_sale_paidAmt') || '')
   const [saving, setSaving]       = useState(false)
   const [notes, setNotes]         = useState(() => sessionStorage.getItem('pending_sale_notes') || '')
+  const [company, setCompany]     = useState(null)
+
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        const { data } = await settingsAPI.getCompany()
+        setCompany(data)
+      } catch (err) {
+        console.error('Failed to load company settings:', err)
+      }
+    }
+    fetchCompany()
+  }, [])
+
+  // Auto-fill isIgst based on customer state vs company state
+  useEffect(() => {
+    if (customer && company) {
+      let customerStateCode = ''
+      if (customer.gstin && customer.gstin.length >= 2) {
+        customerStateCode = customer.gstin.slice(0, 2)
+      } else if (customer.address?.state) {
+        const matched = INDIAN_STATES.find(s => s.name === customer.address.state)
+        if (matched) customerStateCode = matched.code
+      }
+      
+      const companyStateCode = company.state_code || ''
+      if (customerStateCode && companyStateCode) {
+        const isInterstate = customerStateCode !== companyStateCode
+        setIsIgst(isInterstate)
+      }
+    }
+  }, [customer, company])
 
   useEffect(() => {
     sessionStorage.setItem('pending_sale_customer', customer ? JSON.stringify(customer) : '')

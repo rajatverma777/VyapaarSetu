@@ -6,46 +6,7 @@ import { FormSkeleton, Modal, FormField } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { format } from 'date-fns'
-
-const INDIAN_STATES = [
-  { name: "Jammu & Kashmir", code: "01" },
-  { name: "Himachal Pradesh", code: "02" },
-  { name: "Punjab", code: "03" },
-  { name: "Chandigarh", code: "04" },
-  { name: "Uttarakhand", code: "05" },
-  { name: "Haryana", code: "06" },
-  { name: "Delhi", code: "07" },
-  { name: "Rajasthan", code: "08" },
-  { name: "Uttar Pradesh", code: "09" },
-  { name: "Bihar", code: "10" },
-  { name: "Sikkim", code: "11" },
-  { name: "Arunachal Pradesh", code: "12" },
-  { name: "Nagaland", code: "13" },
-  { name: "Manipur", code: "14" },
-  { name: "Mizoram", code: "15" },
-  { name: "Tripura", code: "16" },
-  { name: "Meghalaya", code: "17" },
-  { name: "Assam", code: "18" },
-  { name: "West Bengal", code: "19" },
-  { name: "Jharkhand", code: "20" },
-  { name: "Odisha", code: "21" },
-  { name: "Chhattisgarh", code: "22" },
-  { name: "Madhya Pradesh", code: "23" },
-  { name: "Gujarat", code: "24" },
-  { name: "Daman & Diu", code: "26" },
-  { name: "Dadra & Nagar Haveli", code: "26" },
-  { name: "Maharashtra", code: "27" },
-  { name: "Andhra Pradesh", code: "37" },
-  { name: "Karnataka", code: "29" },
-  { name: "Goa", code: "30" },
-  { name: "Lakshadweep", code: "31" },
-  { name: "Kerala", code: "32" },
-  { name: "Tamil Nadu", code: "33" },
-  { name: "Puducherry", code: "34" },
-  { name: "Andaman & Nicobar Islands", code: "35" },
-  { name: "Telangana", code: "36" },
-  { name: "Ladakh", code: "38" }
-]
+import { INDIAN_STATES } from '../services/constants'
 
 const TABS = ['profile', 'company', 'users', 'appearance', 'backup', 'password']
 
@@ -367,7 +328,13 @@ export default function SettingsPage() {
                 />
               </FormField>
               <FormField label="State Code">
-                <input className="input" value={company.state_code} onChange={e => setC('state_code', e.target.value)} placeholder="09" />
+                <input 
+                  className="input font-mono opacity-60 cursor-not-allowed bg-gray-50/10 dark:bg-gray-800/10" 
+                  value={company.state_code} 
+                  disabled 
+                  readOnly 
+                  placeholder="09" 
+                />
               </FormField>
               <FormField label="Mobile">
                 <input className="input" value={company.mobile} onChange={e => setC('mobile', e.target.value)} />
@@ -394,11 +361,18 @@ export default function SettingsPage() {
                   onChange={e => {
                     const stateName = e.target.value
                     const matched = INDIAN_STATES.find(s => s.name === stateName)
-                    setCompany(prev => ({
-                      ...prev,
-                      state: stateName,
-                      state_code: matched ? matched.code : prev.state_code
-                    }))
+                    setCompany(prev => {
+                      let updatedGstin = prev.gstin || ''
+                      if (matched && (!prev.gstin || /^\d{2}$/.test(prev.gstin.slice(0, 2)) || prev.gstin.length < 2)) {
+                        updatedGstin = matched.code + updatedGstin.slice(2)
+                      }
+                      return {
+                        ...prev,
+                        state: stateName,
+                        state_code: matched ? matched.code : prev.state_code,
+                        gstin: updatedGstin
+                      }
+                    })
                   }}
                 >
                   <option value="">Select State</option>
