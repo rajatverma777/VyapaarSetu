@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Warehouse, AlertTriangle, TrendingDown, TrendingUp, Package, Settings2, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { inventoryAPI, productAPI } from '../services/api'
@@ -6,8 +7,10 @@ import { LoadingScreen, Amount, Modal, FormField, EmptyState } from '../componen
 import { format } from 'date-fns'
 
 export default function InventoryPage() {
+  const navigate = useNavigate()
   const [status, setStatus]       = useState(null)
   const [lowStock, setLowStock]   = useState([])
+  const [lowStockFilter, setLowStockFilter] = useState('all')
   const [logs, setLogs]           = useState([])
   const [logTotal, setLogTotal]   = useState(0)
   const [logPage, setLogPage]     = useState(1)
@@ -105,6 +108,10 @@ export default function InventoryPage() {
 
   const TABS = ['overview', 'low-stock', 'batches', 'logs']
 
+  const filteredLowStock = lowStockFilter === 'out-of-stock'
+    ? lowStock.filter(p => p.current_stock <= 0)
+    : lowStock;
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -123,6 +130,9 @@ export default function InventoryPage() {
               key={t}
               onClick={() => {
                 setTab(t)
+                if (t === 'low-stock') {
+                  setLowStockFilter('all')
+                }
               }}
               className={`glass-tab-btn capitalize ${isActive ? 'active' : ''}`}
             >
@@ -145,17 +155,51 @@ export default function InventoryPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { icon: Package,       label: 'Total Products', value: status.total_products,     color: 'text-indigo-600 dark:text-indigo-400' },
-                  { icon: AlertTriangle, label: 'Low Stock',       value: status.low_stock,           color: 'text-red-650 dark:text-red-400' },
-                  { icon: TrendingDown,  label: 'Out of Stock',    value: status.out_of_stock,        color: 'text-red-650 dark:text-red-400' },
-                  { icon: Warehouse,     label: 'Stock Value',     value: <Amount value={status.total_value} />, color: 'text-green-650 dark:text-green-400' },
-                ].map(({ icon: Icon, label, value, color }) => (
-                  <div key={label} className="card p-5">
-                    <div className={`w-10 h-10 glass-icon-container mb-3 ${color}`}>
+                  { 
+                    icon: Package,       
+                    label: 'Total Products', 
+                    value: status.total_products,     
+                    color: 'text-indigo-600 dark:text-indigo-400',
+                    action: () => navigate('/products')
+                  },
+                  { 
+                    icon: AlertTriangle, 
+                    label: 'Low Stock',       
+                    value: status.low_stock,           
+                    color: 'text-red-650 dark:text-red-400',
+                    action: () => {
+                      setTab('low-stock')
+                      setLowStockFilter('all')
+                    }
+                  },
+                  { 
+                    icon: TrendingDown,  
+                    label: 'Out of Stock',    
+                    value: status.out_of_stock,        
+                    color: 'text-red-650 dark:text-red-400',
+                    action: () => {
+                      setTab('low-stock')
+                      setLowStockFilter('out-of-stock')
+                    }
+                  },
+                  { 
+                    icon: Warehouse,     
+                    label: 'Stock Value',     
+                    value: <Amount value={status.total_value} />, 
+                    color: 'text-green-650 dark:text-green-400',
+                    action: () => setTab('batches')
+                  },
+                ].map(({ icon: Icon, label, value, color, action }) => (
+                  <div 
+                    key={label} 
+                    onClick={action}
+                    className="card p-5 cursor-pointer hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300 group"
+                  >
+                    <div className={`w-10 h-10 glass-icon-container mb-3 transition-transform duration-300 group-hover:scale-110 ${color}`}>
                       <Icon size={20} />
                     </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors duration-300">{value}</p>
+                    <p className="text-xs text-gray-550 mt-0.5 font-semibold">{label}</p>
                   </div>
                 ))}
               </div>
@@ -202,11 +246,25 @@ export default function InventoryPage() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* Low Stock Tab */}
+          )}          {/* Low Stock Tab */}
           {tab === 'low-stock' && (
             <div className="card">
+              <div className="px-4 py-3 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setLowStockFilter('all')} 
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${lowStockFilter === 'all' ? 'bg-indigo-650 text-white shadow-md' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                  >
+                    All Low Stock ({lowStock.length})
+                  </button>
+                  <button 
+                    onClick={() => setLowStockFilter('out-of-stock')} 
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${lowStockFilter === 'out-of-stock' ? 'bg-red-650 text-white shadow-md' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                  >
+                    Out of Stock ({lowStock.filter(p => p.current_stock <= 0).length})
+                  </button>
+                </div>
+              </div>
               <div className="table-container">
                 <table className="table">
                   <thead>
@@ -215,17 +273,20 @@ export default function InventoryPage() {
                       <th className="text-right">Value</th></tr>
                   </thead>
                   <tbody>
-                    {lowStock.length === 0 ? (
+                    {filteredLowStock.length === 0 ? (
                       <tr><td colSpan={6}>
-                        <EmptyState icon={Package} title="All stock levels are fine!" />
+                        <EmptyState 
+                          icon={Package} 
+                          title={lowStockFilter === 'out-of-stock' ? "No products are out of stock!" : "All stock levels are fine!"} 
+                        />
                       </td></tr>
-                    ) : lowStock.map(p => (
+                    ) : filteredLowStock.map(p => (
                       <tr key={p.id}>
                         <td className="font-medium">{p.name}</td>
                         <td className="text-sm text-gray-500">{p.category_name || '—'}</td>
                         <td>{p.unit}</td>
                         <td className="text-right">
-                          <span className={`font-semibold ${p.current_stock <= 0 ? 'text-red-600' : 'text-orange-600'}`}>
+                          <span className={`font-semibold ${p.current_stock <= 0 ? 'text-red-650 dark:text-red-400' : 'text-orange-650'}`}>
                             {p.current_stock}
                           </span>
                         </td>
