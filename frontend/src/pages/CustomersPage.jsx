@@ -9,6 +9,46 @@ import {
 } from '../components/ui'
 import { format } from 'date-fns'
 
+const INDIAN_STATES = [
+  { name: "Jammu & Kashmir", code: "01" },
+  { name: "Himachal Pradesh", code: "02" },
+  { name: "Punjab", code: "03" },
+  { name: "Chandigarh", code: "04" },
+  { name: "Uttarakhand", code: "05" },
+  { name: "Haryana", code: "06" },
+  { name: "Delhi", code: "07" },
+  { name: "Rajasthan", code: "08" },
+  { name: "Uttar Pradesh", code: "09" },
+  { name: "Bihar", code: "10" },
+  { name: "Sikkim", code: "11" },
+  { name: "Arunachal Pradesh", code: "12" },
+  { name: "Nagaland", code: "13" },
+  { name: "Manipur", code: "14" },
+  { name: "Mizoram", code: "15" },
+  { name: "Tripura", code: "16" },
+  { name: "Meghalaya", code: "17" },
+  { name: "Assam", code: "18" },
+  { name: "West Bengal", code: "19" },
+  { name: "Jharkhand", code: "20" },
+  { name: "Odisha", code: "21" },
+  { name: "Chhattisgarh", code: "22" },
+  { name: "Madhya Pradesh", code: "23" },
+  { name: "Gujarat", code: "24" },
+  { name: "Daman & Diu", code: "26" },
+  { name: "Dadra & Nagar Haveli", code: "26" },
+  { name: "Maharashtra", code: "27" },
+  { name: "Andhra Pradesh", code: "37" },
+  { name: "Karnataka", code: "29" },
+  { name: "Goa", code: "30" },
+  { name: "Lakshadweep", code: "31" },
+  { name: "Kerala", code: "32" },
+  { name: "Tamil Nadu", code: "33" },
+  { name: "Puducherry", code: "34" },
+  { name: "Andaman & Nicobar Islands", code: "35" },
+  { name: "Telangana", code: "36" },
+  { name: "Ladakh", code: "38" }
+]
+
 const EMPTY = {
   name: '', mobile: '', email: '', gstin: '',
   address: { street: '', city: '', state: '', pincode: '' },
@@ -192,7 +232,24 @@ export default function CustomersPage() {
             <input type="email" className="input" value={form.email} onChange={e => setF('email', e.target.value)} />
           </FormField>
           <FormField label="GSTIN">
-            <input className="input font-mono" value={form.gstin} onChange={e => setF('gstin', e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" />
+            <input 
+              className="input font-mono" 
+              value={form.gstin} 
+              onChange={e => {
+                const val = e.target.value.toUpperCase()
+                const stateCode = val.slice(0, 2)
+                const matchedState = INDIAN_STATES.find(s => s.code === stateCode)
+                setForm(prev => ({
+                  ...prev,
+                  gstin: val,
+                  address: {
+                    ...(prev.address || {}),
+                    state: matchedState ? matchedState.name : (prev.address?.state || '')
+                  }
+                }))
+              }} 
+              placeholder="22AAAAA0000A1Z5" 
+            />
           </FormField>
           <FormField label="Price Level">
             <select className="select" value={form.price_level} onChange={e => setF('price_level', e.target.value)}>
@@ -216,7 +273,33 @@ export default function CustomersPage() {
                 <input className="input" placeholder="Street" value={form.address?.street || ''} onChange={e => setAddr('street', e.target.value)} />
               </div>
               <input className="input" placeholder="City" value={form.address?.city || ''} onChange={e => setAddr('city', e.target.value)} />
-              <input className="input" placeholder="State" value={form.address?.state || ''} onChange={e => setAddr('state', e.target.value)} />
+              <select 
+                className="select py-[8.5px] text-xs font-semibold" 
+                value={form.address?.state || ''} 
+                onChange={e => {
+                  const stateName = e.target.value
+                  const matched = INDIAN_STATES.find(s => s.name === stateName)
+                  setForm(prev => {
+                    let updatedGstin = prev.gstin || ''
+                    if (matched && (!prev.gstin || /^\d{2}$/.test(prev.gstin.slice(0, 2)) || prev.gstin.length < 2)) {
+                      updatedGstin = matched.code + updatedGstin.slice(2)
+                    }
+                    return {
+                      ...prev,
+                      gstin: updatedGstin,
+                      address: {
+                        ...(prev.address || {}),
+                        state: stateName
+                      }
+                    }
+                  })
+                }}
+              >
+                <option value="">Select State</option>
+                {INDIAN_STATES.map(s => (
+                  <option key={s.code + '-' + s.name} value={s.name}>{s.name}</option>
+                ))}
+              </select>
               <input className="input" placeholder="Pincode" value={form.address?.pincode || ''} onChange={e => setAddr('pincode', e.target.value)} />
             </div>
           </div>

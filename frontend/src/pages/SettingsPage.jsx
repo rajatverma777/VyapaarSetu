@@ -7,6 +7,46 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { format } from 'date-fns'
 
+const INDIAN_STATES = [
+  { name: "Jammu & Kashmir", code: "01" },
+  { name: "Himachal Pradesh", code: "02" },
+  { name: "Punjab", code: "03" },
+  { name: "Chandigarh", code: "04" },
+  { name: "Uttarakhand", code: "05" },
+  { name: "Haryana", code: "06" },
+  { name: "Delhi", code: "07" },
+  { name: "Rajasthan", code: "08" },
+  { name: "Uttar Pradesh", code: "09" },
+  { name: "Bihar", code: "10" },
+  { name: "Sikkim", code: "11" },
+  { name: "Arunachal Pradesh", code: "12" },
+  { name: "Nagaland", code: "13" },
+  { name: "Manipur", code: "14" },
+  { name: "Mizoram", code: "15" },
+  { name: "Tripura", code: "16" },
+  { name: "Meghalaya", code: "17" },
+  { name: "Assam", code: "18" },
+  { name: "West Bengal", code: "19" },
+  { name: "Jharkhand", code: "20" },
+  { name: "Odisha", code: "21" },
+  { name: "Chhattisgarh", code: "22" },
+  { name: "Madhya Pradesh", code: "23" },
+  { name: "Gujarat", code: "24" },
+  { name: "Daman & Diu", code: "26" },
+  { name: "Dadra & Nagar Haveli", code: "26" },
+  { name: "Maharashtra", code: "27" },
+  { name: "Andhra Pradesh", code: "37" },
+  { name: "Karnataka", code: "29" },
+  { name: "Goa", code: "30" },
+  { name: "Lakshadweep", code: "31" },
+  { name: "Kerala", code: "32" },
+  { name: "Tamil Nadu", code: "33" },
+  { name: "Puducherry", code: "34" },
+  { name: "Andaman & Nicobar Islands", code: "35" },
+  { name: "Telangana", code: "36" },
+  { name: "Ladakh", code: "38" }
+]
+
 const TABS = ['profile', 'company', 'users', 'appearance', 'backup', 'password']
 
 const compressImage = (file, maxWidth, maxHeight, callback) => {
@@ -309,7 +349,22 @@ export default function SettingsPage() {
                 </FormField>
               </div>
               <FormField label="GSTIN">
-                <input className="input font-mono" value={company.gstin} onChange={e => setC('gstin', e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" />
+                <input 
+                  className="input font-mono" 
+                  value={company.gstin} 
+                  onChange={e => {
+                    const val = e.target.value.toUpperCase()
+                    const stateCode = val.slice(0, 2)
+                    const matchedState = INDIAN_STATES.find(s => s.code === stateCode)
+                    setCompany(prev => ({
+                      ...prev,
+                      gstin: val,
+                      state_code: stateCode.length === 2 && /^\d+$/.test(stateCode) ? stateCode : prev.state_code,
+                      state: matchedState ? matchedState.name : prev.state
+                    }))
+                  }} 
+                  placeholder="22AAAAA0000A1Z5" 
+                />
               </FormField>
               <FormField label="State Code">
                 <input className="input" value={company.state_code} onChange={e => setC('state_code', e.target.value)} placeholder="09" />
@@ -332,7 +387,26 @@ export default function SettingsPage() {
                 </FormField>
               </div>
               <FormField label="City"><input className="input" value={company.city} onChange={e => setC('city', e.target.value)} /></FormField>
-              <FormField label="State"><input className="input" value={company.state} onChange={e => setC('state', e.target.value)} /></FormField>
+              <FormField label="State">
+                <select 
+                  className="select" 
+                  value={company.state} 
+                  onChange={e => {
+                    const stateName = e.target.value
+                    const matched = INDIAN_STATES.find(s => s.name === stateName)
+                    setCompany(prev => ({
+                      ...prev,
+                      state: stateName,
+                      state_code: matched ? matched.code : prev.state_code
+                    }))
+                  }}
+                >
+                  <option value="">Select State</option>
+                  {INDIAN_STATES.map(s => (
+                    <option key={s.code + '-' + s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </FormField>
 
               <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Bank Details (for Invoice)</h3>
