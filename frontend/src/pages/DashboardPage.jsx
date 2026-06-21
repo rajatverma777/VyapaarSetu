@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   TrendingUp, ShoppingBag, Users, Package,
@@ -53,18 +53,37 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function DashboardPage() {
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
   const navigate = useNavigate()
+  const intervalRef = useRef(null)
 
-  const load = async () => {
-    setLoading(true)
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
+    else setRefreshing(true)
     try {
       const { data: d } = await reportAPI.dashboard()
       setData(d)
+      setLastUpdated(new Date())
     } catch { /* */ }
-    finally { setLoading(false) }
-  }
+    finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // Auto-refresh every 60 seconds
+    intervalRef.current = setInterval(() => load(true), 60000)
+    // Refresh when tab becomes visible again
+    const onVisible = () => { if (document.visibilityState === 'visible') load(true) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(intervalRef.current)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [load])
 
   if (loading) return <LoadingScreen />
 
@@ -84,10 +103,17 @@ export default function DashboardPage() {
             {format(new Date(), 'EEEE, d MMMM yyyy')}
           </p>
         </div>
-        <button onClick={load} className="btn-secondary gap-2">
-          <RefreshCw size={14} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="text-xs text-gray-400 hidden sm:block">
+              Updated {format(lastUpdated, 'h:mm:ss a')}
+            </span>
+          )}
+          <button onClick={() => load(false)} disabled={loading || refreshing} className="btn-secondary gap-2">
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Recall Alerts Warning Banner */}

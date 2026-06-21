@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Search, ShieldAlert, FileText, ArrowRight, Download,
-  Activity, Users, ShoppingBag, Truck, Calendar, Tag, Layers, Trash2
+  Activity, Users, ShoppingBag, Truck, Calendar, Tag, Layers, Trash2, RefreshCw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -40,6 +40,9 @@ export default function TraceabilityPage() {
   const [showRecallResultModal, setShowRecallResultModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteBrandTarget, setDeleteBrandTarget] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const intervalRef = useRef(null)
 
   // Brand Sales Modal State
   const [selectedBrand, setSelectedBrand] = useState(null)
@@ -62,17 +65,20 @@ export default function TraceabilityPage() {
   }
 
   // 1. Load Brand Analytics
-  const loadBrandAnalytics = async () => {
-    setLoadingBrands(true)
+  const loadBrandAnalytics = useCallback(async (silent = false) => {
+    if (!silent) setLoadingBrands(true)
+    else setRefreshing(true)
     try {
       const { data } = await traceabilityAPI.brandAnalytics()
       setBrands(data)
+      setLastUpdated(new Date())
     } catch {
-      toast.error('Failed to load brand tracking reports')
+      if (!silent) toast.error('Failed to load brand tracking reports')
     } finally {
       setLoadingBrands(false)
+      setRefreshing(false)
     }
-  }
+  }, [])
 
   // 2. Load Recalls List
   const loadRecalls = async () => {
@@ -112,9 +118,22 @@ export default function TraceabilityPage() {
   }
 
   useEffect(() => {
-    if (activeTab === 'brand') loadBrandAnalytics()
+    if (activeTab === 'brand') {
+      loadBrandAnalytics()
+      // Auto-refresh every 30 seconds when on brand tab
+      intervalRef.current = setInterval(() => loadBrandAnalytics(true), 30000)
+      // Refresh when page becomes visible
+      const onVisible = () => {
+        if (document.visibilityState === 'visible' && activeTab === 'brand') loadBrandAnalytics(true)
+      }
+      document.addEventListener('visibilitychange', onVisible)
+      return () => {
+        clearInterval(intervalRef.current)
+        document.removeEventListener('visibilitychange', onVisible)
+      }
+    }
     if (activeTab === 'recall') loadRecalls()
-  }, [activeTab])
+  }, [activeTab, loadBrandAnalytics])
 
   // 3. Search Product Traceability
   const handleProductSelect = async (p) => {
@@ -243,6 +262,26 @@ export default function TraceabilityPage() {
       {/* Tabs Content */}
       {activeTab === 'brand' && (
         <div className="card overflow-hidden">
+          {/* Brand table header with refresh */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Brand Performance</h3>
+              {lastUpdated && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Updated {lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  {' · '}Auto-refreshes every 30s
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => loadBrandAnalytics(false)}
+              disabled={loadingBrands || refreshing}
+              className="btn-secondary text-xs gap-1.5 px-3 py-1.5"
+            >
+              <RefreshCw size={13} className={refreshing || loadingBrands ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="table">
               <thead>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Warehouse, AlertTriangle, TrendingDown, TrendingUp, Package, Settings2, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -40,8 +40,8 @@ export default function InventoryPage() {
     return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  const load = async () => {
-    setLoading(true)
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const [statusRes, lowRes] = await Promise.all([
         inventoryAPI.status(),
@@ -49,9 +49,9 @@ export default function InventoryPage() {
       ])
       setStatus(statusRes.data)
       setLowStock(lowRes.data)
-    } catch { toast.error('Failed to load') }
-    finally { setLoading(false) }
-  }
+    } catch { if (!silent) toast.error('Failed to load') }
+    finally { if (!silent) setLoading(false) }
+  }, [])
 
   const loadLogs = async () => {
     try {
@@ -69,7 +69,17 @@ export default function InventoryPage() {
     } catch { /**/ }
   }
 
-  useEffect(() => { load() }, [])
+  const autoRefreshRef = useRef(null)
+  useEffect(() => {
+    load()
+    autoRefreshRef.current = setInterval(() => load(true), 60000)
+    const onVisible = () => { if (document.visibilityState === 'visible') load(true) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(autoRefreshRef.current)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [load])
   useEffect(() => { 
     if (tab === 'logs') loadLogs() 
     if (tab === 'batches') loadBatches()
