@@ -167,6 +167,7 @@ async def submit_ai_import(
     rollbacks = []
 
     try:
+        resolved_brands = {}
         # 2. Process all products
         for item in request.items:
             batch_no = item.batch_number.strip() if (item.batch_number and item.batch_number.strip()) else "DEFAULT"
@@ -187,7 +188,11 @@ async def submit_ai_import(
             cat_id = None
             brand_name = item.manufacturer.strip() if item.manufacturer else None
             if brand_name:
-                cat_id = await resolve_category_from_brand(brand_name, db)
+                if brand_name in resolved_brands:
+                    cat_id = resolved_brands[brand_name]
+                else:
+                    cat_id = await resolve_category_from_brand(brand_name, db)
+                    resolved_brands[brand_name] = cat_id
 
             if not product:
                 # Create new product

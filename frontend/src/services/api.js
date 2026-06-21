@@ -3,7 +3,7 @@ import axios from 'axios'
 const apiURL = import.meta.env.VITE_API_URL || '/api'
 const api = axios.create({
   baseURL: apiURL,
-  timeout: 30000,
+  timeout: 120000, // 120 seconds to prevent timeouts during large batch imports or cold starts
 })
 
 // Attach JWT token to every request
