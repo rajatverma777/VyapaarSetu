@@ -14,6 +14,7 @@ import CustomersPage  from './pages/CustomersPage'
 import SuppliersPage  from './pages/SuppliersPage'
 import SalesPage      from './pages/SalesPage'
 import NewSalePage    from './pages/NewSalePage'
+import SmartCartPage  from './pages/SmartCartPage'
 import PurchasesPage  from './pages/PurchasesPage'
 import NewPurchasePage from './pages/NewPurchasePage'
 import InventoryPage  from './pages/InventoryPage'
@@ -46,7 +47,7 @@ const router = createBrowserRouter([
       { path: 'customers', element: <CustomersPage /> },
       { path: 'suppliers', element: <SuppliersPage /> },
       { path: 'sales', element: <SalesPage /> },
-      { path: 'sales/new', element: <NewSalePage /> },
+      { path: 'sales/new', element: <SmartCartPage /> },
       { path: 'purchases', element: <PurchasesPage /> },
       { path: 'purchases/new', element: <NewPurchasePage /> },
       { path: 'inventory', element: <InventoryPage /> },

@@ -74,8 +74,9 @@ export default function SalesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Sales Invoices</h1>
-        <button onClick={() => navigate('/sales/new')} className="btn-primary">
+        <button onClick={() => navigate('/sales/new')} className="btn-primary gap-2">
           <Plus size={16} /> New Sale
+          <span className="text-[10px] opacity-70 font-normal ml-0.5">Smart Cart</span>
         </button>
       </div>
 
