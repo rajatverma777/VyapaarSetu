@@ -408,7 +408,7 @@ function SmartCartInner() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Grid search bar */}
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-indigo-300/70 pointer-events-none" />
               <input
                 ref={gridSearchRef}
                 type="text"

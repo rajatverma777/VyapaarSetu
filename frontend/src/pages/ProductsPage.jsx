@@ -519,7 +519,7 @@ export default function ProductsPage() {
           <input type="checkbox" checked={lowStock} onChange={e => { setLowStock(e.target.checked); setPage(1) }} className="rounded" />
           Low Stock Only
         </label>
-        <button onClick={load} className="filter-icon-glass text-gray-500"><RefreshCw size={15} /></button>
+        <button onClick={load} className="filter-icon-glass" title="Refresh"><RefreshCw size={15} /></button>
       </div>
 
       {/* Table */}

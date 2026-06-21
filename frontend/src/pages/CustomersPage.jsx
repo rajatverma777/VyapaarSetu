@@ -109,7 +109,7 @@ export default function CustomersPage() {
       <div className="card p-4 flex flex-wrap gap-3">
         <SearchInput value={search} onChange={v => { setSearch(v); setPage(1) }}
           placeholder="Search name, mobile, GSTIN…" className="flex-1 min-w-[200px]" />
-        <button onClick={load} className="btn-icon text-gray-500"><RefreshCw size={15} /></button>
+        <button onClick={load} className="btn-icon" title="Refresh"><RefreshCw size={15} /></button>
         <p className="text-sm text-gray-500 self-center">{total} customers</p>
       </div>
 

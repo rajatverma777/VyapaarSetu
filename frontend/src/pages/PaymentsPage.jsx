@@ -168,7 +168,7 @@ export default function PaymentsPage() {
             ) : (
               <div className="relative" ref={partyRef}>
                 <Search size={16} 
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-primary-600 transition-colors z-10" 
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-indigo-300/70 cursor-pointer hover:text-primary-600 dark:hover:text-indigo-400 transition-colors z-10" 
                         onClick={triggerSearchAllParties} 
                 />
                 <input className="input pl-9" value={partySearch} onChange={e => setPartySearch(e.target.value)} placeholder="Search…" />

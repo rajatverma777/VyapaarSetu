@@ -131,7 +131,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
     <div className="relative w-full">
       {/* Search Input */}
       <div className={`relative flex items-center transition-all duration-200 ${focused ? 'ring-2 ring-indigo-500/30 rounded-[13px]' : ''}`}>
-        <div className="absolute left-3.5 text-gray-400 pointer-events-none">
+        <div className="absolute left-3.5 text-gray-400 dark:text-indigo-300/70 pointer-events-none">
           {loading
             ? <div className="w-4 h-4 border-2 border-indigo-400/40 border-t-indigo-500 rounded-full animate-spin" />
             : barcodeMode

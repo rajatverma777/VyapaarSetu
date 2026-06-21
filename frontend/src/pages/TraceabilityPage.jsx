@@ -472,7 +472,7 @@ export default function TraceabilityPage() {
                   value={searchBatchNo}
                   onChange={(e) => setSearchBatchNo(e.target.value)}
                 />
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-indigo-300/70" />
               </div>
               <button type="submit" disabled={loadingBatchTrace} className="btn-primary py-2 px-6 text-sm">
                 {loadingBatchTrace ? <Spinner size={16} /> : 'Search Batch'}
