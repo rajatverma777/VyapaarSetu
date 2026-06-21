@@ -60,12 +60,24 @@ def parse_expiry_string(expiry_str: Optional[str]) -> Optional[datetime]:
             pass
 
     # Fallback format try
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%Y-%m-%dT%H:%M:%S"):
+    for fmt in (
+        "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%Y-%m-%dT%H:%M:%S",
+        "%b-%y", "%b-%Y", "%b/%y", "%b/%Y", "%d-%b-%Y", "%d/%b/%Y", "%d-%b-%y",
+        "%d/%b/%y", "%d %b %Y", "%d %b %y", "%b %d, %Y", "%B %Y", "%b %Y",
+        "%Y-%m", "%Y/%m"
+    ):
         try:
             return datetime.strptime(expiry_str, fmt)
         except ValueError:
             pass
             
+    # Try dateutil parser as final fallback
+    try:
+        from dateutil.parser import parse as date_parse
+        return date_parse(expiry_str)
+    except Exception:
+        pass
+        
     return None
 
 async def resolve_category_from_brand(brand: Optional[str], db) -> Optional[str]:

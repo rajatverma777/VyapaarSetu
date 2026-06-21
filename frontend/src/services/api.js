@@ -282,3 +282,9 @@ export const traceabilityAPI = {
   deleteBrand:         (brandName) => api.delete(`/traceability/brand/${encodeURIComponent(brandName)}`),
   brandSales:          (brand)  => api.get('/traceability/brand/sales', { params: { brand } }),
 }
+
+// ── AI Import ────────────────────────────────────────────────────────────────
+export const aiImportAPI = {
+  analyze: (items) => api.post('/ai-import/analyze', items),
+  submit: (data) => api.post('/ai-import/submit', data),
+}

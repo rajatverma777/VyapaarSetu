@@ -10,7 +10,8 @@ from app.core.database import connect_to_mongo, close_mongo_connection
 from app.api.routes import (
     auth, users, products, categories, customers,
     suppliers, purchases, sales, payments,
-    inventory, reports, settings, backup, returns, traceability
+    inventory, reports, settings, backup, returns,
+    traceability, ai_import
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -95,6 +96,7 @@ app.include_router(settings.router,   prefix="/api/settings",   tags=["Settings"
 app.include_router(backup.router,     prefix="/api/backup",     tags=["Backup"])
 app.include_router(returns.router,    prefix="/api/returns",    tags=["Returns"])
 app.include_router(traceability.router, prefix="/api/traceability", tags=["Traceability"])
+app.include_router(ai_import.router, prefix="/api/ai-import", tags=["AI Import"])
 
 @app.get("/api/health")
 async def health_check():

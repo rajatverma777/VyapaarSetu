@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
-import { Plus, Upload, Download, Edit2, Trash2, Package, RefreshCw, Settings, FolderPlus, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Upload, Download, Edit2, Trash2, Package, RefreshCw, Settings, FolderPlus, ChevronUp, ChevronDown, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { productAPI, categoryAPI, inventoryAPI } from '../services/api'
+import AIImportModal from '../components/products/AIImportModal'
 import {
   Modal, ConfirmDialog, Pagination, EmptyState,
   SearchInput, StatusBadge, LoadingScreen, TableSkeleton, Amount, FormField, Spinner, GlassSelect
@@ -44,6 +45,7 @@ export default function ProductsPage() {
     _setImportPreviewItems(Array.isArray(val) ? val : [])
   }
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [showAIImportModal, setShowAIImportModal] = useState(false)
   const [importing, setImporting] = useState(false)
 
   // Product Autocomplete Matching States
@@ -483,6 +485,9 @@ export default function ProductsPage() {
             </button>
           )}
           <input type="file" ref={fileRef} onChange={handleBulkImport} accept=".xlsx,.xls,.png,.jpg,.jpeg,.pdf" className="hidden" />
+          <button onClick={() => setShowAIImportModal(true)} className="btn-secondary flex items-center gap-1.5">
+            <Sparkles size={15} className="text-indigo-500 animate-pulse" /> Import via AI
+          </button>
           <button onClick={() => fileRef.current.click()} className="btn-secondary">
             <Upload size={15} /> Bulk Import
           </button>
@@ -500,13 +505,13 @@ export default function ProductsPage() {
             value={catFilter}
             onChange={v => { setCatFilter(v); setPage(1) }}
             options={[
-              { value: '', label: 'All Categories' },
+              { value: '', label: 'All Brands' },
               ...categories.map(c => ({ value: String(c.id), label: c.name }))
             ]}
-            placeholder="All Categories"
+            placeholder="All Brands"
             className="w-72"
           />
-          <button onClick={() => setShowCategoryManager(true)} className="filter-icon-glass" title="Manage Categories">
+          <button onClick={() => setShowCategoryManager(true)} className="filter-icon-glass" title="Manage Brands">
             <Settings size={15} />
           </button>
         </div>
@@ -660,11 +665,20 @@ export default function ProductsPage() {
             <input type="number" className="input" value={form.cases !== null && form.cases !== undefined ? form.cases : ''} onChange={e => setF('cases', e.target.value === '' ? null : parseFloat(e.target.value))} />
           </FormField>
           <FormField label="Brand">
-            <input className="input" value={form.brand} onChange={e => setF('brand', e.target.value)} />
-          </FormField>
-          <FormField label="Category">
-            <select className="select" value={form.category_id || ''} onChange={e => setF('category_id', e.target.value || '')}>
-              <option value="">No Category</option>
+            <select
+              className="select"
+              value={form.category_id || ''}
+              onChange={e => {
+                const catId = e.target.value
+                const selectedCat = categories.find(c => String(c.id) === String(catId))
+                setForm(prev => ({
+                  ...prev,
+                  category_id: catId || '',
+                  brand: selectedCat ? selectedCat.name : ''
+                }))
+              }}
+            >
+              <option value="">No Brand</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </FormField>
@@ -1027,27 +1041,27 @@ export default function ProductsPage() {
         )}
       </Modal>
 
-      {/* Category Manager Modal */}
+      {/* Brand Manager Modal */}
       <Modal
         open={showCategoryManager}
         onClose={() => setShowCategoryManager(false)}
-        title="Manage Categories"
+        title="Manage Brands"
         size="md"
         footer={<button onClick={() => setShowCategoryManager(false)} className="btn-secondary">Close</button>}
       >
         <div className="space-y-5">
-          {/* Add Category Form */}
+          {/* Add Brand Form */}
           <form onSubmit={handleAddCategory} className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 space-y-3">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
               <FolderPlus size={16} className="text-primary-500" />
-              Add New Category
+              Add New Brand
             </h3>
             <div className="grid grid-cols-1 gap-3">
               <input
                 className="input"
                 value={newCatName}
                 onChange={e => setNewCatName(e.target.value)}
-                placeholder="Category Name (e.g. Injections)"
+                placeholder="Brand Name (e.g. RMS, Cipla)"
                 required
               />
               <input
@@ -1057,17 +1071,17 @@ export default function ProductsPage() {
                 placeholder="Description (optional)"
               />
               <button type="submit" disabled={catSaving} className="btn-primary w-full justify-center">
-                {catSaving ? 'Saving…' : 'Add Category'}
+                {catSaving ? 'Saving…' : 'Add Brand'}
               </button>
             </div>
           </form>
 
-          {/* List of Categories */}
+          {/* List of Brands */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Existing Categories</h3>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Existing Brands</h3>
             <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
               {categories.length === 0 ? (
-                <p className="p-4 text-center text-sm text-gray-400">No categories found.</p>
+                <p className="p-4 text-center text-sm text-gray-400">No brands found.</p>
               ) : categories.map(c => (
                 <div key={c.id} className="p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                   <div>
@@ -1077,7 +1091,7 @@ export default function ProductsPage() {
                   <button
                     onClick={() => handleDeleteCategory(c.id)}
                     className="btn-icon text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded p-1.5"
-                    title={`Delete category: ${c.name}`}
+                    title={`Delete brand: ${c.name}`}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -1087,6 +1101,16 @@ export default function ProductsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* AI Copy-Paste Import Assistant Wizard Modal */}
+      <AIImportModal
+        open={showAIImportModal}
+        onClose={() => setShowAIImportModal(false)}
+        onImportSuccess={() => {
+          setShowAIImportModal(false)
+          load()
+        }}
+      />
     </div>
   )
 }
