@@ -549,6 +549,41 @@ async def update_product(
     if not update_dict:
         raise HTTPException(status_code=400, detail="No data to update")
 
+    # Clean name
+    if "name" in update_dict:
+        update_dict["name"] = " ".join(update_dict["name"].split()).strip()
+
+    unset_dict = {}
+
+    # Clean SKU: if empty string or None, we should unset it to prevent E11000 duplicate key error
+    if "sku" in update_dict:
+        sku_val = update_dict["sku"]
+        sku_str = " ".join(sku_val.split()).strip() if sku_val else ""
+        if sku_str:
+            update_dict["sku"] = sku_str
+        else:
+            update_dict.pop("sku", None)
+            unset_dict["sku"] = ""
+
+    # Clean Barcode: if empty string or None, we should unset it
+    if "barcode" in update_dict:
+        barcode_val = update_dict["barcode"]
+        barcode_str = " ".join(barcode_val.split()).strip() if barcode_val else ""
+        if barcode_str:
+            update_dict["barcode"] = barcode_str
+        else:
+            update_dict.pop("barcode", None)
+            unset_dict["barcode"] = ""
+
+    # Check for duplicate SKU if SKU is updated
+    if "sku" in update_dict:
+        existing_sku = await db.products.find_one({
+            "sku": update_dict["sku"],
+            "_id": {"$ne": ObjectId(product_id)}
+        })
+        if existing_sku:
+            raise HTTPException(status_code=400, detail="Another product already has this SKU")
+
     # Resolve category from brand if brand is being updated
     if "brand" in update_dict:
         brand_val = update_dict["brand"]
@@ -562,9 +597,14 @@ async def update_product(
             update_dict["brand"] = None
 
     update_dict["updated_at"] = datetime.utcnow()
+    
+    mongo_update = {"$set": update_dict}
+    if unset_dict:
+        mongo_update["$unset"] = unset_dict
+
     result = await db.products.update_one(
         {"_id": ObjectId(product_id)},
-        {"$set": update_dict}
+        mongo_update
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Product not found")
