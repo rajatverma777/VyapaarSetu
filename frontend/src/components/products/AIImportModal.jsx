@@ -703,8 +703,8 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
               </h5>
             </div>
 
-            <div className="relative border border-gray-250 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900/60 backdrop-blur-md">
-              <div className="flex justify-between items-center px-4 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-250 dark:border-gray-750">
+            <div className="relative border border-gray-250 dark:border-indigo-500/15 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-indigo-500/5 backdrop-blur-md">
+              <div className="flex justify-between items-center px-4 py-2 bg-gray-100/50 dark:bg-[#161720]/80 border-b border-gray-250 dark:border-indigo-500/15">
                 <span className="text-xs font-semibold text-gray-500 tracking-wider">AI EXTRACTION PROMPT</span>
                 <button
                   type="button"

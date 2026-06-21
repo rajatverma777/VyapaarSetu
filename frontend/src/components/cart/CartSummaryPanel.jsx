@@ -150,7 +150,7 @@ export default function CartSummaryPanel({ onCheckout, onSaveDraft }) {
         {/* Save Draft */}
         <button
           onClick={onSaveDraft}
-          className="btn-secondary w-full justify-center text-sm gap-2"
+          className="btn-secondary w-full justify-center text-sm gap-2 whitespace-nowrap"
         >
           <Save size={14} />
           Save Draft
@@ -161,7 +161,7 @@ export default function CartSummaryPanel({ onCheckout, onSaveDraft }) {
         <button
           onClick={onCheckout}
           disabled={items.length === 0}
-          className="btn-success w-full justify-center py-3.5 text-base font-bold gap-2 disabled:opacity-40"
+          className="btn-success w-full justify-center py-3.5 text-base font-bold gap-2 disabled:opacity-40 whitespace-nowrap"
         >
           <ShoppingCart size={18} />
           Checkout

@@ -410,10 +410,10 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Invoice Branding</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Logo Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20">
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
                     <label className="text-xs font-semibold text-gray-500 mb-2">Company Logo (Header)</label>
                     {company.logo_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white flex items-center justify-center">
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center">
                         <img src={company.logo_base64} alt="Company Logo" className="max-w-full max-h-full object-contain" />
                         <button
                           onClick={() => setC('logo_base64', '')}
@@ -423,7 +423,7 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-400">
                         <Building2 size={32} />
                       </div>
                     )}
@@ -446,10 +446,10 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Watermark Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50/50 dark:bg-gray-800/20">
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
                     <label className="text-xs font-semibold text-gray-500 mb-2">Invoice Watermark (Background)</label>
                     {company.watermark_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white flex items-center justify-center">
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center">
                         <img src={company.watermark_base64} alt="Invoice Watermark" className="max-w-full max-h-full object-contain opacity-50" />
                         <button
                           onClick={() => setC('watermark_base64', '')}
@@ -459,7 +459,7 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-400">
                         <Palette size={32} />
                       </div>
                     )}
@@ -503,7 +503,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Share this code with your staff members so they can join your business during registration.</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-lg font-black bg-white dark:bg-gray-800 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl tracking-wider select-all text-indigo-650 dark:text-indigo-300">
+                <span className="font-mono text-lg font-black bg-white dark:bg-indigo-500/10 px-4 py-2 border border-gray-200 dark:border-indigo-500/25 rounded-xl tracking-wider select-all text-indigo-600 dark:text-indigo-200">
                   {user?.tenant_id || '—'}
                 </span>
                 <button
@@ -552,7 +552,7 @@ export default function SettingsPage() {
                           {isAdmin && u.id !== user?.id && (
                             <button
                               onClick={() => toggleUserStatus(u)}
-                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none ${u.is_active ? 'bg-indigo-650' : 'bg-gray-250 dark:bg-gray-700'}`}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none border dark:border-white/5 ${u.is_active ? 'bg-indigo-600 border-transparent' : 'bg-gray-200 dark:bg-white/10'}`}
                               title="Toggle Status"
                             >
                               <span

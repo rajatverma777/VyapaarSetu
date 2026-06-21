@@ -175,7 +175,7 @@ export default function SalesPage() {
       >
         {payModal && (
           <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 space-y-1">
+            <div className="bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100/50 dark:border-indigo-500/10 rounded-xl p-4 space-y-1">
               <p className="text-sm"><b>Invoice:</b> {payModal.invoice_number}</p>
               <p className="text-sm"><b>Total:</b> ₹{payModal.total_amount?.toFixed(2)}</p>
               <p className="text-sm text-red-600"><b>Balance:</b> ₹{payModal.balance_amount?.toFixed(2)}</p>

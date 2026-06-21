@@ -142,15 +142,16 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
       ) : (
         /* ── Customer Search ───────────────────────────────── */
         <div className="relative">
-          <div className="flex items-center gap-2">
-            <User size={15} className="text-gray-400 flex-shrink-0" />
+          <div className="input flex items-center gap-2.5 py-0 pl-3.5 pr-2 hover:border-indigo-400/40 focus-within:border-indigo-500/50 focus-within:ring-2 focus-within:ring-indigo-500/20">
+            <User size={15} className="text-indigo-400/70 dark:text-indigo-300/60 flex-shrink-0" />
+            <div className="w-[1px] h-4 bg-gray-200 dark:bg-white/10 flex-shrink-0" />
             <input
               ref={extInputRef}
               type="text"
               value={searchQuery}
               onChange={e => handleSearch(e.target.value)}
               placeholder="Search customer (F4) or leave as Walk-in…"
-              className="input flex-1 py-2.5 text-sm"
+              className="flex-1 py-2.5 text-sm bg-transparent border-0 outline-none focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-400/70 dark:placeholder-indigo-200/35"
               autoComplete="off"
             />
             {searching && (
@@ -160,22 +161,21 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
 
           {results.length > 0 && (
             <div
-              className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-2xl border border-white/30 dark:border-white/10 max-h-60 overflow-y-auto"
-              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(30px)' }}
+              className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-2xl border border-gray-200/60 dark:border-white/10 max-h-60 overflow-y-auto bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
             >
               {results.map(c => (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => handleSelect(c)}
-                  className="w-full px-4 py-2.5 text-left flex items-center gap-3 border-b border-gray-100 last:border-0 hover:bg-indigo-50/60 transition-colors"
+                  className="w-full px-4 py-2.5 text-left flex items-center gap-3 border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-indigo-50/60 dark:hover:bg-white/5 transition-colors"
                 >
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-bold">{c.name?.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
-                    <p className="text-xs text-gray-500">{c.mobile || c.gstin || 'No contact'}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{c.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{c.mobile || c.gstin || 'No contact'}</p>
                   </div>
                   {(c.current_balance || 0) > 0 && (
                     <span className="text-[10px] font-medium text-orange-500 flex-shrink-0">

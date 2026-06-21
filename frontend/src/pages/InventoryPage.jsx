@@ -420,10 +420,10 @@ export default function InventoryPage() {
                 />
                 <input className="input pl-9" value={prodSearch} onChange={e => setProdSearch(e.target.value)} placeholder="Search product…" />
                 {prodResults.length > 0 && (
-                  <div className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 rounded-xl shadow-xl border z-50">
+                  <div className="dropdown-glass">
                     {prodResults.map(p => (
                       <button key={p.id} onClick={() => selectProd(p)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex justify-between">
+                        className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50/60 dark:hover:bg-white/5 transition-colors border-b border-gray-100 dark:border-white/5 last:border-0 flex justify-between">
                         <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
                         <span className="text-gray-500 dark:text-gray-400">Stock: {p.current_stock}</span>
                       </button>

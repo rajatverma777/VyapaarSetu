@@ -173,10 +173,10 @@ export default function PaymentsPage() {
                 />
                 <input className="input pl-9" value={partySearch} onChange={e => setPartySearch(e.target.value)} placeholder="Search…" />
                 {partyResults.length > 0 && (
-                  <div className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 rounded-xl shadow-xl border z-50">
+                  <div className="dropdown-glass">
                     {partyResults.map(p => (
                       <button key={p.id} onClick={() => { setSelectedParty(p); setF('party_id', p.id); setPartySearch(''); setPartyResults([]) }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+                        className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50/60 dark:hover:bg-white/5 transition-colors border-b border-gray-100 dark:border-white/5 last:border-0">
                         <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
                         {p.mobile && <span className="text-gray-500 dark:text-gray-400 ml-2">· {p.mobile}</span>}
                         {p.current_balance > 0 && <span className="text-red-500 ml-2 font-semibold">₹{p.current_balance?.toFixed(2)}</span>}

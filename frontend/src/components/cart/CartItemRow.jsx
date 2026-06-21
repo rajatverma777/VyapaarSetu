@@ -96,7 +96,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
           <button
             onClick={decrement}
             disabled={item.qty <= 1}
-            className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:bg-indigo-100 hover:text-indigo-600 transition-colors disabled:opacity-40 flex-shrink-0"
+            className="qty-btn w-6 h-6 flex items-center justify-center flex-shrink-0"
           >
             <Minus size={10} />
           </button>
@@ -113,7 +113,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
           <button
             onClick={increment}
             disabled={isOverStock}
-            className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:bg-indigo-100 hover:text-indigo-600 transition-colors disabled:opacity-40 flex-shrink-0"
+            className="qty-btn w-6 h-6 flex items-center justify-center flex-shrink-0"
           >
             <Plus size={10} />
           </button>

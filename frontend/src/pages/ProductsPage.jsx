@@ -816,17 +816,17 @@ export default function ProductsPage() {
                         
                         {/* Autocomplete Search Dropdown */}
                         {activeSearchIdx === idx && searchResults.length > 0 && (
-                          <div className="absolute left-2 right-2 top-11 z-50 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto text-xs text-left">
+                          <div className="dropdown-glass absolute left-2 right-2 top-11 max-h-48 text-xs text-left">
                             <div 
-                              className="p-2 border-b dark:border-gray-700 font-semibold text-primary-600 dark:text-primary-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                              className="p-2.5 border-b border-gray-100 dark:border-white/5 font-semibold text-indigo-600 dark:text-indigo-400 cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-white/5 transition-colors"
                               onClick={() => handleSetNewProduct(idx)}
                             >
                               🆕 Create as New Product: "{item.name}"
                             </div>
-                            {searchResults.map(prod => (
+                            {searchResults.map((prod, pIdx) => (
                               <div 
                                 key={prod.id} 
-                                className="p-2 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                                className={`p-2.5 border-b border-gray-100 dark:border-white/5 cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-white/5 transition-colors ${pIdx === searchResults.length - 1 ? 'border-0' : ''}`}
                                 onClick={() => handleSelectProduct(idx, prod)}
                               >
                                 🔗 Link to: <strong className="text-gray-800 dark:text-gray-200">{prod.name}</strong> 
@@ -1051,7 +1051,7 @@ export default function ProductsPage() {
       >
         <div className="space-y-5">
           {/* Add Brand Form */}
-          <form onSubmit={handleAddCategory} className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 space-y-3">
+          <form onSubmit={handleAddCategory} className="bg-gray-50/50 dark:bg-indigo-500/5 p-4 rounded-xl border border-gray-100 dark:border-indigo-500/15 space-y-3">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
               <FolderPlus size={16} className="text-primary-500" />
               Add New Brand

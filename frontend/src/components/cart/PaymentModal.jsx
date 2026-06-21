@@ -48,16 +48,15 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-md rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 overflow-hidden animate-modal-in"
-        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(40px)' }}
+        className="relative w-full max-w-md rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/70">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/70 dark:border-white/10">
           <div>
-            <h3 className="text-base font-bold text-gray-900">Payment</h3>
-            <p className="text-xs text-gray-500">Grand Total: <span className="font-bold text-gray-800">₹{grandTotal.toFixed(2)}</span></p>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Payment</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Grand Total: <span className="font-bold text-gray-800 dark:text-white">₹{grandTotal.toFixed(2)}</span></p>
           </div>
-          <button onClick={onClose} className="btn-icon w-7 h-7 p-1 text-gray-400"><X size={16} /></button>
+          <button onClick={onClose} className="btn-icon w-7 h-7 p-1 text-gray-400 dark:text-gray-500 hover:dark:text-gray-300"><X size={16} /></button>
         </div>
 
         {/* Payment rows */}
@@ -99,7 +98,7 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
                   <button
                     type="button"
                     onClick={() => fillBalance(i)}
-                    className="text-[10px] text-indigo-500 hover:text-indigo-700 font-semibold px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors flex-shrink-0"
+                    className="text-[10px] text-indigo-500 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 font-semibold px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 transition-colors flex-shrink-0"
                     title="Fill remaining balance"
                   >
                     Fill
@@ -123,7 +122,7 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
           {rows.length < PAYMENT_OPTIONS.length && (
             <button
               onClick={addRow}
-              className="flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-800 font-semibold py-1 transition-colors"
+              className="flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold py-1 transition-colors"
             >
               <Plus size={14} />
               Add payment method (split)
@@ -139,8 +138,8 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
               : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40'
           }`}>
             <div>
-              <p className="text-xs font-semibold text-gray-600">Total Paid</p>
-              <p className="text-xl font-bold text-gray-900">₹{totalPaid.toFixed(2)}</p>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Total Paid</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">₹{totalPaid.toFixed(2)}</p>
             </div>
             <div className="text-right">
               {isFullyPaid ? (
@@ -150,13 +149,13 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
                 </div>
               ) : balance > 0 ? (
                 <div>
-                  <p className="text-xs font-semibold text-orange-600">Balance Due</p>
-                  <p className="text-lg font-bold text-orange-700">₹{balance.toFixed(2)}</p>
+                  <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">Balance Due</p>
+                  <p className="text-lg font-bold text-orange-700 dark:text-orange-300">₹{balance.toFixed(2)}</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-xs font-semibold text-blue-600">Change</p>
-                  <p className="text-lg font-bold text-blue-700">₹{Math.abs(balance).toFixed(2)}</p>
+                  <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">Change</p>
+                  <p className="text-lg font-bold text-blue-700 dark:text-blue-300">₹{Math.abs(balance).toFixed(2)}</p>
                 </div>
               )}
             </div>
@@ -165,11 +164,11 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
 
         {/* Footer */}
         <div className="px-5 pb-5 flex gap-3">
-          <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+          <button onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
           <button
             onClick={handleConfirm}
             disabled={rows.every(r => !(parseFloat(r.amount) > 0))}
-            className="btn-success flex-1 text-sm font-bold"
+            className="btn-success flex-1 text-sm font-bold justify-center"
           >
             {isFullyPaid ? '✓ Confirm Payment' : `Collect ₹${totalPaid.toFixed(2)}`}
           </button>

@@ -165,11 +165,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
       {results.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-2xl border border-white/30 dark:border-white/10 max-h-80 overflow-y-auto"
-          style={{
-            background: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(30px) saturate(180%)',
-          }}
+          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-2xl border border-gray-200/60 dark:border-white/10 max-h-80 overflow-y-auto bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
         >
           {results.map((p, i) => (
             <button
@@ -177,15 +173,15 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
               ref={el => listRefs.current[i] = el}
               type="button"
               onClick={() => handleSelect(p)}
-              className={`w-full px-4 py-2.5 text-left flex items-center gap-3 border-b border-gray-100/80 last:border-0 transition-colors duration-100 ${
-                i === activeIdx ? 'bg-indigo-50/90 dark:bg-indigo-900/30' : 'hover:bg-gray-50/80'
+              className={`w-full px-4 py-2.5 text-left flex items-center gap-3 border-b border-gray-100/80 dark:border-white/5 last:border-0 transition-colors duration-100 ${
+                i === activeIdx ? 'bg-indigo-50/90 dark:bg-indigo-900/30 text-indigo-950 dark:text-white' : 'hover:bg-gray-50/80 dark:hover:bg-white/5 text-gray-700 dark:text-gray-250'
               }`}
             >
               {/* Product icon */}
               <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-bold ${
                 p.current_stock <= 0
-                  ? 'bg-red-100 text-red-500'
-                  : 'bg-indigo-100 text-indigo-600'
+                  ? 'bg-red-100 dark:bg-red-950/40 text-red-500 dark:text-red-300'
+                  : 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-300'
               }`}>
                 {p.current_stock <= 0 ? <AlertCircle size={14} /> : <Package size={14} />}
               </div>
@@ -193,26 +189,26 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
               {/* Main info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{p.name}</p>
                   {p.brand && (
-                    <span className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded-md flex-shrink-0">{p.brand}</span>
+                    <span className="text-[10px] text-indigo-600 dark:text-indigo-300 font-medium bg-indigo-55 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded-md flex-shrink-0">{p.brand}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  {p.sku && <span className="text-[10px] text-gray-400 font-mono">SKU: {p.sku}</span>}
-                  {p.batch_no && <span className="text-[10px] text-gray-400">Batch: {p.batch_no}</span>}
+                  {p.sku && <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">SKU: {p.sku}</span>}
+                  {p.batch_no && <span className="text-[10px] text-gray-400 dark:text-gray-500">Batch: {p.batch_no}</span>}
                   {p.expiry_date && (
                     <span className={`text-[10px] font-medium ${getExpiryColor(p.expiry_date)}`}>
                       Exp: {new Date(p.expiry_date).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}
                     </span>
                   )}
-                  <span className="text-[10px] text-gray-400">GST {p.gst_rate || 0}%</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">GST {p.gst_rate || 0}%</span>
                 </div>
               </div>
 
               {/* Prices + stock */}
               <div className="text-right flex-shrink-0">
-                <p className="text-sm font-bold text-indigo-600">₹{(p.selling_price || 0).toFixed(2)}</p>
+                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">₹{(p.selling_price || 0).toFixed(2)}</p>
                 <p className={`text-[11px] font-medium ${getStockColor(p.current_stock)}`}>
                   Stock: {p.current_stock ?? 0} {p.unit || ''}
                 </p>
@@ -225,13 +221,12 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
       {/* Empty state when typing but no results */}
       {focused && query.length >= 2 && results.length === 0 && !loading && (
         <div
-          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-xl border border-white/30 dark:border-white/10"
-          style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(30px)' }}
+          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-xl border border-gray-200/60 dark:border-white/10 bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
         >
           <div className="px-4 py-6 text-center">
-            <Package size={24} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">No products found for <strong>"{query}"</strong></p>
-            <p className="text-xs text-gray-400 mt-1">Try a different name, SKU, or barcode</p>
+            <Package size={24} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">No products found for <strong>"{query}"</strong></p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Try a different name, SKU, or barcode</p>
           </div>
         </div>
       )}
