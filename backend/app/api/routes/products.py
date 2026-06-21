@@ -508,6 +508,19 @@ async def _create_product_internal(
             upsert=True
         )
 
+    # Sync brand and category_id to all matching products (including inactive duplicates)
+    if product_dict.get("brand") or product_dict.get("category_id"):
+        name_escaped = re.escape(cleaned_name.strip())
+        name_regex_str = "^" + name_escaped.replace(" ", r"\s*") + "$"
+        name_regex = {"$regex": name_regex_str, "$options": "i"}
+        await db.products.update_many(
+            {"name": name_regex},
+            {"$set": {
+                "brand": product_dict.get("brand"),
+                "category_id": product_dict.get("category_id")
+            }}
+        )
+
     return {"message": "Product created", "id": str(result.inserted_id)}
 
 @router.post("/")
@@ -608,6 +621,24 @@ async def update_product(
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    # Sync brand and category_id to all similar products (including inactive ones) by name
+    if "brand" in update_dict or "category_id" in update_dict:
+        import re
+        p_doc = await db.products.find_one({"_id": ObjectId(product_id)})
+        if p_doc and p_doc.get("name"):
+            name_escaped = re.escape(p_doc["name"].strip())
+            name_regex_str = "^" + name_escaped.replace(" ", r"\s*") + "$"
+            name_regex = {"$regex": name_regex_str, "$options": "i"}
+            
+            await db.products.update_many(
+                {"name": name_regex},
+                {"$set": {
+                    "brand": update_dict.get("brand"),
+                    "category_id": update_dict.get("category_id")
+                }}
+            )
+
     return {"message": "Product updated"}
 
 @router.delete("/{product_id}")
