@@ -321,6 +321,67 @@ async def list_recalls(
     recalls = await db.recalls.find().sort("date", -1).to_list(None)
     return [serialize_doc(r) for r in recalls]
 
+@router.delete("/recall/{recall_id}")
+async def delete_recall(
+    recall_id: str,
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_create_purchases"))
+):
+    try:
+        oid = ObjectId(recall_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Recall ID format")
+        
+    recall = await db.recalls.find_one({"_id": oid})
+    if not recall:
+        raise HTTPException(status_code=404, detail="Recall record not found")
+        
+    await db.recalls.delete_one({"_id": oid})
+    
+    # Audit log
+    await db.audit_logs.insert_one({
+        "action": "RECALL_DELETED",
+        "details": f"Batch recall for batch '{recall.get('batch_no')}' was deleted.",
+        "reference_id": recall_id,
+        "created_by": str(current_user["_id"]),
+        "created_by_name": current_user.get("full_name", ""),
+        "created_at": datetime.utcnow()
+    })
+    
+    return {"message": "Recall successfully deleted"}
+
+@router.delete("/brand/{brand_name}")
+async def delete_brand(
+    brand_name: str,
+    db = Depends(get_database),
+    current_user = Depends(require_permission("can_create_purchases"))
+):
+    brand_clean = brand_name.strip()
+    if not brand_clean:
+        raise HTTPException(status_code=400, detail="Invalid brand name")
+        
+    products_count = await db.products.count_documents({"brand": brand_clean})
+    if products_count == 0:
+        raise HTTPException(status_code=404, detail="Brand not found or has no products")
+        
+    await db.products.update_many(
+        {"brand": brand_clean},
+        {"$set": {"brand": None}}
+    )
+    
+    # Audit log
+    await db.audit_logs.insert_one({
+        "action": "BRAND_DELETED",
+        "details": f"Brand '{brand_clean}' was deleted (cleared brand field for {products_count} products).",
+        "reference_id": brand_clean,
+        "created_by": str(current_user["_id"]),
+        "created_by_name": current_user.get("full_name", ""),
+        "created_at": datetime.utcnow()
+    })
+    
+    return {"message": f"Brand successfully deleted, updated {products_count} products"}
+
+
 @router.get("/brand/sales")
 async def get_brand_sales_details(
     brand: str = Query(...),

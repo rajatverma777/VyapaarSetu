@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import {
   Search, ShieldAlert, FileText, ArrowRight, Download,
-  Activity, Users, ShoppingBag, Truck, Calendar, Tag, Layers
+  Activity, Users, ShoppingBag, Truck, Calendar, Tag, Layers, Trash2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   traceabilityAPI, productAPI
 } from '../services/api'
 import {
-  Amount, SearchAutocomplete, GlassSelect, Spinner, Modal
+  Amount, SearchAutocomplete, GlassSelect, Spinner, Modal, ConfirmDialog
 } from '../components/ui'
 import { format } from 'date-fns'
 
@@ -38,6 +38,8 @@ export default function TraceabilityPage() {
   const [recalling, setRecalling] = useState(false)
   const [affectedCustomers, setAffectedCustomers] = useState([])
   const [showRecallResultModal, setShowRecallResultModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteBrandTarget, setDeleteBrandTarget] = useState(null)
 
   // Brand Sales Modal State
   const [selectedBrand, setSelectedBrand] = useState(null)
@@ -82,6 +84,30 @@ export default function TraceabilityPage() {
       toast.error('Failed to load active recalls')
     } finally {
       setLoadingRecalls(false)
+    }
+  }
+
+  const handleDeleteRecall = async (recallId) => {
+    try {
+      await traceabilityAPI.deleteRecall(recallId)
+      toast.success('Recall record deleted successfully')
+      loadRecalls()
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to delete recall record')
+    } finally {
+      setDeleteTarget(null)
+    }
+  }
+
+  const handleDeleteBrand = async (brandName) => {
+    try {
+      await traceabilityAPI.deleteBrand(brandName)
+      toast.success(`Brand "${brandName}" deleted successfully`)
+      loadBrandAnalytics()
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to delete brand')
+    } finally {
+      setDeleteBrandTarget(null)
     }
   }
 
@@ -225,19 +251,20 @@ export default function TraceabilityPage() {
                   <th className="text-right">Sales Revenue</th>
                   <th className="text-right">Quantity Sold</th>
                   <th>Top Customers (Value purchased)</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingBrands ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-10">
+                    <td colSpan={5} className="text-center py-10">
                       <Spinner size={30} className="mx-auto" />
                       <p className="text-xs text-gray-500 mt-2">Loading brand analytics...</p>
                     </td>
                   </tr>
                 ) : brands.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-10 text-gray-400 text-sm">
+                    <td colSpan={5} className="text-center py-10 text-gray-400 text-sm">
                       No sales transactions recorded.
                     </td>
                   </tr>
@@ -269,6 +296,18 @@ export default function TraceabilityPage() {
                             <span className="text-xs text-gray-400">None</span>
                           )}
                         </div>
+                      </td>
+                      <td>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteBrandTarget(b)
+                          }}
+                          className="btn-icon text-red-500 hover:bg-red-500/10 p-1 rounded"
+                          title="Delete Brand"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -630,19 +669,28 @@ export default function TraceabilityPage() {
                           <span className="badge badge--error capitalize">recalled</span>
                         </td>
                         <td>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const { data } = await traceabilityAPI.createRecall({ batch_no: r.batch_no, reason: r.reason })
-                                exportContactCSV(data.affected_customers, r.batch_no)
-                              } catch {
-                                toast.error('Failed to export list')
-                              }
-                            }}
-                            className="btn-secondary text-[10px] px-2 py-1 flex items-center gap-1 border border-red-500/10 text-red-600 bg-red-500/5 hover:bg-red-500/10"
-                          >
-                            <Download size={10} /> Export CSV
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const { data } = await traceabilityAPI.createRecall({ batch_no: r.batch_no, reason: r.reason })
+                                  exportContactCSV(data.affected_customers, r.batch_no)
+                                } catch {
+                                  toast.error('Failed to export list')
+                                }
+                              }}
+                              className="btn-secondary text-[10px] px-2 py-1 flex items-center gap-1 border border-red-500/10 text-red-600 bg-red-500/5 hover:bg-red-500/10"
+                            >
+                              <Download size={10} /> Export CSV
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(r)}
+                              className="btn-icon text-red-500 hover:bg-red-500/10 p-1 rounded"
+                              title="Delete Recall Record"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -780,6 +828,24 @@ export default function TraceabilityPage() {
           )}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => handleDeleteRecall(deleteTarget?.id)}
+        title="Delete Recall Event"
+        message={`Are you sure you want to delete the recall record for batch "${deleteTarget?.batch_no}"?`}
+        danger
+      />
+
+      <ConfirmDialog
+        open={!!deleteBrandTarget}
+        onClose={() => setDeleteBrandTarget(null)}
+        onConfirm={() => handleDeleteBrand(deleteBrandTarget?.brand)}
+        title="Delete Brand"
+        message={`Are you sure you want to delete the brand "${deleteBrandTarget?.brand}"? This will clear the brand field for all of its products.`}
+        danger
+      />
     </div>
   )
 }

@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { authAPI, healthAPI } from '../services/api'
-import { Building2, Eye, EyeOff, Loader2, Sun, Moon, User, Lock, Mail, Phone } from 'lucide-react'
+import { Building2, Eye, EyeOff, Loader2, Sun, Moon, User, Lock, Mail, Phone, Home } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const { login, token, loading } = useAuth()
   const { dark, toggle } = useTheme()
+  const location = useLocation()
   const [form, setForm] = useState({ username: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [needSetup, setNeedSetup] = useState(false)
-  const [registerMode, setRegisterMode] = useState(false)
+  const [registerMode, setRegisterMode] = useState(location.state?.registerMode || false)
   const [showCodeModal, setShowCodeModal] = useState(false)
   const [newCompanyCode, setNewCompanyCode] = useState('')
   const [regForm, setRegForm] = useState({
@@ -117,8 +118,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center ambient-bg p-4 overflow-hidden relative">
-      {/* Top right theme toggle */}
-      <div className="absolute top-4 right-4 z-20">
+      {/* Top right theme toggle & Home button */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
+        <Link
+          to="/"
+          className="btn-secondary p-2.5 rounded-full shadow-lg transition-transform duration-200 active:scale-95 flex items-center justify-center"
+          title="Back to Home"
+        >
+          <Home size={18} />
+        </Link>
         <button
           type="button"
           onClick={toggle}
@@ -131,9 +139,9 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md relative z-10 animate-modal-in">
         {/* Logo Header */}
-        <div className="flex items-center justify-center gap-3.5 mb-8 px-2">
+        <Link to="/" className="flex items-center justify-center gap-3.5 mb-8 px-2 hover:opacity-85 transition-opacity select-none cursor-pointer group">
           <div className="w-12 h-12 glass-icon-container text-gray-800 dark:text-white shadow-md flex-shrink-0 rounded-2xl">
-            <Building2 size={22} className="text-indigo-600 dark:text-indigo-300 animate-pulse" />
+            <Building2 size={22} className="text-indigo-600 dark:text-indigo-300 animate-pulse group-hover:scale-105 transition-transform" />
           </div>
           <div className="text-left">
             <h1 className="text-2xl font-black leading-tight tracking-tight text-gray-950 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>Vyapaar Setu</h1>
@@ -141,7 +149,7 @@ export default function LoginPage() {
               {registerMode ? (needSetup ? 'First-time Setup: Create Admin Account' : 'Create Account') : 'Sign in to your account'}
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Card */}
         <div className="card shadow-2xl p-8">

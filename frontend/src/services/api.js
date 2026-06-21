@@ -278,5 +278,7 @@ export const traceabilityAPI = {
   batchTraceability:   (batch)  => api.get(`/traceability/batch/${batch}`),
   listRecalls:         ()       => api.get('/traceability/recalls'),
   createRecall:        (data)   => api.post('/traceability/recall', data),
+  deleteRecall:        (id)     => api.delete(`/traceability/recall/${id}`),
+  deleteBrand:         (brandName) => api.delete(`/traceability/brand/${encodeURIComponent(brandName)}`),
   brandSales:          (brand)  => api.get('/traceability/brand/sales', { params: { brand } }),
 }

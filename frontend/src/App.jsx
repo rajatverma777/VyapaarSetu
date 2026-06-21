@@ -22,6 +22,7 @@ import PaymentsPage   from './pages/PaymentsPage'
 import SettingsPage   from './pages/SettingsPage'
 import ReturnsPage      from './pages/ReturnsPage'
 import TraceabilityPage from './pages/TraceabilityPage'
+import HomePage         from './pages/HomePage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -30,14 +31,16 @@ function PrivateRoute({ children }) {
 
 const router = createBrowserRouter([
   {
+    path: '/',
+    element: <HomePage />
+  },
+  {
     path: '/login',
     element: <LoginPage />
   },
   {
-    path: '/',
     element: <PrivateRoute><AppLayout /></PrivateRoute>,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'products', element: <ProductsPage /> },
       { path: 'customers', element: <CustomersPage /> },

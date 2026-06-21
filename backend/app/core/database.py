@@ -96,6 +96,10 @@ class TenantCollection:
         filter = self._inject_tenant(filter)
         return await self._collection.count_documents(filter, *args, **kwargs)
 
+    async def distinct(self, key, filter=None, *args, **kwargs):
+        filter = self._inject_tenant(filter)
+        return await self._collection.distinct(key, filter, *args, **kwargs)
+
     def aggregate(self, pipeline, *args, **kwargs):
         match_step = {"$match": {"tenant_id": self.tenant_id}}
         new_pipeline = [match_step] + list(pipeline)

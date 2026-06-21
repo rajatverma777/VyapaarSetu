@@ -8,7 +8,7 @@
   }
   * { box-sizing: border-box; }
   body {
-    @apply font-sans antialiased text-gray-900 dark:text-gray-100 bg-[#eef2f6] dark:bg-[#0b0f19] min-h-screen transition-colors duration-300;
+    @apply font-sans antialiased text-gray-100 bg-[#07090e] dark:bg-[#07090e] min-h-screen transition-colors duration-300;
   }
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -351,12 +351,12 @@
 
   /* Optimized Ambient BG Gradients */
   .ambient-bg {
-    background-color: #eef2f6;
-    background-image: radial-gradient(circle at 50% 50%, #f7f9fb 0%, #eef2f6 100%);
+    background-color: #07090e;
+    background-image: radial-gradient(circle at 50% 50%, #121824 0%, #07090e 100%);
   }
   .dark .ambient-bg {
-    background-color: #0b0f19;
-    background-image: radial-gradient(circle at 50% 50%, #131929 0%, #0b0f19 100%);
+    background-color: #07090e;
+    background-image: radial-gradient(circle at 50% 50%, #121824 0%, #07090e 100%);
   }
 }
 

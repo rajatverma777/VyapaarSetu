@@ -3,17 +3,19 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
-  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
+  const [dark] = useState(true)
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem('theme', dark ? 'dark' : 'light')
-  }, [dark])
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  }, [])
 
-  const toggle = () => setDark(d => !d)
+  const toggle = () => {
+    // Keep it dark to match the homepage theme exactly as requested
+  }
 
   return (
-    <ThemeContext.Provider value={{ dark, toggle }}>
+    <ThemeContext.Provider value={{ dark: true, toggle }}>
       {children}
     </ThemeContext.Provider>
   )

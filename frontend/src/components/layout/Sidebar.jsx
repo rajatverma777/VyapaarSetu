@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import {
@@ -51,7 +51,7 @@ export default function Sidebar({ onClose }) {
     <div className="card h-full flex flex-col backdrop-blur-2xl text-gray-900 dark:text-gray-100">
       {/* Logo */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200/40 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
+        <Link to="/" onClick={onClose} className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
           <div className="w-9 h-9 glass-icon-container text-gray-800 dark:text-white shadow-sm flex-shrink-0">
             <Building2 size={16} />
           </div>
@@ -59,7 +59,7 @@ export default function Sidebar({ onClose }) {
             <p className="text-sm font-black leading-tight tracking-tight text-gray-950 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>Vyapaar Setu</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold tracking-wide leading-tight mt-0.5">v1.0.0</p>
           </div>
-        </div>
+        </Link>
         <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-white p-1">
           <X size={18} />
         </button>
