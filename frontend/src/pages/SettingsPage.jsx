@@ -327,15 +327,7 @@ export default function SettingsPage() {
                   placeholder="22AAAAA0000A1Z5" 
                 />
               </FormField>
-              <FormField label="State Code">
-                <input 
-                  className="input font-mono opacity-60 cursor-not-allowed bg-gray-50/10 dark:bg-gray-800/10" 
-                  value={company.state_code} 
-                  disabled 
-                  readOnly 
-                  placeholder="09" 
-                />
-              </FormField>
+
               <FormField label="Mobile">
                 <input className="input" value={company.mobile} onChange={e => setC('mobile', e.target.value)} />
               </FormField>
@@ -353,34 +345,47 @@ export default function SettingsPage() {
                   <textarea className="input" rows={2} value={company.address} onChange={e => setC('address', e.target.value)} />
                 </FormField>
               </div>
-              <FormField label="City"><input className="input" value={company.city} onChange={e => setC('city', e.target.value)} /></FormField>
-              <FormField label="State">
-                <select 
-                  className="select" 
-                  value={company.state} 
-                  onChange={e => {
-                    const stateName = e.target.value
-                    const matched = INDIAN_STATES.find(s => s.name === stateName)
-                    setCompany(prev => {
-                      let updatedGstin = prev.gstin || ''
-                      if (matched && (!prev.gstin || /^\d{2}$/.test(prev.gstin.slice(0, 2)) || prev.gstin.length < 2)) {
-                        updatedGstin = matched.code + updatedGstin.slice(2)
-                      }
-                      return {
-                        ...prev,
-                        state: stateName,
-                        state_code: matched ? matched.code : prev.state_code,
-                        gstin: updatedGstin
-                      }
-                    })
-                  }}
-                >
-                  <option value="">Select State</option>
-                  {INDIAN_STATES.map(s => (
-                    <option key={s.code + '-' + s.name} value={s.name}>{s.name}</option>
-                  ))}
-                </select>
-              </FormField>
+              <div className="sm:col-span-2">
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField label="City"><input className="input" value={company.city} onChange={e => setC('city', e.target.value)} /></FormField>
+                  <FormField label="State">
+                    <select 
+                      className="select" 
+                      value={company.state} 
+                      onChange={e => {
+                        const stateName = e.target.value
+                        const matched = INDIAN_STATES.find(s => s.name === stateName)
+                        setCompany(prev => {
+                          let updatedGstin = prev.gstin || ''
+                          if (matched && (!prev.gstin || /^\d{2}$/.test(prev.gstin.slice(0, 2)) || prev.gstin.length < 2)) {
+                            updatedGstin = matched.code + updatedGstin.slice(2)
+                          }
+                          return {
+                            ...prev,
+                            state: stateName,
+                            state_code: matched ? matched.code : prev.state_code,
+                            gstin: updatedGstin
+                          }
+                        })
+                      }}
+                    >
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map(s => (
+                        <option key={s.code + '-' + s.name} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="State Code">
+                    <input 
+                      className="input font-mono opacity-60 cursor-not-allowed bg-gray-50/10 dark:bg-gray-800/10" 
+                      value={company.state_code} 
+                      disabled 
+                      readOnly 
+                      placeholder="09" 
+                    />
+                  </FormField>
+                </div>
+              </div>
 
               <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Bank Details (for Invoice)</h3>
