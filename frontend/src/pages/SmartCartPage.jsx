@@ -267,10 +267,9 @@ function ProductCard({ product, onAddToCart }) {
 }
 
 
-// ── Inner SmartCart ──────────────────────────────────────────────────────────
 function SmartCartInner() {
   const navigate = useNavigate()
-  const { CART_IDS, activeId, setActiveId, activeCart, addProduct, getCartItemCount } = useCart()
+  const { CART_IDS, activeId, setActiveId, activeCart, addProduct, getCartItemCount, syncCartStock } = useCart()
   const { items, isIgst, discPct } = activeCart
   const totals = calcTotals(items, discPct, isIgst)
 
@@ -320,6 +319,14 @@ function SmartCartInner() {
     loadProductGrid(ctrl.signal)
     return () => ctrl.abort()   // cancels stale call on StrictMode re-run / unmount
   }, [loadProductGrid])
+
+  // Sync cart item stock limits with fresh database stock
+  useEffect(() => {
+    if (gridLoaded && allProducts.length > 0) {
+      syncCartStock(allProducts)
+    }
+  }, [allProducts, gridLoaded, syncCartStock])
+
 
   // Filter product grid by search
   useEffect(() => {
@@ -543,7 +550,7 @@ function SmartCartInner() {
                     </button>
                   </div>
                 ) : (
-                  <table className="table w-full text-sm">
+                  <table className="table w-full text-sm table-fixed">
                     <thead className="sticky top-0 z-10">
                       <tr>
                         <th className="px-3 w-8">#</th>

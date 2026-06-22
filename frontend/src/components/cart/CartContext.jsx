@@ -231,6 +231,39 @@ export function CartProvider({ children }) {
     })
   }, [updateActive])
 
+  // ── Sync cart item stock limits with fresh database stock ────────────────────
+  const syncCartStock = useCallback((productsList) => {
+    if (!productsList || productsList.length === 0) return
+    setCarts(prev => {
+      let changed = false
+      const nextCarts = { ...prev }
+      for (const id of CART_IDS) {
+        const cart = nextCarts[id]
+        if (cart && cart.items.length > 0) {
+          const updatedItems = cart.items.map(item => {
+            const match = productsList.find(p => p.id === item.product_id)
+            if (match) {
+              const latestTotalStock = match.current_stock ?? 0
+              const newMaxStock = item.max_stock != null 
+                ? Math.min(item.max_stock, latestTotalStock)
+                : latestTotalStock
+              const newQty = Math.min(item.qty, newMaxStock)
+              if (item.max_stock !== newMaxStock || item.qty !== newQty) {
+                changed = true
+                return calcItem({ ...item, max_stock: newMaxStock, qty: newQty })
+              }
+            }
+            return item
+          })
+          if (changed) {
+            nextCarts[id] = { ...cart, items: updatedItems }
+          }
+        }
+      }
+      return changed ? nextCarts : prev
+    })
+  }, [])
+
   const value = {
     CART_IDS,
     carts,
@@ -251,9 +284,11 @@ export function CartProvider({ children }) {
     clearCart,
     clearActiveCart,
     clearNewFlag,
+    syncCartStock,
     calcItem,
     calcTotals,
   }
+
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }
