@@ -149,11 +149,22 @@ export default function NewSalePage() {
   }, [items, customer, isIgst, discPct, payMode, paidAmt, notes])
 
   const addProduct = (product) => {
+    const stock = product.current_stock ?? 0
+    if (stock <= 0) {
+      toast.error('Product is out of stock!')
+      return
+    }
     setItems(prev => {
       const existing = prev.findIndex(i => i.product_id === product.id)
       if (existing >= 0) {
         const updated = [...prev]
-        updated[existing] = calcItem({ ...updated[existing], qty: updated[existing].qty + 1 })
+        const maxStock = updated[existing].max_stock ?? 999999
+        if (updated[existing].qty >= maxStock) {
+          toast.error('Cannot add more. Stock limit reached!')
+          return prev
+        }
+        const newQty = Math.min(updated[existing].qty + 1, maxStock)
+        updated[existing] = calcItem({ ...updated[existing], qty: newQty })
         return updated
       }
       return [...prev, calcItem({
@@ -177,7 +188,12 @@ export default function NewSalePage() {
   const updateItem = (idx, key, value) => {
     setItems(prev => {
       const updated = [...prev]
-      updated[idx] = calcItem({ ...updated[idx], [key]: parseFloat(value) || 0, is_igst: isIgst })
+      const item = { ...updated[idx], [key]: parseFloat(value) || 0, is_igst: isIgst }
+      if (key === 'qty') {
+        const maxStock = item.max_stock ?? 999999
+        item.qty = Math.max(0, Math.min(parseFloat(value) || 0, maxStock))
+      }
+      updated[idx] = calcItem(item)
       return updated
     })
   }

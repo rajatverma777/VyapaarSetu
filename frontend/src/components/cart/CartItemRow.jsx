@@ -32,7 +32,10 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
     updateItem(idx, 'qty', num)
   }
 
-  const increment = () => updateItem(idx, 'qty', (item.qty || 0) + 1)
+  const increment = () => {
+    if (item.qty >= (item.max_stock ?? Infinity)) return
+    updateItem(idx, 'qty', (item.qty || 0) + 1)
+  }
   const decrement = () => {
     if (item.qty <= 1) return
     updateItem(idx, 'qty', item.qty - 1)
@@ -112,7 +115,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
           />
           <button
             onClick={increment}
-            disabled={isOverStock}
+            disabled={item.qty >= (item.max_stock ?? Infinity)}
             className="qty-btn w-6 h-6 flex items-center justify-center flex-shrink-0"
           >
             <Plus size={10} />
