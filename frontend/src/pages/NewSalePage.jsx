@@ -191,7 +191,11 @@ export default function NewSalePage() {
       const item = { ...updated[idx], [key]: parseFloat(value) || 0, is_igst: isIgst }
       if (key === 'qty') {
         const maxStock = item.max_stock ?? 999999
-        item.qty = Math.max(0, Math.min(parseFloat(value) || 0, maxStock))
+        const requested = parseFloat(value) || 0
+        if (requested > maxStock) {
+          toast.error(`Stock limit: only ${maxStock} available`)
+        }
+        item.qty = Math.max(0, Math.min(requested, maxStock))
       }
       updated[idx] = calcItem(item)
       return updated
@@ -388,6 +392,7 @@ export default function NewSalePage() {
                       <td>
                         <input
                           type="number" min="0.01" step="0.01"
+                          max={item.max_stock != null ? item.max_stock : undefined}
                           value={item.qty}
                           onChange={e => updateItem(idx, 'qty', e.target.value)}
                           className="input w-20 text-center p-1.5 text-sm"

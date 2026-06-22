@@ -97,7 +97,11 @@ function ProductCard({ product, onAddToCart }) {
 
   const handleIncrease = (e) => {
     e.stopPropagation()
-    if (totalQtyInCart >= (product.current_stock ?? 0)) return
+    if (adding) return // block rapid clicks while async batch fetch is in-flight
+    if (totalQtyInCart >= (product.current_stock ?? 0)) {
+      toast.error(`Stock limit: only ${product.current_stock ?? 0} available`)
+      return
+    }
     handleAdd()
   }
 

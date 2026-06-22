@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import toast from 'react-hot-toast'
 
 const CART_IDS = ['A', 'B', 'C']
 const STORAGE_KEY = 'smart_cart_state'
@@ -128,7 +129,10 @@ export function CartProvider({ children }) {
         const updated = [...c.items]
         const newQty = updated[existing].qty + 1
         const maxStock = batchInfo ? batchInfo.current_stock : product.current_stock
-        if (newQty > (maxStock ?? Infinity)) return { items: c.items } // no change, stock full
+        if (maxStock != null && newQty > maxStock) {
+          toast.error(`Stock limit: only ${maxStock} available`)
+          return { items: c.items } // no change, stock full
+        }
         updated[existing] = calcItem({ ...updated[existing], qty: newQty })
         return { items: updated }
       }
@@ -165,8 +169,14 @@ export function CartProvider({ children }) {
 
       // Stock guard
       if (key === 'qty') {
-        const maxStock = item.max_stock ?? 999999
-        item.qty = Math.max(0, Math.min(parseFloat(value) || 0, maxStock))
+        const maxStock = item.max_stock
+        const requested = parseFloat(value) || 0
+        if (maxStock != null && requested > maxStock) {
+          toast.error(`Stock limit: only ${maxStock} available`)
+          item.qty = maxStock
+        } else {
+          item.qty = Math.max(0, requested)
+        }
       }
       updated[idx] = calcItem(item)
       return { items: updated }

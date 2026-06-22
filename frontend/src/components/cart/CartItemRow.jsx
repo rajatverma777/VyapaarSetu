@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { Trash2, Plus, Minus, ChevronDown, AlertTriangle, Package } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useCart } from './CartContext'
 
 function getStockStatus(qty, maxStock) {
@@ -27,13 +28,21 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
   const isOverStock = item.qty > (item.max_stock ?? Infinity)
 
   const handleQtyChange = (val) => {
-    const num = parseFloat(val) || 0
+    let num = parseFloat(val) || 0
     if (num < 0) return
+    // Clamp to max_stock at component level (belt-and-suspenders with CartContext guard)
+    if (item.max_stock != null && num > item.max_stock) {
+      num = item.max_stock
+      toast.error(`Stock limit: only ${item.max_stock} available`)
+    }
     updateItem(idx, 'qty', num)
   }
 
   const increment = () => {
-    if (item.qty >= (item.max_stock ?? Infinity)) return
+    if (item.max_stock != null && item.qty >= item.max_stock) {
+      toast.error(`Stock limit: only ${item.max_stock} available`)
+      return
+    }
     updateItem(idx, 'qty', (item.qty || 0) + 1)
   }
   const decrement = () => {
@@ -107,6 +116,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
             type="number"
             min="0.01"
             step="1"
+            max={item.max_stock != null ? item.max_stock : undefined}
             value={item.qty}
             onChange={e => handleQtyChange(e.target.value)}
             className={`w-14 text-center text-sm font-bold input py-1 px-1.5 ${
@@ -115,7 +125,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
           />
           <button
             onClick={increment}
-            disabled={item.qty >= (item.max_stock ?? Infinity)}
+            disabled={item.max_stock != null && item.qty >= item.max_stock}
             className="qty-btn w-6 h-6 flex items-center justify-center flex-shrink-0"
           >
             <Plus size={10} />
