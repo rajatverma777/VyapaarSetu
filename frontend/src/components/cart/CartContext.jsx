@@ -127,7 +127,7 @@ export function CartProvider({ children }) {
       if (existing >= 0) {
         const updated = [...c.items]
         const newQty = updated[existing].qty + 1
-        const maxStock = batchInfo ? batchInfo.available_stock : product.current_stock
+        const maxStock = batchInfo ? batchInfo.current_stock : product.current_stock
         if (newQty > (maxStock ?? Infinity)) return { items: c.items } // no change, stock full
         updated[existing] = calcItem({ ...updated[existing], qty: newQty })
         return { items: updated }
@@ -147,7 +147,7 @@ export function CartProvider({ children }) {
         purchase_price: product.purchase_price || 0,
         discount_pct: 0,
         gst_rate:     product.gst_rate || 0,
-        max_stock:    batchInfo ? batchInfo.available_stock : (product.current_stock ?? 999999),
+        max_stock:    batchInfo ? batchInfo.current_stock : (product.current_stock ?? 999999),
         batch_no:     batchInfo?.batch_no || product.batch_no || '',
         expiry_date:  batchInfo?.expiry || product.expiry_date || '',
         is_igst:      isIgst,

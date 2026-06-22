@@ -97,6 +97,7 @@ function ProductCard({ product, onAddToCart }) {
 
   const handleIncrease = (e) => {
     e.stopPropagation()
+    if (totalQtyInCart >= (product.current_stock ?? 0)) return
     handleAdd()
   }
 
@@ -211,7 +212,7 @@ function ProductCard({ product, onAddToCart }) {
             {/* Plus Button */}
             <button
               onClick={handleIncrease}
-              disabled={adding}
+              disabled={adding || totalQtyInCart >= (product.current_stock ?? 0)}
               className="qty-btn w-7 h-7"
               title="Increase quantity"
             >
