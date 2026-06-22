@@ -104,7 +104,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
 
       {/* Qty */}
       <td className="px-2 py-2.5 w-28">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-center gap-1">
           <button
             onClick={decrement}
             disabled={item.qty <= 1}
@@ -154,7 +154,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
           step="0.01"
           value={item.rate}
           onChange={e => updateItem(idx, 'rate', e.target.value)}
-          className="input w-full py-1 px-2 text-sm text-right font-medium"
+          className="input w-full py-1 px-2 text-sm text-center font-medium"
         />
       </td>
 

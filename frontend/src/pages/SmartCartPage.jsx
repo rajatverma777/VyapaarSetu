@@ -557,7 +557,7 @@ function SmartCartInner() {
                         <th className="px-2">Product</th>
                         <th className="px-2 w-12 text-center">Unit</th>
                         <th className="px-2 w-28 text-center">Qty</th>
-                        <th className="px-2 w-24 text-right">Rate ₹</th>
+                        <th className="px-2 w-24 text-center">Rate ₹</th>
                         <th className="px-2 w-16 text-center">Disc%</th>
                         <th className="px-2 w-24 text-right">Taxable</th>
                         <th className="px-2 w-28 text-right">GST</th>
