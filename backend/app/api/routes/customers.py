@@ -116,10 +116,9 @@ async def delete_customer(
     db = Depends(get_database),
     current_user = Depends(get_current_active_user)
 ):
-    await db.customers.update_one(
-        {"_id": ObjectId(customer_id)},
-        {"$set": {"is_active": False}}
-    )
+    result = await db.customers.delete_one({"_id": ObjectId(customer_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
     return {"message": "Customer deleted"}
 
 @router.get("/{customer_id}/ledger")

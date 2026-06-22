@@ -240,10 +240,9 @@ async def bulk_delete_products(
     if not object_ids:
         raise HTTPException(status_code=400, detail="No valid IDs provided")
         
-    await db.products.update_many(
-        {"_id": {"$in": object_ids}},
-        {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
-    )
+    await db.products.delete_many({"_id": {"$in": object_ids}})
+    await db.batches.delete_many({"product_id": {"$in": ids}})
+    await db.stock_logs.delete_many({"product_id": {"$in": ids}})
     return {"message": f"Successfully deleted {len(object_ids)} products"}
 
 @router.get("/barcode/{barcode}")
@@ -647,12 +646,14 @@ async def delete_product(
     db = Depends(get_database),
     current_user = Depends(require_permission("can_manage_products"))
 ):
-    result = await db.products.update_one(
-        {"_id": ObjectId(product_id)},
-        {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
-    )
-    if result.matched_count == 0:
+    result = await db.products.delete_one({"_id": ObjectId(product_id)})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Cascade delete associated batches and stock logs
+    await db.batches.delete_many({"product_id": product_id})
+    await db.stock_logs.delete_many({"product_id": product_id})
+    
     return {"message": "Product deleted"}
 
 @router.post("/bulk-import")

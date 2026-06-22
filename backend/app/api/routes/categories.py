@@ -61,10 +61,10 @@ async def delete_category(
     db = Depends(get_database),
     current_user = Depends(get_current_active_user)
 ):
-    count = await db.products.count_documents({"category_id": cat_id, "is_active": True})
+    count = await db.products.count_documents({"category_id": cat_id})
     if count > 0:
         raise HTTPException(status_code=400, detail=f"Category has {count} active products")
-    await db.categories.update_one(
-        {"_id": ObjectId(cat_id)}, {"$set": {"is_active": False}}
-    )
+    result = await db.categories.delete_one({"_id": ObjectId(cat_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Category not found")
     return {"message": "Category deleted"}

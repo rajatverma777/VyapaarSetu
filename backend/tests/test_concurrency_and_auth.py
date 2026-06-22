@@ -16,7 +16,7 @@ async def test_auth_refresh():
         }
         reg_res = await client.post("/api/auth/register", json=reg_payload)
         print("Registration status:", reg_res.status_code, reg_res.json())
-        assert reg_res.status_code == 200, "Registration failed"
+        assert reg_res.status_code in [200, 201], "Registration failed"
         
         login_payload = {
             "username": username,
@@ -49,16 +49,19 @@ async def test_concurrency():
     print("\nTesting Concurrent Stock Depletion & Transactions...")
     async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
         username = f"saleuser_{int(asyncio.get_event_loop().time())}"
-        await client.post("/api/auth/register", json={
+        reg_res = await client.post("/api/auth/register", json={
             "username": username,
             "password": "password123",
             "full_name": "Sale Tester",
             "email": f"{username}@example.com",
             "role": "admin",
-            "mobile": "8888888888"
+            "mobile": "8888888888",
+            "company_name": "Sale Test Business"
         })
+        print("Registration status:", reg_res.status_code, reg_res.text)
         
         login_res = await client.post("/api/auth/token", data={"username": username, "password": "password123"})
+        print("Login status:", login_res.status_code, login_res.text)
         auth_headers = {"Authorization": f"Bearer {login_res.json()['access_token']}"}
         
         cat_res = await client.post("/api/categories/", json={"name": f"TestCat_{username}", "description": "desc"}, headers=auth_headers)

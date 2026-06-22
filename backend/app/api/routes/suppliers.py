@@ -88,10 +88,9 @@ async def delete_supplier(
     db = Depends(get_database),
     current_user = Depends(get_current_active_user)
 ):
-    await db.suppliers.update_one(
-        {"_id": ObjectId(supplier_id)},
-        {"$set": {"is_active": False}}
-    )
+    result = await db.suppliers.delete_one({"_id": ObjectId(supplier_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Supplier not found")
     return {"message": "Supplier deleted"}
 
 @router.get("/{supplier_id}/ledger")
