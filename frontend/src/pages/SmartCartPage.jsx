@@ -102,8 +102,27 @@ function ProductCard({ product, onAddToCart }) {
       toast.error(`Stock limit: only ${product.current_stock ?? 0} available`)
       return
     }
-    handleAdd()
+
+    // Find indices of items of this product in the active cart
+    const itemIndices = activeCart?.items
+      .map((item, idx) => ({ item, idx }))
+      .filter(({ item }) => item.product_id === product.id) || []
+
+    if (itemIndices.length > 0) {
+      // Product is already in cart, increment the last item synchronously
+      const { item, idx } = itemIndices[itemIndices.length - 1]
+      if (item.max_stock != null && item.qty >= item.max_stock) {
+        toast.error(`Stock limit: only ${item.max_stock} available`)
+        return
+      }
+      updateItem(idx, 'qty', (item.qty || 0) + 1)
+      if ('vibrate' in navigator) navigator.vibrate(30)
+    } else {
+      // First time add, needs batch fetch (asynchronous)
+      handleAdd()
+    }
   }
+
 
   const stock = product.current_stock ?? 0
   const stockDot   = stock <= 0 ? '#f87171' : stock <= 5 ? '#fbbf24' : '#34d399'
