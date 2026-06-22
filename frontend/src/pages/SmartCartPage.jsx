@@ -550,19 +550,19 @@ function SmartCartInner() {
                     </button>
                   </div>
                 ) : (
-                  <table className="table w-full text-sm table-fixed">
+                  <table className="table w-full text-sm">
                     <thead className="sticky top-0 z-10">
                       <tr>
-                        <th className="px-3 w-8">#</th>
-                        <th className="px-2">Product</th>
-                        <th className="px-2 w-12 text-center">Unit</th>
-                        <th className="px-2 w-28 text-center">Qty</th>
-                        <th className="px-2 w-24 text-center">Rate ₹</th>
-                        <th className="px-2 w-16 text-center">Disc%</th>
-                        <th className="px-2 w-24 text-right">Taxable</th>
-                        <th className="px-2 w-28 text-right">GST</th>
-                        <th className="px-2 w-24 text-right">Total</th>
-                        <th className="px-2 w-10"></th>
+                        <th className="px-3 w-8 text-center">#</th>
+                        <th className="px-2 min-w-[180px]">Product</th>
+                        <th className="px-2 w-14 text-center">Unit</th>
+                        <th className="px-2 w-32 text-center">Qty</th>
+                        <th className="px-2 w-28 text-center">Rate ₹</th>
+                        <th className="px-2 w-20 text-center">Disc%</th>
+                        <th className="px-2 w-28 text-right">Taxable</th>
+                        <th className="px-2 w-32 text-right">GST</th>
+                        <th className="px-2 w-28 text-right">Total</th>
+                        <th className="px-2 w-12 text-center"></th>
                       </tr>
                     </thead>
                     <tbody>

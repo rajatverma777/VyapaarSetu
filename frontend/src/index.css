@@ -554,9 +554,9 @@
   }
   .table { @apply w-full text-sm border-collapse; }
   .table thead { @apply bg-white/35 dark:bg-white/5; }
-  .table th { @apply px-4 py-3.5 text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap; }
+  .table th { @apply px-4 py-3.5 text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap align-middle; }
   .table th:not(.text-left):not(.text-right):not(.text-center):not(.text-justify) { text-align: left; }
-  .table td { @apply px-4 py-3.5 text-gray-900 dark:text-gray-100 border-t border-gray-200/20 dark:border-white/5; }
+  .table td { @apply px-4 py-3.5 text-gray-900 dark:text-gray-100 border-t border-gray-200/20 dark:border-white/5 align-middle; }
   .table tr { @apply hover:bg-white/40 dark:hover:bg-white/5 transition-colors duration-150; }
 
   /* Apple Style Badges */
@@ -2257,6 +2257,61 @@ input[type=number] {
 /* Smart cart tab active glow */
 .cart-tab-active {
   box-shadow: 0 0 0 1px rgba(99,102,241,0.3), 0 4px 12px rgba(99,102,241,0.15);
+}
+
+/* ── Flat Compact Table Inputs ────────────────────────────────────────────── */
+.table-input {
+  width: 100%;
+  height: 28px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-align: center;
+  color: #1f2937;
+  background: rgba(243, 244, 246, 0.7);
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  outline: none;
+  transition: all 180ms ease-out;
+}
+
+.dark .table-input {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.table-input:hover {
+  background: rgba(243, 244, 246, 0.95);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.dark .table-input:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.table-input:focus {
+  background: #ffffff;
+  border-color: rgba(99, 102, 241, 0.65);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.dark .table-input:focus {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(99, 102, 241, 0.85);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+/* Remove default spin buttons for clean layout */
+.table-input[type="number"]::-webkit-outer-spin-button,
+.table-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.table-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 
