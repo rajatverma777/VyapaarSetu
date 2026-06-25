@@ -132,14 +132,16 @@ wholesale-erp/
 | **Inventory** | Real-time stock, adjustments, low-stock alerts, stock logs |
 | **Customers** | CRUD, ledger, credit limit, outstanding, transaction history |
 | **Suppliers** | CRUD, ledger, purchase history |
-| **Sales** | GST invoice (CGST/SGST/IGST), barcode billing, PDF generation, payment tracking |
+| **Sales (Smart Cart)** | Multi-cart (A/B/C) billing, FEFO batch selection, barcode scanning, split payments, checkout flow, drafts |
+| **Design / UI** | Translucent Apple iOS liquid glass styling, glass badges, hover gloss sheen, baseline-aligned clean tables |
+| **Database** | MongoDB hard delete cascade system (erasing related batches and stock logs) |
 | **Purchases** | Purchase entry with GST, auto stock update, supplier ledger |
 | **Payments** | Receipt/payment entry, party-wise ledger |
 | **Reports** | Sales, Purchases, GST Summary, HSN-wise, Profit & Loss, Stock, Outstanding |
 | **PDF Invoice** | Professional ReportLab invoice with company logo, bank details, GST breakdown |
 | **Settings** | Company info, GST details, invoice customization, user management |
 | **Backup** | Full MongoDB backup/restore as ZIP |
-| **Dark Mode** | Full dark mode support |
+| **Dark/Light Mode** | Seamless glassmorphic themes in dark/light mode with hot reloading |
 
 ---
 
@@ -148,9 +150,12 @@ wholesale-erp/
 | Key | Action |
 |-----|--------|
 | `F2` | Focus product search in billing |
-| `Enter` | Select first product in dropdown |
-| `Escape` | Close modal |
-| `Ctrl+K` | Global search |
+| `F4` | Focus customer search |
+| `F8` | Save draft (with toast confirmation) |
+| `F9` | Open checkout modal |
+| `Enter` | Select first product / confirm option |
+| `Escape` | Close modal / step back |
+| `Ctrl+K` | Global search focus |
 
 ---
 
@@ -196,6 +201,25 @@ npm run build
 # Or use the preview server
 npm run preview
 ```
+
+---
+
+## 🔄 CI/CD Pipeline
+
+The project features an automated build, lint, and test validation pipeline configured in GitHub Actions:
+
+- **Pipeline File**: [.github/workflows/ci.yml](.github/workflows/ci.yml)
+- **Execution Triggers**: Runs automatically on every push or pull request to the `main` branch.
+
+### Pipeline Stages
+1. **Frontend Build & Validate**:
+   - Sets up Node.js v18 with `npm` caching matched to `package-lock.json`.
+   - Runs `npm install` and `npm run build` to confirm Vite assets compile without any type, structure, or stylesheet compilation errors.
+2. **Backend Test Suite (with MongoDB service)**:
+   - Sets up Python 3.10 with standard library dependencies.
+   - Spins up a live MongoDB v6.0 container inside GitHub Actions, binding to port `27017` to replicate the local database.
+   - Installs requirements (`requirements.txt`) and test frameworks (`pytest`, `pytest-asyncio`, `httpx`).
+   - Runs the backend test suite (`pytest tests/ -o asyncio_mode=auto`) to verify authentication, concurrency, hard delete cascades, and RBAC endpoints.
 
 ---
 
