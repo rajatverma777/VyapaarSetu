@@ -18,7 +18,7 @@ import { Table as TiptapTable } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { TableCell } from '@tiptap/extension-table-cell'
-import { documentsAPI, settingsAPI } from '../../services/api'
+import { documentsAPI, settingsAPI, customerAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import PrintLayout from '../../components/print/PrintLayout'
 import { ConfirmDialog } from '../../components/ui'
@@ -172,6 +172,36 @@ export default function LetterheadPage() {
   const docRef = useRef(doc)
   const isEditRef = useRef(isEdit)
   const bypassBlockerRef = useRef(false)
+
+  const [customerSuggestions, setCustomerSuggestions] = useState([])
+  const [showCustSuggestions, setShowCustSuggestions] = useState(false)
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.customer-suggest-container')) {
+        setShowCustSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  const handleCustomerChange = async (val) => {
+    setField('customer_name', val)
+    if (!val.trim()) {
+      setCustomerSuggestions([])
+      setShowCustSuggestions(false)
+      return
+    }
+    try {
+      const { data } = await customerAPI.list({ search: val, limit: 10 })
+      setCustomerSuggestions(data.items || [])
+      setShowCustSuggestions(true)
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   docRef.current = doc
   isEditRef.current = isEdit
@@ -675,13 +705,39 @@ export default function LetterheadPage() {
                 <div className="card p-4 space-y-4">
                   <div>
                     <label className="form-label">Customer / To</label>
-                    <input
-                      className="input"
-                      placeholder="Customer, Hospital, Doctor…"
-                      value={doc.customer_name}
-                      onChange={e => setField('customer_name', e.target.value)}
-                      id="doc-customer-input"
-                    />
+                    <div className="customer-suggest-container relative">
+                      <input
+                        className="input"
+                        placeholder="Customer, Hospital, Doctor…"
+                        value={doc.customer_name || ''}
+                        onChange={e => handleCustomerChange(e.target.value)}
+                        onFocus={() => {
+                          if (doc.customer_name && doc.customer_name.trim()) {
+                            handleCustomerChange(doc.customer_name)
+                          }
+                        }}
+                        id="doc-customer-input"
+                        autoComplete="off"
+                      />
+                      {showCustSuggestions && customerSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-60 overflow-y-auto">
+                          {customerSuggestions.map((cust) => (
+                            <button
+                              key={cust.id}
+                              type="button"
+                              onClick={() => {
+                                setField('customer_name', cust.name)
+                                setShowCustSuggestions(false)
+                              }}
+                              className="w-full px-4 py-2 text-left text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex justify-between border-b border-gray-100 dark:border-gray-700/50 last:border-0"
+                            >
+                              <span className="font-medium text-gray-900 dark:text-white">{cust.name}</span>
+                              {cust.mobile && <span className="text-gray-500 text-[10px] ml-2">{cust.mobile}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Reference No.</label>
