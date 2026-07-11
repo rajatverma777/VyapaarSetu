@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     INVOICE_DIR: str = "static/invoices"
     EXPORT_DIR: str = "static/exports"
     BACKUP_DIR: str = "static/backups"
+    DOCS_DIR: str = "static/documents"
 
     # Gemini
     GEMINI_API_KEY: Optional[str] = None

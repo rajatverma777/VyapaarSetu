@@ -238,7 +238,7 @@ async def delete_document(
     if ref:
         from app.core.config import settings
         filename = f"Letter-{ref.replace('/', '-')}.pdf"
-        filepath = os.path.join(settings.DOCS_DIR, filename)
+        filepath = os.path.abspath(os.path.join(settings.DOCS_DIR, filename))
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)

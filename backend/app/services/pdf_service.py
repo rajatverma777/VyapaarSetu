@@ -1472,7 +1472,7 @@ import io
 import asyncio
 from reportlab.lib.pagesizes import A4
 
-_LETTERHEAD_DIR = os.path.join(os.path.dirname(__file__), "..", "static", "documents")
+_LETTERHEAD_DIR = os.path.abspath(settings.DOCS_DIR)
 
 
 def _parse_html_to_story(content: str, f: str, fb: str, page_width: float, font_size: int = 10) -> list:
