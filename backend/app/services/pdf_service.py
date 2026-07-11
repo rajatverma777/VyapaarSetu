@@ -1037,7 +1037,7 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
         grad.wrap(CW, 2.0)
         grad.drawOn(canvas, LM, 1.0 * mm)
         
-        # Parse invoice generation time from sale_date
+        # Parse invoice generation time from sale_date (stored in UTC)
         sale_date_val = sale.get("sale_date") or sale.get("created_at") or sale.get("date")
         invoice_time = None
         if sale_date_val:
@@ -1049,11 +1049,15 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
             except Exception:
                 pass
         if not invoice_time:
-            invoice_time = datetime.now()
+            invoice_time = datetime.utcnow()
+
+        # Convert UTC to IST (UTC + 5:30) for local display
+        from datetime import timedelta
+        invoice_time_ist = invoice_time + timedelta(hours=5, minutes=30)
 
         # Computer generated timestamp at y = 5.0 * mm (sits above the gradient bar)
         cg_p = Paragraph(
-            f"Computer generated invoice | {invoice_time.strftime('%d-%m-%Y %H:%M')}",
+            f"Computer generated invoice | {invoice_time_ist.strftime('%d-%m-%Y %H:%M')}",
             ParagraphStyle("GN_canvas", fontName=f, fontSize=5.5, textColor=SILVER, alignment=TA_CENTER)
         )
         cg_p.wrap(CW, 8)
@@ -1463,7 +1467,7 @@ async def generate_return_note(ret: dict, company: dict) -> str:
         grad.wrap(CW, 2.0)
         grad.drawOn(canvas, LM, 1.0 * mm)
 
-        # Parse return note generation time from ret object
+        # Parse return note generation time from ret object (stored in UTC)
         ret_date_val = ret.get("created_at") or ret.get("date")
         return_time = None
         if ret_date_val:
@@ -1475,10 +1479,14 @@ async def generate_return_note(ret: dict, company: dict) -> str:
             except Exception:
                 pass
         if not return_time:
-            return_time = datetime.now()
+            return_time = datetime.utcnow()
+
+        # Convert UTC to IST (UTC + 5:30) for local display
+        from datetime import timedelta
+        return_time_ist = return_time + timedelta(hours=5, minutes=30)
 
         cg_p = Paragraph(
-            f"Computer generated return document | {return_time.strftime('%d-%m-%Y %H:%M')}",
+            f"Computer generated return document | {return_time_ist.strftime('%d-%m-%Y %H:%M')}",
             ParagraphStyle("GN_canvas_ret", fontName=f, fontSize=5.5, textColor=SILVER, alignment=TA_CENTER)
         )
         cg_p.wrap(CW, 8)
