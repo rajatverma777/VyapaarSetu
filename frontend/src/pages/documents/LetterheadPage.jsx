@@ -171,6 +171,7 @@ export default function LetterheadPage() {
   const autoSaveRef = useRef(null)
   const docRef = useRef(doc)
   const isEditRef = useRef(isEdit)
+  const bypassBlockerRef = useRef(false)
 
   docRef.current = doc
   isEditRef.current = isEdit
@@ -246,8 +247,13 @@ export default function LetterheadPage() {
   // ── Unsaved changes blocker ───────────────────────────────────────────────────
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      hasChanges && currentLocation.pathname !== nextLocation.pathname
+      hasChanges && !bypassBlockerRef.current && currentLocation.pathname !== nextLocation.pathname
   )
+
+  // Reset bypass blocker ref when id changes (e.g. after navigating from new to edit)
+  useEffect(() => {
+    bypassBlockerRef.current = false
+  }, [id])
 
   // Warn before page unload
   useEffect(() => {
@@ -355,6 +361,7 @@ export default function LetterheadPage() {
     if (!doc.subject.trim()) return toast.error('Subject is required')
 
     setSaving(true)
+    bypassBlockerRef.current = true
     const payload = {
       ...doc,
       title: titleToSave,
@@ -366,6 +373,8 @@ export default function LetterheadPage() {
       if (isEdit) {
         await documentsAPI.update(id, payload)
         toast.success('Document saved')
+        setHasChanges(false)
+        bypassBlockerRef.current = false
       } else {
         const { data } = await documentsAPI.create(payload)
         toast.success(`Created — ${data.reference}`)
@@ -373,9 +382,9 @@ export default function LetterheadPage() {
         navigate(`/documents/${data.id}`, { replace: true })
         return
       }
-      setHasChanges(false)
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Save failed')
+      bypassBlockerRef.current = false
     } finally {
       setSaving(false)
     }
@@ -421,6 +430,7 @@ export default function LetterheadPage() {
   // ── Delete ────────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!window.confirm('Delete this document?')) return
+    bypassBlockerRef.current = true
     try {
       await documentsAPI.delete(id)
       toast.success('Document deleted')
@@ -428,6 +438,7 @@ export default function LetterheadPage() {
       navigate('/documents', { replace: true })
     } catch {
       toast.error('Delete failed')
+      bypassBlockerRef.current = false
     }
   }
 
