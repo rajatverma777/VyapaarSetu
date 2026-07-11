@@ -642,15 +642,6 @@ export default function LetterheadPage() {
                 >
                   <Copy size={13} />
                 </button>
-                {isAdmin && (
-                  <button
-                    onClick={handleDelete}
-                    className="icon-btn text-red-400 hover:text-red-650"
-                    title="Archive"
-                  >
-                    <Archive size={14} />
-                  </button>
-                )}
               </>
             )}
           </div>
