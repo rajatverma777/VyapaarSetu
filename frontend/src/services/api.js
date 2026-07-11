@@ -288,3 +288,24 @@ export const aiImportAPI = {
   analyze: (items) => api.post('/ai-import/analyze', items),
   submit: (data) => api.post('/ai-import/submit', data),
 }
+
+// ── Documents (Letterhead) ────────────────────────────────────────────────────
+export const documentsAPI = {
+  list:              (params) => api.get('/documents/', { params }),
+  getById:           (id)     => api.get(`/documents/${id}`),
+  create:            (data)   => api.post('/documents/', data),
+  update:            (id, d)  => api.put(`/documents/${id}`, d),
+  delete:            (id)     => api.delete(`/documents/${id}`),
+  duplicate:         (id)     => api.post(`/documents/${id}/duplicate`),
+  recordPrint:       (id)     => api.post(`/documents/${id}/record-print`),
+  recordPdfDownload: (id)     => api.post(`/documents/${id}/record-pdf-download`),
+  getPdfBlob: async (id) => {
+    const token = localStorage.getItem('token')
+    const resp = await fetch(`${apiURL}/documents/${id}/pdf`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!resp.ok) throw new Error('Failed to fetch document PDF')
+    const blob = await resp.blob()
+    return URL.createObjectURL(blob)
+  }
+}

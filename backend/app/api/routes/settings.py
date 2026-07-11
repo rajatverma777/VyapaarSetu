@@ -10,6 +10,7 @@ router = APIRouter()
 class CompanySettings(BaseModel):
     company_name: str
     gstin: Optional[str] = None
+    drug_license: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -24,8 +25,12 @@ class CompanySettings(BaseModel):
     invoice_prefix: str = "INV"
     invoice_terms: Optional[str] = None
     invoice_footer: Optional[str] = None
+    document_prefix: str = "DOC"
     logo_base64: Optional[str] = None
     watermark_base64: Optional[str] = None
+    watermark_enabled: bool = True
+    signature_base64: Optional[str] = None
+    seal_base64: Optional[str] = None
 
 @router.get("/company")
 async def get_company_settings(

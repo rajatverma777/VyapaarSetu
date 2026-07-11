@@ -28,6 +28,8 @@ const NAV_ITEMS = [
   { to: '/traceability', icon: Activity,      label: 'Traceability' },
   { to: '/reports',    icon: BarChart3,       label: 'Reports' },
   { to: '/settings',   icon: Settings,        label: 'Settings' },
+  { divider: true, label: 'DOCUMENTS' },
+  { to: '/documents',  icon: FileText,        label: 'Letterhead' },
 ]
 
 export default function Sidebar({ onClose }) {
@@ -106,6 +108,10 @@ export default function Sidebar({ onClose }) {
             }
             if (item.to === '/reports') {
               return !!(permissions.can_view_sales || permissions.can_view_purchases)
+            }
+            if (item.to === '/documents') {
+              return !!(permissions.can_create_sales || permissions.can_view_sales ||
+                        permissions.can_manage_settings)
             }
             return true
           }

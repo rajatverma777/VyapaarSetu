@@ -24,6 +24,8 @@ import SettingsPage   from './pages/SettingsPage'
 import ReturnsPage      from './pages/ReturnsPage'
 import TraceabilityPage from './pages/TraceabilityPage'
 import HomePage         from './pages/HomePage'
+import DocumentsListPage from './pages/documents/DocumentsListPage'
+import LetterheadPage    from './pages/documents/LetterheadPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -55,7 +57,10 @@ const router = createBrowserRouter([
       { path: 'traceability', element: <TraceabilityPage /> },
       { path: 'payments', element: <PaymentsPage /> },
       { path: 'reports', element: <ReportsPage /> },
-      { path: 'settings', element: <SettingsPage /> }
+      { path: 'settings', element: <SettingsPage /> },
+      { path: 'documents', element: <DocumentsListPage /> },
+      { path: 'documents/new', element: <LetterheadPage /> },
+      { path: 'documents/:id', element: <LetterheadPage /> },
     ]
   }
 ])

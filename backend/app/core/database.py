@@ -168,7 +168,7 @@ async def create_indexes():
     collections_to_index = [
         "products", "batches", "customers", "suppliers", "sales", 
         "purchases", "payments", "ledger", "stock_logs", "categories",
-        "ocr_tasks"
+        "ocr_tasks", "documents"
     ]
     for col in collections_to_index:
         await db[col].create_index("tenant_id")
@@ -227,5 +227,15 @@ async def create_indexes():
     # Users indexes
     await db.users.create_index("username", unique=True)
     await db.users.create_index("email", unique=True, sparse=True)
+
+    # Documents indexes
+    await db.documents.create_index("reference", sparse=True)
+    await db.documents.create_index("status")
+    await db.documents.create_index("created_at")
+    await db.documents.create_index([("customer_name", 1), ("created_at", -1)])
+    await db.documents.create_index(
+        [("customer_name", "text"), ("subject", "text"),
+         ("reference", "text"), ("title", "text")]
+    )
 
     logger.info("Database indexes created")

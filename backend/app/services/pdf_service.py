@@ -1007,6 +1007,30 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
         )
         sig_p.wrap(60 * mm, 15 * mm)
         sig_p.drawOn(canvas, W - RM - 60 * mm, 4.0 * mm)
+
+        # Decode and draw signature image if available
+        sig_b64 = company.get("signature_base64", "")
+        if sig_b64:
+            try:
+                import base64
+                import io
+                from reportlab.lib.utils import ImageReader
+                b64_data = sig_b64.split(",")[-1] if "," in sig_b64 else sig_b64
+                img_bytes = base64.b64decode(b64_data)
+                img_bytes = make_white_transparent(img_bytes)
+                sig_img_reader = ImageReader(io.BytesIO(img_bytes))
+                
+                sig_w = 32 * mm
+                sig_h = 9 * mm
+                sig_x = W - RM - sig_w
+                sig_y = 10 * mm  # Sits beautifully above the text and below the line
+                canvas.drawImage(
+                    sig_img_reader, sig_x, sig_y,
+                    width=sig_w, height=sig_h,
+                    mask='auto', preserveAspectRatio=True,
+                )
+            except Exception as e:
+                print(f"Failed to draw signature in invoice PDF: {e}")
         
         # Bottom gradient bar at y = 1.0 * mm (absolute bottom area)
         grad = GradientRect(CW, 2.0, GLASS_ACCENT, TEAL)
@@ -1397,6 +1421,30 @@ async def generate_return_note(ret: dict, company: dict) -> str:
         sig_p.wrap(60 * mm, 15 * mm)
         sig_p.drawOn(canvas, W - RM - 60 * mm, 4.0 * mm)
 
+        # Decode and draw signature image if available
+        sig_b64 = company.get("signature_base64", "")
+        if sig_b64:
+            try:
+                import base64
+                import io
+                from reportlab.lib.utils import ImageReader
+                b64_data = sig_b64.split(",")[-1] if "," in sig_b64 else sig_b64
+                img_bytes = base64.b64decode(b64_data)
+                img_bytes = make_white_transparent(img_bytes)
+                sig_img_reader = ImageReader(io.BytesIO(img_bytes))
+                
+                sig_w = 32 * mm
+                sig_h = 9 * mm
+                sig_x = W - RM - sig_w
+                sig_y = 10 * mm  # Sits beautifully above the text and below the line
+                canvas.drawImage(
+                    sig_img_reader, sig_x, sig_y,
+                    width=sig_w, height=sig_h,
+                    mask='auto', preserveAspectRatio=True,
+                )
+            except Exception as e:
+                print(f"Failed to draw signature in credit/debit note PDF: {e}")
+
         grad = GradientRect(CW, 2.0, GLASS_ACCENT, TEAL)
         grad.wrap(CW, 2.0)
         grad.drawOn(canvas, LM, 1.0 * mm)
@@ -1411,3 +1459,561 @@ async def generate_return_note(ret: dict, company: dict) -> str:
 
     doc.build(story)
     return filepath
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COMPANY LETTERHEAD PDF GENERATOR
+# ══════════════════════════════════════════════════════════════════════════════
+
+import html
+import re
+import base64
+import io
+import asyncio
+from reportlab.lib.pagesizes import A4
+
+_LETTERHEAD_DIR = os.path.join(os.path.dirname(__file__), "..", "static", "documents")
+
+
+def _parse_html_to_story(content: str, f: str, fb: str, page_width: float, font_size: int = 10) -> list:
+    """
+    Convert basic HTML rich text → ReportLab Paragraph / Table flowables.
+    Handles: <p>, <b>, <strong>, <i>, <em>, <u>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <th>, <br>.
+    """
+    from reportlab.platypus import ListFlowable, ListItem
+
+    story_items = []
+    body_style = ParagraphStyle(
+        "LH_Body", fontName=f, fontSize=font_size, leading=int(font_size * 1.5), textColor=NAVY,
+        spaceBefore=4, spaceAfter=4,
+    )
+    bold_style = ParagraphStyle(
+        "LH_Bold", fontName=fb, fontSize=font_size, leading=int(font_size * 1.5), textColor=NAVY,
+        spaceBefore=4, spaceAfter=4,
+    )
+
+    # Convert <span style="font-size: XXpt"> to <font size="XX"> to preserve individual sizes
+    span_fs_pattern = re.compile(r'<span[^>]*style=["\'][^"\']*font-size:\s*(\d+)(?:pt|px|em)?[^"\']*["\'][^>]*>(.*?)</span>', re.DOTALL | re.IGNORECASE)
+    old_content = ""
+    while old_content != content:
+        old_content = content
+        content = span_fs_pattern.sub(r'<font size="\1">\2</font>', content)
+
+    # Clean up content — normalize tags
+    content = re.sub(r'<br\s*/?>', '\n', content)
+    content = re.sub(r'<p[^>]*>', '', content)
+    content = re.sub(r'</p>', '\n', content)
+    content = re.sub(r'<(div|span)[^>]*>', '', content)
+    content = re.sub(r'</(div|span)>', '', content)
+
+    # Extract and replace tables first
+    table_pattern = re.compile(r'<table[^>]*>(.*?)</table>', re.DOTALL | re.IGNORECASE)
+    ul_pattern = re.compile(r'<ul[^>]*>(.*?)</ul>', re.DOTALL | re.IGNORECASE)
+    ol_pattern = re.compile(r'<ol[^>]*>(.*?)</ol>', re.DOTALL | re.IGNORECASE)
+    li_pattern = re.compile(r'<li[^>]*>(.*?)</li>', re.DOTALL | re.IGNORECASE)
+    tr_pattern = re.compile(r'<tr[^>]*>(.*?)</tr>', re.DOTALL | re.IGNORECASE)
+    td_pattern = re.compile(r'<t[dh][^>]*>(.*?)</t[dh]>', re.DOTALL | re.IGNORECASE)
+
+    # Split content on table boundaries
+    parts = re.split(r'(<table[^>]*>.*?</table>|<ul[^>]*>.*?</ul>|<ol[^>]*>.*?</ol>)',
+                     content, flags=re.DOTALL | re.IGNORECASE)
+
+    for part in parts:
+        part_stripped = part.strip()
+        if not part_stripped:
+            continue
+
+        # Handle tables
+        if re.match(r'<table', part_stripped, re.IGNORECASE):
+            rows_data = []
+            for row_match in tr_pattern.finditer(part_stripped):
+                row_html = row_match.group(1)
+                cells = [re.sub(r'<[^>]+>', '', td_match.group(1)).strip()
+                         for td_match in td_pattern.finditer(row_html)]
+                if cells:
+                    rows_data.append(cells)
+
+            if rows_data:
+                # Normalize row widths
+                max_cols = max(len(r) for r in rows_data)
+                for row in rows_data:
+                    while len(row) < max_cols:
+                        row.append("")
+
+                col_w = [(page_width - 20) / max_cols] * max_cols
+                tbl_data = [
+                    [Paragraph(cell, body_style) for cell in row]
+                    for row in rows_data
+                ]
+                tbl = Table(tbl_data, colWidths=col_w)
+                tbl_style = TableStyle([
+                    ('GRID', (0, 0), (-1, -1), 0.5, GLASS_BORDER),
+                    ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+                    ('FONTNAME', (0, 0), (-1, 0), fb),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, LIGHT_BG]),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ])
+                tbl.setStyle(tbl_style)
+                story_items.append(tbl)
+                story_items.append(Spacer(1, 3 * mm))
+            continue
+
+        # Handle unordered lists
+        if re.match(r'<ul', part_stripped, re.IGNORECASE):
+            items = li_pattern.findall(part_stripped)
+            bullet_items = []
+            for item_text in items:
+                clean = re.sub(r'<[^>]+>', '', item_text).strip()
+                bullet_items.append(
+                    ListItem(Paragraph(clean, body_style), bulletColor=GLASS_ACCENT, leftIndent=15)
+                )
+            if bullet_items:
+                story_items.append(ListFlowable(bullet_items, bulletType='bullet',
+                                                leftIndent=10, spaceBefore=4, spaceAfter=4))
+            continue
+
+        # Handle ordered lists
+        if re.match(r'<ol', part_stripped, re.IGNORECASE):
+            items = li_pattern.findall(part_stripped)
+            num_items = []
+            for item_text in items:
+                clean = re.sub(r'<[^>]+>', '', item_text).strip()
+                num_items.append(
+                    ListItem(Paragraph(clean, body_style), leftIndent=15)
+                )
+            if num_items:
+                story_items.append(ListFlowable(num_items, bulletType='1',
+                                                leftIndent=10, spaceBefore=4, spaceAfter=4))
+            continue
+
+        # Plain paragraphs / inline text — preserve inline bold/italic tags for Paragraph
+        # Split on newlines to create paragraph breaks
+        lines = [l for l in part_stripped.split('\n') if l.strip()]
+        for line in lines:
+            # Convert HTML tags to ReportLab XML equivalents
+            line_clean = (line
+                .replace('<strong>', '<b>').replace('</strong>', '</b>')
+                .replace('<em>', '<i>').replace('</em>', '</i>')
+                .replace('<s>', '<strike>').replace('</s>', '</strike>')
+                .replace('<del>', '<strike>').replace('</del>', '</strike>')
+            )
+            # Strip remaining unrecognized tags but keep <b> <i> <u> and <font>
+            line_clean = re.sub(r'<(?!/?[biuBIU]|/?strike|/?br|/?font)[^>]+>', '', line_clean)
+            line_clean = line_clean.strip()
+            if line_clean:
+                story_items.append(Paragraph(line_clean, body_style))
+
+    return story_items
+
+
+def make_white_transparent(img_bytes: bytes) -> bytes:
+    """
+    Remove white/light background from an image using Pillow.
+    Uses a grayscale inversion mask to create a clean, anti-aliased transparency channel.
+    """
+    try:
+        from PIL import Image, ImageOps
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+        r, g, b, a = img.split()
+        
+        # Convert to grayscale and invert so white becomes transparent, black becomes opaque
+        gray = img.convert("L")
+        alpha = ImageOps.invert(gray)
+        
+        # Blend with original alpha mask if it exists
+        if a:
+            alpha = Image.min(alpha, a)
+            
+        transparent_img = Image.merge("RGBA", (r, g, b, alpha))
+        
+        buf = io.BytesIO()
+        transparent_img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception:
+        return img_bytes
+
+
+async def generate_letterhead_pdf(doc_data: dict, settings_data: dict) -> str:
+    """
+    Generate a professional A4 company letterhead PDF.
+    Shares brand palette and font registration from invoice generator.
+    """
+    os.makedirs(_LETTERHEAD_DIR, exist_ok=True)
+    ref = doc_data.get("reference", "LETTER")
+    filepath = os.path.join(_LETTERHEAD_DIR, f"Letter-{ref}.pdf")
+
+    _register_fonts()
+    f, fb = _R(), _R(True)
+
+    # ── Page dimensions ────────────────────────────────────────────────────────
+    W, H = A4
+    margin_top    = float(doc_data.get("margin_top", 25)) * mm
+    margin_right  = float(doc_data.get("margin_right", 20)) * mm
+    margin_bottom = float(doc_data.get("margin_bottom", 25)) * mm
+    margin_left   = float(doc_data.get("margin_left", 20)) * mm
+    CW = W - margin_left - margin_right
+
+    # ── Company info ───────────────────────────────────────────────────────────
+    company_name  = settings_data.get("company_name", "Company Name")
+    gstin         = settings_data.get("gstin", "")
+    drug_license  = settings_data.get("drug_license", "")
+    address       = settings_data.get("address", "")
+    city          = settings_data.get("city", "")
+    state         = settings_data.get("state", "")
+    pincode       = settings_data.get("pincode", "")
+    mobile        = settings_data.get("mobile", "")
+    email         = settings_data.get("email", "")
+    website       = settings_data.get("website", "")
+    logo_b64      = settings_data.get("logo_base64", "")
+    wm_b64        = settings_data.get("watermark_base64", "") or logo_b64
+    sig_b64       = settings_data.get("signature_base64", "")
+    show_wm       = doc_data.get("show_watermark", True) and settings_data.get("watermark_enabled", True)
+    show_header   = doc_data.get("show_header", True)
+    show_footer   = doc_data.get("show_footer", True)
+    show_sig      = doc_data.get("show_signature", True)
+    show_pages    = doc_data.get("show_page_numbers", True)
+    is_confidential = doc_data.get("is_confidential", False)
+    footer_notes  = doc_data.get("footer_notes", "")
+
+    # Decode watermark image if available
+    wm_img_reader = None
+    if show_wm and wm_b64:
+        try:
+            from reportlab.lib.utils import ImageReader
+            b64_data = wm_b64.split(",")[-1] if "," in wm_b64 else wm_b64
+            img_bytes = base64.b64decode(b64_data)
+            img_bytes = make_white_transparent(img_bytes)
+            wm_img_reader = ImageReader(io.BytesIO(img_bytes))
+        except Exception:
+            wm_img_reader = None
+
+    # Decode logo image if available
+    logo_img_reader = None
+    if logo_b64:
+        try:
+            from reportlab.lib.utils import ImageReader
+            b64_data = logo_b64.split(",")[-1] if "," in logo_b64 else logo_b64
+            img_bytes = base64.b64decode(b64_data)
+            logo_img_reader = ImageReader(io.BytesIO(img_bytes))
+        except Exception:
+            logo_img_reader = None
+
+    # Decode signature image if available
+    sig_img_reader = None
+    if show_sig and sig_b64:
+        try:
+            from reportlab.lib.utils import ImageReader
+            b64_data = sig_b64.split(",")[-1] if "," in sig_b64 else sig_b64
+            img_bytes = base64.b64decode(b64_data)
+            img_bytes = make_white_transparent(img_bytes)
+            sig_img_reader = ImageReader(io.BytesIO(img_bytes))
+        except Exception:
+            sig_img_reader = None
+
+    # ── QR Code (company website) ──────────────────────────────────────────────
+    qr_img_reader = None
+    if show_footer and website:
+        try:
+            import qrcode
+            from reportlab.lib.utils import ImageReader
+            qr = qrcode.QRCode(version=1, box_size=4, border=1)
+            qr.add_data(website)
+            qr.make(fit=True)
+            qr_pil = qr.make_image(fill_color="black", back_color="white")
+            buf = io.BytesIO()
+            qr_pil.save(buf, format="PNG")
+            buf.seek(0)
+            qr_img_reader = ImageReader(buf)
+        except Exception:
+            qr_img_reader = None
+
+    # ── Header height estimate ─────────────────────────────────────────────────
+    HEADER_H = 28 * mm if show_header else 0
+    FOOTER_H = 22 * mm if show_footer else 0
+    frame_top    = H - margin_top - HEADER_H - 3 * mm
+    frame_height = frame_top - margin_bottom - FOOTER_H
+
+    # ── Page decorations callback ──────────────────────────────────────────────
+    def draw_page_decorations(canvas, doc_obj):
+        canvas.saveState()
+
+        # Watermark (extremely subtle, elegant 3% opacity)
+        if wm_img_reader:
+            canvas.saveState()
+            canvas.setFillAlpha(0.03)
+            wm_size = min(W, H) * 0.55
+            canvas.drawImage(
+                wm_img_reader,
+                (W - wm_size) / 2, (H - wm_size) / 2,
+                width=wm_size, height=wm_size,
+                mask='auto', preserveAspectRatio=True,
+            )
+            canvas.restoreState()
+
+        # CONFIDENTIAL diagonal overlay
+        if is_confidential:
+            canvas.saveState()
+            canvas.setFillColorRGB(0.8, 0, 0, alpha=0.08)
+            canvas.setFont(fb, 60)
+            canvas.translate(W / 2, H / 2)
+            canvas.rotate(45)
+            canvas.drawCentredString(0, 0, "CONFIDENTIAL")
+            canvas.restoreState()
+
+        # Company Header (two-column design)
+        if show_header:
+            hx = margin_left
+            hy = H - margin_top - HEADER_H
+            hw = CW
+
+            # Header divider line (thin gray #cbd5e1)
+            canvas.setStrokeColor(colors.HexColor("#cbd5e1"))
+            canvas.setLineWidth(0.75)
+            canvas.line(hx, hy, hx + hw, hy)
+
+            # Left Side: Logo & Brand details
+            logo_h = 14 * mm
+            logo_w = 0
+            if logo_img_reader:
+                logo_y = hy + (HEADER_H - logo_h) / 2
+                canvas.drawImage(
+                    logo_img_reader, hx, logo_y,
+                    width=22 * mm, height=logo_h,
+                    mask='auto', preserveAspectRatio=True,
+                )
+                logo_w = 22 * mm + 4 * mm
+
+            # Company name
+            name_x = hx + logo_w
+            name_y = hy + HEADER_H - 8 * mm
+            canvas.setFont(fb, 16)
+            canvas.setFillColor(colors.HexColor("#0f172a")) # Slate-900
+            canvas.drawString(name_x, name_y, company_name)
+
+            # Company address
+            addr_parts = [p for p in [address, city, state, pincode] if p]
+            addr_line = ", ".join(addr_parts)
+            if addr_line:
+                canvas.setFont(f, 8.5)
+                canvas.setFillColor(colors.HexColor("#475569")) # Slate-600
+                canvas.drawString(name_x, name_y - 6 * mm, addr_line)
+
+            # Right Side: Contact info & licenses (right-aligned stacks)
+            rx = W - margin_right
+            ry = hy + HEADER_H - 6 * mm
+            canvas.setFont(f, 7.5)
+            canvas.setFillColor(colors.HexColor("#64748b"))
+
+            contact_lines = []
+            if mobile:
+                contact_lines.append(("T:", mobile))
+            if email:
+                contact_lines.append(("E:", email))
+            if website:
+                contact_lines.append(("W:", website))
+
+            for label, val in contact_lines:
+                canvas.setFont(fb, 7.5)
+                canvas.setFillColor(colors.HexColor("#94a3b8"))
+                lbl_w = canvas.stringWidth(f"{label} ", fb, 7.5)
+                val_w = canvas.stringWidth(val, f, 7.5)
+                canvas.drawString(rx - lbl_w - val_w, ry, label)
+                canvas.setFont(f, 7.5)
+                canvas.setFillColor(colors.HexColor("#64748b"))
+                canvas.drawString(rx - val_w, ry, val)
+                ry -= 4.5 * mm
+
+            # Add contact/license separator line & license detail block
+            if gstin or drug_license:
+                ry -= 1 * mm
+                canvas.setStrokeColor(colors.HexColor("#e2e8f0"))
+                canvas.setLineWidth(0.5)
+                canvas.line(rx - 45 * mm, ry + 3 * mm, rx, ry + 3 * mm)
+
+                canvas.setFont(f, 7)
+                canvas.setFillColor(colors.HexColor("#94a3b8"))
+                if gstin:
+                    canvas.drawRightString(rx, ry, f"GSTIN: {gstin}")
+                    ry -= 4 * mm
+                if drug_license:
+                    canvas.drawRightString(rx, ry, f"DL No: {drug_license}")
+
+        # Footer
+        if show_footer:
+            fy = margin_bottom
+            canvas.setStrokeColor(GLASS_BORDER)
+            canvas.setLineWidth(0.4)
+            canvas.line(margin_left, fy + FOOTER_H - 2 * mm, W - margin_right, fy + FOOTER_H - 2 * mm)
+
+            # Thin divider color line (matching React UI)
+            grad = GradientRect(CW, 1.5, colors.HexColor("#cbd5e1"), colors.HexColor("#cbd5e1"))
+            grad.wrap(CW, 1.5)
+            grad.drawOn(canvas, margin_left, fy)
+
+            # Footer notes
+            if footer_notes:
+                fn_p = Paragraph(footer_notes, ParagraphStyle(
+                    "LH_FN", fontName=f, fontSize=7, textColor=GREY, alignment=TA_LEFT
+                ))
+                fn_p.wrap(CW * 0.6, 20)
+                fn_p.drawOn(canvas, margin_left, fy + 6 * mm)
+
+            # Page numbers
+            if show_pages:
+                page_text = f"Page {canvas.getPageNumber()}"
+                canvas.setFont(f, 7)
+                canvas.setFillColor(GREY)
+                canvas.drawRightString(W - margin_right, fy + 6 * mm, page_text)
+
+            # QR code bottom left
+            if qr_img_reader:
+                qr_size = 15 * mm
+                canvas.drawImage(
+                    qr_img_reader,
+                    margin_left, fy + 3 * mm,
+                    width=qr_size, height=qr_size,
+                    mask='auto', preserveAspectRatio=True,
+                )
+
+        # Centered Signature block on right-hand corner
+        if show_sig and sig_img_reader:
+            sig_h = 16 * mm
+            sig_w = 45 * mm
+            sig_x = W - margin_right - sig_w
+            sig_y = margin_bottom + FOOTER_H + 3 * mm
+
+            # Centered signature image
+            canvas.drawImage(
+                sig_img_reader, sig_x, sig_y + 8 * mm,
+                width=sig_w, height=sig_h,
+                mask='auto', preserveAspectRatio=True,
+            )
+            canvas.setStrokeColor(colors.HexColor("#cbd5e1"))
+            canvas.setLineWidth(0.5)
+            canvas.line(sig_x, sig_y + 7 * mm, sig_x + sig_w, sig_y + 7 * mm)
+
+            sig_text = Paragraph(
+                f'<font face="{f}" size="7" color="#94a3b8">AUTHORIZED SIGNATORY</font><br/>'
+                f'<font face="{fb}" size="8" color="#0f172a">{company_name}</font>',
+                ParagraphStyle("LH_SIG", alignment=TA_CENTER, leading=10),
+            )
+            sig_text.wrap(sig_w, 15 * mm)
+            sig_text.drawOn(canvas, sig_x, sig_y)
+
+        canvas.restoreState()
+
+    # ── Document build ─────────────────────────────────────────────────────────
+    doc = BaseDocTemplate(
+        filepath,
+        pagesize=A4,
+        leftMargin=margin_left,
+        rightMargin=margin_right,
+        topMargin=margin_top + HEADER_H + 3 * mm,
+        bottomMargin=margin_bottom + FOOTER_H,
+    )
+
+    frame = Frame(
+        margin_left, margin_bottom + FOOTER_H,
+        CW, H - margin_top - HEADER_H - margin_bottom - FOOTER_H - 3 * mm,
+        id="main", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0,
+    )
+    template = PageTemplate(id="main", frames=[frame], onPage=draw_page_decorations)
+    doc.addPageTemplates([template])
+
+    # ── Story ──────────────────────────────────────────────────────────────────
+    story = []
+
+    # Reference + Document metadata block
+    ref_val      = doc_data.get("reference", "")
+    doc_date     = doc_data.get("date", "")
+    subject      = doc_data.get("subject", "")
+    customer     = doc_data.get("customer_name", "")
+    title_text   = doc_data.get("title", "")
+
+    if isinstance(doc_date, str) and doc_date:
+        try:
+            from datetime import datetime as _dt
+            doc_date = _dt.fromisoformat(doc_date.replace("Z", "+00:00")).strftime("%d %B %Y")
+        except Exception:
+            pass
+    elif hasattr(doc_date, "strftime"):
+        doc_date = doc_date.strftime("%d %B %Y")
+
+    # Meta block (Ref, Date, To) arranged in a balanced two-column grid
+    import html
+    left_parts = []
+    if ref_val:
+        left_parts.append(f'<font face="{fb}" size="8.5" color="#475569">Ref No: </font><font face="Courier" size="8.5" color="#0f172a">{html.escape(ref_val)}</font>')
+    if customer:
+        left_parts.append(f'<font face="{fb}" size="8.5" color="#475569">To: </font><font face="{fb}" size="8.5" color="#0f172a">{html.escape(customer)}</font>')
+
+    left_html = "<br/>".join(left_parts)
+    left_p = Paragraph(left_html, ParagraphStyle("LH_META_L", leading=13)) if left_parts else Paragraph("", ParagraphStyle("E"))
+
+    right_parts = []
+    if doc_date:
+        right_parts.append(f'<font face="{fb}" size="8.5" color="#475569">Date: </font><font face="{f}" size="8.5" color="#0f172a">{html.escape(doc_date)}</font>')
+
+    right_html = "<br/>".join(right_parts)
+    right_p = Paragraph(right_html, ParagraphStyle("LH_META_R", alignment=TA_RIGHT, leading=13)) if right_parts else Paragraph("", ParagraphStyle("E"))
+
+    if left_parts or right_parts:
+        meta_tbl = Table(
+            [[left_p, right_p]],
+            colWidths=[CW * 0.65, CW * 0.35]
+        )
+        meta_tbl.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(meta_tbl)
+
+    # Thin separator line matching React UI: borderBottom: '0.5px solid #f1f5f9'
+    story.append(HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#f1f5f9"), spaceAfter=12))
+
+    # Subject line styled with indigo left accent bar
+    if subject:
+        sub_p = Paragraph(
+            f'<font face="{fb}" size="10" color="#0f172a">SUBJECT: {html.escape(subject).upper()}</font>',
+            ParagraphStyle("LH_SUB_P", leading=12)
+        )
+        sub_tbl = Table([[sub_p]], colWidths=[CW])
+        sub_tbl.setStyle(TableStyle([
+            ('LINELEFT', (0, 0), (0, 0), 2.25, colors.HexColor("#6366f1")),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+        ]))
+        story.append(sub_tbl)
+        story.append(Spacer(1, 4 * mm))
+
+    content = doc_data.get("content", "")
+    if content:
+        font_size = int(doc_data.get("font_size", 10))
+        content_story = _parse_html_to_story(content, f, fb, CW, font_size=font_size)
+        story.extend(content_story)
+    else:
+        story.append(Spacer(1, 20 * mm))
+
+    # Build PDF
+    def _build():
+        doc.build(story)
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _build)
+
+    return filepath
+

@@ -11,7 +11,7 @@ from app.api.routes import (
     auth, users, products, categories, customers,
     suppliers, purchases, sales, payments,
     inventory, reports, settings, backup, returns,
-    traceability, ai_import
+    traceability, ai_import, documents
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -78,6 +78,7 @@ async def shutdown_db_client():
 os.makedirs("static/invoices", exist_ok=True)
 os.makedirs("static/exports", exist_ok=True)
 os.makedirs("static/backups", exist_ok=True)
+os.makedirs("static/documents", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Register all routers
@@ -97,6 +98,7 @@ app.include_router(backup.router,     prefix="/api/backup",     tags=["Backup"])
 app.include_router(returns.router,    prefix="/api/returns",    tags=["Returns"])
 app.include_router(traceability.router, prefix="/api/traceability", tags=["Traceability"])
 app.include_router(ai_import.router, prefix="/api/ai-import", tags=["AI Import"])
+app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 
 @app.get("/api/health")
 async def health_check():

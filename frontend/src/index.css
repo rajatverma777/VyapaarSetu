@@ -2315,5 +2315,427 @@ input[type=number] {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPANY LETTERHEAD / PRINT SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── A4 Paper on Screen ──────────────────────────────────────────────────────── */
+.print-page {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  color: #0d1b3e;
+  position: relative;
+  padding: 25mm 20mm;
+  margin: 0 auto;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  border-radius: 4px;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.6;
+  overflow: hidden;
+  color-scheme: light; /* Prevent dark mode from leaking */
+}
 
+/* ── Watermark ───────────────────────────────────────────────────────────────── */
+.print-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.print-watermark-img {
+  width: 55%;
+  max-width: 55%;
+  opacity: 0.03;
+  object-fit: contain;
+  user-select: none;
+  mix-blend-mode: multiply;
+}
+
+/* ── CONFIDENTIAL overlay ────────────────────────────────────────────────────── */
+.print-confidential-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+  font-size: 72pt;
+  font-weight: 900;
+  color: rgba(220, 38, 38, 0.07);
+  transform: rotate(45deg);
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+/* ── Company Header ──────────────────────────────────────────────────────────── */
+.company-header {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 8mm;
+}
+.company-header-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.company-logo-wrap {
+  flex-shrink: 0;
+}
+.company-logo {
+  width: auto;
+  height: 22mm;
+  max-width: 22mm;
+  object-fit: contain;
+}
+.company-details {
+  flex: 1;
+  min-width: 0;
+}
+.company-name {
+  font-size: 14pt;
+  font-weight: 800;
+  color: #0d1b3e;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
+}
+.company-meta {
+  font-size: 8pt;
+  color: #64748b;
+  margin: 0 0 1px 0;
+  line-height: 1.4;
+}
+.company-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 7.5pt;
+  color: #64748b;
+  margin-top: 2px;
+}
+.company-license-row {
+  font-size: 7pt;
+  color: #94a3b8;
+}
+.company-header-divider {
+  height: 0.75px;
+  background: #cbd5e1;
+  border-radius: 0.5px;
+  margin-top: 6mm;
+}
+
+/* ── Print Content Area ─────────────────────────────────────────────────────── */
+.print-content-area {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+/* ── Document Meta (Ref/Date/To) ────────────────────────────────────────────── */
+.print-meta {
+  margin-bottom: 8mm;
+}
+.print-meta-row {
+  display: flex;
+  gap: 12px;
+  font-size: 9pt;
+  margin-bottom: 2px;
+  color: #0d1b3e;
+}
+.print-meta-key {
+  font-weight: 700;
+  color: #64748b;
+  min-width: 60px;
+}
+
+/* ── Subject Line ────────────────────────────────────────────────────────────── */
+.print-subject {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #0d1b3e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-bottom: 4mm;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────────── */
+.print-divider {
+  border: none;
+  border-top: 0.5px solid #cbd5e1;
+  margin: 4mm 0 6mm;
+}
+
+/* ── Body text ───────────────────────────────────────────────────────────────── */
+.print-body {
+  font-size: 10pt;
+  line-height: 1.7;
+  color: #0d1b3e;
+}
+.print-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+  margin: 4mm 0;
+}
+.print-body th, .print-body td {
+  border: 0.5px solid #cbd5e1;
+  padding: 4px 8px;
+  text-align: left;
+}
+.print-body th {
+  background: #f0f7ff;
+  font-weight: 700;
+  color: #0d1b3e;
+}
+.print-body tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+/* ── Signature Block ─────────────────────────────────────────────────────────── */
+.print-signature-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8mm;
+}
+.print-signature-block {
+  text-align: right;
+  min-width: 120px;
+}
+.print-signature-img {
+  max-height: 80px;
+  max-width: 200px;
+  object-fit: contain;
+  display: block;
+  margin-left: auto;
+  mix-blend-mode: multiply;
+}
+.print-signature-line {
+  border-top: 0.5px solid #94a3b8;
+  margin-top: 4px;
+  margin-bottom: 3px;
+  width: 100%;
+}
+.print-signature-label {
+  font-size: 7.5pt;
+  color: #64748b;
+  margin: 0;
+}
+.print-signature-company {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #0d1b3e;
+  margin: 1px 0 0;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+.print-footer {
+  position: relative;
+  z-index: 2;
+  margin-top: 8mm;
+  padding-top: 3mm;
+  border-top: 0.5px solid #cbd5e1;
+}
+.print-footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.print-footer-qr {
+  width: 14mm;
+  height: 14mm;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.print-footer-notes {
+  flex: 1;
+  font-size: 7.5pt;
+  color: #64748b;
+  margin: 0;
+}
+.print-footer-pages {
+  font-size: 7.5pt;
+  color: #94a3b8;
+  margin: 0;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── Print-only elements (hidden on screen) ─────────────────────────────────── */
+.print-only {
+  display: none;
+}
+
+/* ── TipTap Editor Styles ────────────────────────────────────────────────────── */
+.tiptap-editor .ProseMirror {
+  min-height: 400px;
+  outline: none;
+  font-size: 10.5pt;
+  line-height: 1.7;
+  color: inherit;
+}
+.tiptap-editor .ProseMirror p {
+  margin: 0.4em 0;
+}
+.tiptap-editor .ProseMirror h1 { font-size: 1.5em; font-weight: 800; margin: 0.5em 0 0.25em; }
+.tiptap-editor .ProseMirror h2 { font-size: 1.25em; font-weight: 700; margin: 0.5em 0 0.25em; }
+.tiptap-editor .ProseMirror h3 { font-size: 1.1em; font-weight: 600; margin: 0.5em 0 0.25em; }
+.tiptap-editor .ProseMirror ul,
+.tiptap-editor .ProseMirror ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.tiptap-editor .ProseMirror li { margin: 0.15em 0; }
+.tiptap-editor .ProseMirror hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
+.tiptap-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+.tiptap-editor .ProseMirror td,
+.tiptap-editor .ProseMirror th {
+  border: 1px solid #cbd5e1;
+  padding: 6px 10px;
+  min-width: 40px;
+  position: relative;
+}
+.tiptap-editor .ProseMirror th {
+  background: #f0f7ff;
+  font-weight: 700;
+}
+.tiptap-editor .ProseMirror .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(99, 102, 241, 0.1);
+  pointer-events: none;
+}
+/* Placeholder */
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* ── Accessibility: focus visible ───────────────────────────────────────────── */
+.print-page:focus-visible { outline: 2px solid #6366f1; outline-offset: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   @MEDIA PRINT — Professional A4 Output
+   Hides all UI chrome; only document visible.
+   Forces light color scheme to prevent dark mode from bleeding.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Force light mode on print regardless of system preference */
+  * {
+    color-scheme: light !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Hide ALL UI chrome */
+  .no-print,
+  nav, aside,
+  [class*="sidebar"],
+  [class*="navbar"],
+  [class*="toolbar"],
+  [class*="Sidebar"],
+  [class*="AppLayout"],
+  [class*="doc-meta-panel"],
+  button:not(.print-always-show),
+  .glass-tab-track,
+  .glass-tab-btn,
+  select:not(.print-always-show),
+  input:not(.print-always-show) {
+    display: none !important;
+  }
+
+  /* Show print-only content */
+  .print-only {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* Strip background, border, shadows, height-locks from React root / layout wrappers during print */
+  #root,
+  .ambient-bg,
+  [class*="AppLayout"],
+  main,
+  .flex-1 {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Reset page */
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
+  html, body {
+    background: white !important;
+    color: #0d1b3e !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10pt !important;
+  }
+
+  /* Paper styling */
+  .print-page {
+    width: 100% !important;
+    min-height: 100vh !important; /* Take exactly the page viewport height */
+    height: 100vh !important;     /* Lock to exactly one page to avoid blank trailing page */
+    margin: 0 !important;
+    /* padding is controlled dynamically by inline styles */
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: white !important;
+    color: #0d1b3e !important;
+    transform: none !important;
+    page-break-after: avoid;
+    box-sizing: border-box !important;
+  }
+
+  /* Watermark: absolute position inside print-page container */
+  .print-watermark {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Ensure colors render in print */
+  .company-header-divider {
+    background: #cbd5e1 !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent content from being cut off mid-element */
+  p, li, tr { page-break-inside: avoid; }
+  h1, h2, h3 { page-break-after: avoid; }
+  table { page-break-inside: auto; }
+}

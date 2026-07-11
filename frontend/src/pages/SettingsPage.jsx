@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Settings, Building2, Users, Database, Key, Plus, Trash2, Sun, Moon, Palette, User } from 'lucide-react'
+import { Settings, Building2, Users, Database, Key, Plus, Trash2, Sun, Moon, Palette, User, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { settingsAPI, backupAPI, userAPI } from '../services/api'
 import { FormSkeleton, Modal, FormField } from '../components/ui'
@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext'
 import { format } from 'date-fns'
 import { INDIAN_STATES } from '../services/constants'
 
-const TABS = ['profile', 'company', 'users', 'appearance', 'backup', 'password']
+const TABS = ['profile', 'company', 'users', 'documents', 'appearance', 'backup', 'password']
 
 const compressImage = (file, maxWidth, maxHeight, callback) => {
   const reader = new FileReader()
@@ -53,11 +53,13 @@ export default function SettingsPage() {
 
   // Company
   const [company, setCompany] = useState({
-    company_name: '', gstin: '', address: '', city: '', state: '',
+    company_name: '', gstin: '', drug_license: '', address: '', city: '', state: '',
     state_code: '', pincode: '', mobile: '', email: '', website: '',
     bank_name: '', bank_account: '', bank_ifsc: '',
     invoice_prefix: 'INV', invoice_terms: '', invoice_footer: '',
-    logo_base64: '', watermark_base64: ''
+    document_prefix: 'DOC',
+    logo_base64: '', watermark_base64: '', watermark_enabled: true,
+    signature_base64: '', seal_base64: ''
   })
 
   // Profile
@@ -223,12 +225,13 @@ export default function SettingsPage() {
     finally { setPwSaving(false) }
   }
 
-  const tabIcons = { profile: User, company: Building2, users: Users, appearance: Palette, backup: Database, password: Key }
+  const tabIcons = { profile: User, company: Building2, users: Users, documents: FileText, appearance: Palette, backup: Database, password: Key }
   const setC = (k, v) => setCompany(c => ({ ...c, [k]: v }))
   const setU = (k, v) => setUserForm(f => ({ ...f, [k]: v }))
 
   const visibleTabs = TABS.filter(t => {
     if (t === 'company') return isAdmin || user?.permissions?.can_manage_settings
+    if (t === 'documents') return isAdmin || user?.permissions?.can_manage_settings
     if (t === 'backup') return isAdmin
     return true
   })
@@ -328,6 +331,10 @@ export default function SettingsPage() {
                 />
               </FormField>
 
+              <FormField label="Drug License No.">
+                <input className="input font-mono" value={company.drug_license} onChange={e => setC('drug_license', e.target.value)} placeholder="MH-MUM-123456" />
+              </FormField>
+
               <FormField label="Mobile">
                 <input className="input" value={company.mobile} onChange={e => setC('mobile', e.target.value)} />
               </FormField>
@@ -339,6 +346,9 @@ export default function SettingsPage() {
               </FormField>
               <FormField label="Invoice Prefix">
                 <input className="input" value={company.invoice_prefix} onChange={e => setC('invoice_prefix', e.target.value)} />
+              </FormField>
+              <FormField label="Document Prefix">
+                <input className="input" placeholder="DOC" value={company.document_prefix} onChange={e => setC('document_prefix', e.target.value)} />
               </FormField>
               <div className="sm:col-span-2">
                 <FormField label="Address">
@@ -482,6 +492,91 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Digital Signature & Seal */}
+              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Digital Signature &amp; Company Seal
+                </h3>
+                <p className="text-xs text-gray-400 mb-4">
+                  Signature appears on printed invoices and letterhead documents. Use a transparent PNG for best results.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Signature Upload */}
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
+                    <label className="text-xs font-semibold text-gray-500 mb-2">Digital Signature</label>
+                    {company.signature_base64 ? (
+                      <div className="relative group mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center p-2" style={{ minHeight: '80px', maxHeight: '90px' }}>
+                        <img
+                          src={company.signature_base64}
+                          alt="Digital Signature"
+                          style={{ maxHeight: '80px', maxWidth: '200px', objectFit: 'contain' }}
+                        />
+                        <button
+                          onClick={() => setC('signature_base64', '')}
+                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-300 dark:text-gray-600" style={{ height: '80px' }}>
+                        <span className="text-xs">No signature uploaded</span>
+                      </div>
+                    )}
+                    <label className="btn-secondary text-xs cursor-pointer">
+                      Upload Signature
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0]
+                          if (!file) return
+                          if (file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed')
+                          compressImage(file, 600, 200, (base64) => setC('signature_base64', base64))
+                        }}
+                      />
+                    </label>
+                    <p className="text-[10px] text-gray-400 mt-1.5 text-center">PNG (transparent) recommended · Max 2MB</p>
+                  </div>
+
+                  {/* Seal Upload */}
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
+                    <label className="text-xs font-semibold text-gray-500 mb-2">Company Seal (Optional)</label>
+                    {company.seal_base64 ? (
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center">
+                        <img src={company.seal_base64} alt="Company Seal" className="max-w-full max-h-full object-contain" />
+                        <button
+                          onClick={() => setC('seal_base64', '')}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-300 dark:text-gray-600">
+                        <span className="text-[10px] text-center px-2">No seal</span>
+                      </div>
+                    )}
+                    <label className="btn-secondary text-xs cursor-pointer">
+                      Upload Seal
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0]
+                          if (!file) return
+                          if (file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed')
+                          compressImage(file, 400, 400, (base64) => setC('seal_base64', base64))
+                        }}
+                      />
+                    </label>
+                    <p className="text-[10px] text-gray-400 mt-1.5 text-center">PNG · Max 2MB · Round seal works best</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end mt-5">
               <button onClick={saveCompany} disabled={saving} className="btn-primary">
@@ -490,6 +585,53 @@ export default function SettingsPage() {
             </div>
           </div>
         )
+      )}
+
+      {/* Documents Settings Tab */}
+      {tab === 'documents' && (isAdmin || user?.permissions?.can_manage_settings) && (
+        <div className="card p-6 max-w-lg animate-fade-in">
+          <h2 className="section-title mb-2">Document Settings</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+            Configure how company letterhead documents are generated.
+          </p>
+          <div className="space-y-4">
+            <FormField label="Document Reference Prefix">
+              <input
+                className="input font-mono"
+                placeholder="DOC"
+                value={company.document_prefix}
+                onChange={e => setC('document_prefix', e.target.value.toUpperCase())}
+              />
+              <p className="text-[10px] text-gray-400 mt-1">
+                Documents will be numbered as: {company.document_prefix || 'DOC'}-2026-00001
+              </p>
+            </FormField>
+            <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Enable Watermark on Documents</p>
+                <p className="text-xs text-gray-400 mt-0.5">Company logo appears as a faint watermark behind content</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={!!company.watermark_enabled}
+                onClick={() => setC('watermark_enabled', !company.watermark_enabled)}
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors duration-200 border ${
+                  company.watermark_enabled ? 'bg-indigo-600 border-transparent' : 'bg-gray-200 dark:bg-white/10 border-gray-200 dark:border-white/5'
+                }`}
+              >
+                <span
+                  className="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 shadow"
+                  style={{ transform: company.watermark_enabled ? 'translateX(18px)' : 'translateX(2px)' }}
+                />
+              </button>
+            </label>
+            <div className="flex justify-end pt-2">
+              <button onClick={saveCompany} disabled={saving} className="btn-primary">
+                {saving ? 'Saving…' : 'Save Document Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Users Tab */}

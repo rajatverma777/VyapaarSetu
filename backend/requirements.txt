@@ -17,3 +17,5 @@ python-dateutil==2.9.0
 pytesseract==0.3.13
 dnspython==2.6.1
 pypdf==4.2.0
+qrcode[pil]==7.4.2
+bcrypt==4.1.3

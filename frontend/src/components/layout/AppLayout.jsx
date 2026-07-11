@@ -1,18 +1,35 @@
-import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
+
+  // Auto-collapse sidebar on document editor pages (new or editing) to maximize space
+  const isEditorPage = location.pathname.startsWith('/documents/') && location.pathname !== '/documents'
+
+  useEffect(() => {
+    // Reset sidebar drawer to closed on route change
+    setSidebarOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    const handleToggle = () => setSidebarOpen(open => !open)
+    window.addEventListener('toggle-sidebar', handleToggle)
+    return () => window.removeEventListener('toggle-sidebar', handleToggle)
+  }, [])
 
   return (
     <div className="flex h-screen ambient-bg overflow-hidden relative">
 
-      {/* Mobile overlay */}
+      {/* Mobile & Editor desktop overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm lg:hidden transition-all duration-300"
+          className={`fixed inset-0 z-20 bg-black/35 backdrop-blur-sm transition-all duration-300 ${
+            isEditorPage ? '' : 'lg:hidden'
+          }`}
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -20,8 +37,9 @@ export default function AppLayout() {
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-30 w-64 p-3.5 transform transition-transform duration-300 ease-in-out
-        lg:relative lg:translate-x-0 lg:flex-shrink-0 lg:p-4 lg:pr-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isEditorPage ? 'lg:fixed lg:-translate-x-full' : 'lg:relative lg:translate-x-0 lg:flex-shrink-0'}
+        lg:p-4 lg:pr-0
+        ${sidebarOpen ? 'translate-x-0 lg:translate-x-0' : '-translate-x-full'}
       `}>
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </aside>
