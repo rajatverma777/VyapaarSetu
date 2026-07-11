@@ -230,12 +230,22 @@ async def delete_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Soft delete — archive instead of physical delete
-    await db.documents.update_one(
-        {"_id": ObjectId(doc_id)},
-        {"$set": {"status": "archived", "updated_at": datetime.utcnow()}},
-    )
-    return {"message": "Document archived"}
+    # Hard delete from MongoDB
+    await db.documents.delete_one({"_id": ObjectId(doc_id)})
+
+    # Delete generated PDF file if it exists
+    ref = doc.get("reference")
+    if ref:
+        from app.core.config import settings
+        filename = f"Letter-{ref.replace('/', '-')}.pdf"
+        filepath = os.path.join(settings.DOCS_DIR, filename)
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception as e:
+                print(f"Failed to delete PDF file: {e}")
+
+    return {"message": "Document deleted"}
 
 
 @router.post("/{doc_id}/duplicate")

@@ -78,13 +78,13 @@ export default function DocumentsListPage() {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation()
-    if (!window.confirm('Archive this document? It will no longer appear in the main list.')) return
+    if (!window.confirm('Delete this document permanently? This action cannot be undone.')) return
     try {
       await documentsAPI.delete(id)
-      toast.success('Document archived')
+      toast.success('Document deleted')
       loadDocs()
     } catch {
-      toast.error('Failed to archive')
+      toast.error('Failed to delete')
     }
   }
 
