@@ -1037,9 +1037,23 @@ async def generate_sale_invoice(sale: dict, company: dict) -> str:
         grad.wrap(CW, 2.0)
         grad.drawOn(canvas, LM, 1.0 * mm)
         
+        # Parse invoice generation time from sale_date
+        sale_date_val = sale.get("sale_date") or sale.get("created_at") or sale.get("date")
+        invoice_time = None
+        if sale_date_val:
+            try:
+                if isinstance(sale_date_val, str):
+                    invoice_time = datetime.fromisoformat(sale_date_val.replace("Z", ""))
+                elif isinstance(sale_date_val, datetime):
+                    invoice_time = sale_date_val
+            except Exception:
+                pass
+        if not invoice_time:
+            invoice_time = datetime.now()
+
         # Computer generated timestamp at y = 5.0 * mm (sits above the gradient bar)
         cg_p = Paragraph(
-            f"Computer generated invoice | {datetime.now().strftime('%d-%m-%Y %H:%M')}",
+            f"Computer generated invoice | {invoice_time.strftime('%d-%m-%Y %H:%M')}",
             ParagraphStyle("GN_canvas", fontName=f, fontSize=5.5, textColor=SILVER, alignment=TA_CENTER)
         )
         cg_p.wrap(CW, 8)
@@ -1449,8 +1463,22 @@ async def generate_return_note(ret: dict, company: dict) -> str:
         grad.wrap(CW, 2.0)
         grad.drawOn(canvas, LM, 1.0 * mm)
 
+        # Parse return note generation time from ret object
+        ret_date_val = ret.get("created_at") or ret.get("date")
+        return_time = None
+        if ret_date_val:
+            try:
+                if isinstance(ret_date_val, str):
+                    return_time = datetime.fromisoformat(ret_date_val.replace("Z", ""))
+                elif isinstance(ret_date_val, datetime):
+                    return_time = ret_date_val
+            except Exception:
+                pass
+        if not return_time:
+            return_time = datetime.now()
+
         cg_p = Paragraph(
-            f"Computer generated return document | {datetime.now().strftime('%d-%m-%Y %H:%M')}",
+            f"Computer generated return document | {return_time.strftime('%d-%m-%Y %H:%M')}",
             ParagraphStyle("GN_canvas_ret", fontName=f, fontSize=5.5, textColor=SILVER, alignment=TA_CENTER)
         )
         cg_p.wrap(CW, 8)
