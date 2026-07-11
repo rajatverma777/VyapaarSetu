@@ -242,15 +242,13 @@ export default function DocumentsListPage() {
                             >
                               <Copy size={14} />
                             </button>
-                            {isAdmin && (
-                              <button
-                                onClick={e => handleDelete(e, doc.id)}
-                                className="icon-btn text-red-400 hover:text-red-600"
-                                title="Archive"
-                              >
-                                <Archive size={14} />
-                              </button>
-                            )}
+                            <button
+                              onClick={e => handleDelete(e, doc.id)}
+                              className="icon-btn text-red-500 hover:text-red-700 hover:bg-red-500/10 dark:hover:bg-red-500/20"
+                              title="Delete Document"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </td>
                       </tr>

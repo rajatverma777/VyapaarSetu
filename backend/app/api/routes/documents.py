@@ -224,7 +224,7 @@ async def update_document(
 async def delete_document(
     doc_id: str,
     db=Depends(get_database),
-    current_user=Depends(require_permission("can_manage_settings")),
+    current_user=Depends(get_current_active_user),
 ):
     doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
     if not doc:

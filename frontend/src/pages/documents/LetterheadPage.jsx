@@ -420,13 +420,14 @@ export default function LetterheadPage() {
 
   // ── Delete ────────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
-    if (!window.confirm('Archive this document?')) return
+    if (!window.confirm('Delete this document?')) return
     try {
       await documentsAPI.delete(id)
-      toast.success('Document archived')
-      navigate('/documents')
+      toast.success('Document deleted')
+      setHasChanges(false)
+      navigate('/documents', { replace: true })
     } catch {
-      toast.error('Failed')
+      toast.error('Delete failed')
     }
   }
 
@@ -594,6 +595,17 @@ export default function LetterheadPage() {
               <Check size={13} />
               Finalize
             </button>
+            {isEdit && (
+              <button
+                onClick={handleDelete}
+                className="btn-secondary text-xs text-red-500 hover:text-red-600 hover:bg-red-500/5 dark:hover:bg-red-500/10 border-red-200 dark:border-white/5"
+                id="btn-delete"
+                title="Delete Document"
+              >
+                <Trash2 size={13} />
+                Delete
+              </button>
+            )}
             <button
               onClick={handlePrint}
               className="btn-secondary text-xs"
