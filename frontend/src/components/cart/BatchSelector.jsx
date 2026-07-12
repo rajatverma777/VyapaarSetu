@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Calendar, Package, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 function getDaysToExpiry(expiry) {
@@ -25,7 +26,7 @@ export default function BatchSelector({ product, batches, onSelect, onClose }) {
     onClose()
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
@@ -135,5 +136,5 @@ export default function BatchSelector({ product, batches, onSelect, onClose }) {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
