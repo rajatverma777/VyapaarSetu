@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { CommandPaletteProvider } from './context/CommandPaletteContext'
 
 // Layout
 import AppLayout from './components/layout/AppLayout'
@@ -68,18 +69,45 @@ const router = createBrowserRouter([
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: { fontSize: '14px' },
-            success: { iconTheme: { primary: '#22c55e', secondary: '#fff' } },
-            error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
-          }}
-        />
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <CommandPaletteProvider>
+        <AuthProvider>
+          <Toaster
+            position="top-right"
+            gutter={8}
+            toastOptions={{
+              duration: 3500,
+              style: {
+                fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
+                fontSize: '13px',
+                fontWeight: '500',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 12px 40px rgba(0,0,0,0.12)',
+                border: '1px solid rgba(229,231,235,0.7)',
+                backdropFilter: 'blur(16px)',
+                maxWidth: '380px',
+              },
+              success: {
+                iconTheme: { primary: '#10b981', secondary: '#fff' },
+                style: {
+                  background: 'rgba(255,255,255,0.97)',
+                  color: '#111827',
+                  borderLeft: '3px solid #10b981',
+                },
+              },
+              error: {
+                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                style: {
+                  background: 'rgba(255,255,255,0.97)',
+                  color: '#111827',
+                  borderLeft: '3px solid #ef4444',
+                },
+              },
+            }}
+          />
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </CommandPaletteProvider>
     </ThemeProvider>
   )
 }

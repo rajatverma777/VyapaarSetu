@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Search, ChevronDown, Check } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { X, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Search, ChevronDown, Check, Settings, LogOut, Sun, Moon, Home, LayoutDashboard } from 'lucide-react'
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 export function Modal({ open, onClose, title, children, size = 'md', footer }) {
@@ -42,25 +43,23 @@ export function Spinner({ size = 20 }) {
 
 export function LoadingScreen() {
   return (
-    <div className="animate-pulse space-y-6 w-full py-2">
-      {/* Top Stat Cards Skeleton */}
+    <div className="space-y-5 w-full py-2">
+      {/* Stat Cards Shimmer Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 bg-white/45 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-[20px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" />
+          <div key={i} className="skeleton skeleton-card" style={{ height: 110, animationDelay: `${i * 80}ms` }} />
         ))}
       </div>
-      
-      {/* Lower Row Skeletons */}
+      {/* Stat Cards Shimmer Row 2 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-16 bg-white/45 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-[20px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" />
+          <div key={i} className="skeleton skeleton-card" style={{ height: 88, animationDelay: `${i * 80 + 40}ms` }} />
         ))}
       </div>
-
-      {/* Main content split panel skeletons */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 h-72 bg-white/45 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-[20px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" />
-        <div className="h-72 bg-white/45 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-[20px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" />
+      {/* Chart + panel shimmer */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 skeleton skeleton-card" style={{ height: 280 }} />
+        <div className="skeleton skeleton-card" style={{ height: 280, animationDelay: '120ms' }} />
       </div>
     </div>
   )
@@ -68,22 +67,25 @@ export function LoadingScreen() {
 
 export function TableSkeleton({ rows = 5, cols = 5 }) {
   return (
-    <div className="animate-pulse space-y-3 w-full py-4">
-      <div className="flex gap-4 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+    <div className="space-y-2 w-full py-4">
+      {/* Header shimmer */}
+      <div className="flex gap-4 px-4 py-2.5 border-b border-gray-100 dark:border-white/5">
         {Array.from({ length: cols }).map((_, i) => (
-          <div key={i} className="h-4 bg-gray-200/60 dark:bg-white/15 rounded flex-1" />
+          <div key={i} className="skeleton" style={{ height: 12, flex: 1, animationDelay: `${i * 60}ms` }} />
         ))}
       </div>
+      {/* Row shimmers */}
       {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} className="flex gap-4 px-4 py-3 items-center border-b border-gray-100 dark:border-gray-700/50">
+        <div key={r} className="flex gap-4 px-4 py-3 items-center border-b border-gray-50 dark:border-white/3">
           {Array.from({ length: cols }).map((_, c) => (
-            <div key={c} className="h-5 bg-gray-200/50 dark:bg-white/10 rounded flex-1" />
+            <div key={c} className="skeleton" style={{ height: 14, flex: 1, borderRadius: 7, animationDelay: `${(r * cols + c) * 30}ms` }} />
           ))}
         </div>
       ))}
     </div>
   )
 }
+
 
 // ── Form Skeleton ─────────────────────────────────────────────────────────────
 export function FormSkeleton() {
@@ -160,20 +162,6 @@ export function Pagination({ page, total, limit, onChange }) {
           <ChevronRight size={16} />
         </button>
       </div>
-    </div>
-  )
-}
-
-// ── Empty State ───────────────────────────────────────────────────────────────
-export function EmptyState({ icon: Icon, title, description, action }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      {Icon && <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-        <Icon size={26} className="text-gray-400" />
-      </div>}
-      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
-      {description && <p className="text-sm text-gray-500 mb-4">{description}</p>}
-      {action}
     </div>
   )
 }
@@ -687,3 +675,114 @@ export function DatePicker({ value, onChange, className = '' }) {
     </div>
   )
 }
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+export function EmptyState({ icon: Icon, title, description, action, actionLabel }) {
+  return (
+    <div className="empty-state">
+      {Icon && (
+        <div className="empty-state-icon">
+          <Icon size={26} />
+        </div>
+      )}
+      <div>
+        <p className="empty-state-title">{title}</p>
+        {description && <p className="empty-state-desc mt-1">{description}</p>}
+      </div>
+      {action && actionLabel && (
+        <button onClick={action} className="btn-primary text-sm mt-1">
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ── Floating User Menu Portal ───────────────────────────────────────────────
+export function FloatingUserMenu({ isOpen, onClose, anchorRect, user, dark, onToggleTheme, onLogout, onNavigate }) {
+  const containerRef = useRef(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        onClose()
+      }
+    }
+    if (isOpen) {
+      setMounted(true)
+      setTimeout(() => document.addEventListener('mousedown', handler), 50)
+    } else {
+      setMounted(false)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler)
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen || !anchorRect) return null
+
+  const viewportWidth  = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const menuWidth      = 210
+  const menuHeight     = 132
+
+  let top  = anchorRect.bottom + 8
+  let left = anchorRect.left
+
+  // Sidebar left-aligned layout positioning helper
+  if (anchorRect.left < 100) {
+    top  = anchorRect.bottom - menuHeight - 16
+    left = anchorRect.right + 12
+  } else {
+    left = anchorRect.right - menuWidth
+  }
+
+  // Safety boundaries
+  if (left + menuWidth > viewportWidth)  left = viewportWidth - menuWidth - 12
+  if (left < 12)                        left = 12
+  if (top + menuHeight > viewportHeight) top = viewportHeight - menuHeight - 12
+  if (top < 12)                          top = 12
+
+  return createPortal(
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        width: `${menuWidth}px`,
+        zIndex: 99999,
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(5px)',
+        transition: 'opacity 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1)',
+        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.2)',
+      }}
+      className="p-1.5 bg-slate-900/95 dark:bg-[#0c101d]/95 border border-white/[0.08] rounded-2xl backdrop-blur-xl flex flex-col gap-1 text-slate-100"
+    >
+      <div className="px-3 py-2.5 border-b border-white/[0.06] pb-2 mb-1">
+        <p className="text-sm font-bold text-white tracking-tight leading-tight">{user?.full_name}</p>
+        <p className="text-[9px] text-indigo-400 font-extrabold uppercase tracking-widest mt-1">{user?.role}</p>
+      </div>
+
+      <Link
+        to="/"
+        onClick={onClose}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
+      >
+        <Home size={14} className="text-slate-400" />
+        <span>Home Website</span>
+      </Link>
+
+      <button
+        onClick={() => { onLogout(); onClose() }}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-[0.98] transition-all text-left border-t border-white/[0.06] pt-2 mt-1"
+      >
+        <LogOut size={14} />
+        <span>Log Out</span>
+      </button>
+    </div>,
+    document.body
+  )
+}
+

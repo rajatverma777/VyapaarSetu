@@ -118,41 +118,45 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center ambient-bg p-4 overflow-hidden relative">
-      {/* Top right theme toggle & Home button */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
+      {/* Top right controls */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         <Link
           to="/"
-          className="btn-secondary p-2.5 rounded-full shadow-lg transition-transform duration-200 active:scale-95 flex items-center justify-center"
+          className="navbar-icon-btn"
           title="Back to Home"
         >
-          <Home size={18} />
+          <Home size={16} />
         </Link>
         <button
           type="button"
           onClick={toggle}
-          className="btn-secondary p-2.5 rounded-full shadow-lg transition-transform duration-200 active:scale-95"
+          className="navbar-icon-btn"
           title="Toggle Theme"
         >
-          {dark ? <Sun size={18} className="text-amber-500 animate-spin-slow" /> : <Moon size={18} className="text-indigo-650" />}
+          {dark ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-indigo-500" />}
         </button>
       </div>
 
-      <div className="w-full max-w-md relative z-10 animate-modal-in">
+      <div className="w-full max-w-md relative z-10" style={{ animation: 'page-enter 400ms cubic-bezier(0.16,1,0.3,1) both' }}>
         {/* Logo Header */}
         <Link to="/" className="flex items-center justify-center gap-3.5 mb-8 px-2 hover:opacity-85 transition-opacity select-none cursor-pointer group">
-          <div className="w-12 h-12 glass-icon-container text-gray-800 dark:text-white shadow-md flex-shrink-0 rounded-2xl">
-            <Building2 size={22} className="text-indigo-600 dark:text-indigo-300 animate-pulse group-hover:scale-105 transition-transform" />
+          <div className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0 shadow-lg" style={{
+            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+            boxShadow: '0 8px 32px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.2)'
+          }}>
+            <Building2 size={22} className="text-white" />
           </div>
           <div className="text-left">
-            <h1 className="text-2xl font-black leading-tight tracking-tight text-gray-950 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>Vyapaar Setu</h1>
+            <h1 className="text-2xl font-black leading-tight tracking-tight text-gray-950 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif", letterSpacing: '-0.02em' }}>Vyapaar Setu</h1>
             <p className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold tracking-wide leading-tight mt-0.5">
-              {registerMode ? (needSetup ? 'First-time Setup: Create Admin Account' : 'Create Account') : 'Sign in to your account'}
+              {registerMode ? (needSetup ? 'First-time Setup: Create Admin Account' : 'Create your account') : 'Sign in to continue'}
             </p>
           </div>
         </Link>
 
         {/* Card */}
-        <div className="card shadow-2xl p-8">
+        <div className="card shadow-2xl p-8" style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), inset 0 2px 2px rgba(255,255,255,0.9)' }}>
+
           {showCodeModal ? (
             <div className="space-y-6 text-center animate-modal-in">
               <div className="w-16 h-16 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-500/20">

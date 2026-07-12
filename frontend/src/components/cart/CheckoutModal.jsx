@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CheckCircle, Printer, ShoppingBag, X, ArrowRight, User, Package } from 'lucide-react'
 import { salesAPI } from '../../services/api'
 import { useCart } from './CartContext'
@@ -77,7 +78,7 @@ export default function CheckoutModal({ onClose, onSuccess }) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={step < 4 ? onClose : undefined} />
 
@@ -237,5 +238,5 @@ export default function CheckoutModal({ onClose, onSuccess }) {
         </div>
       )}
     </div>
-  )
+  , document.body)
 }

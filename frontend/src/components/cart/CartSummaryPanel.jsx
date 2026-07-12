@@ -145,8 +145,8 @@ export default function CartSummaryPanel({ onCheckout, onSaveDraft }) {
         />
       </div>
 
-      {/* Actions */}
-      <div className="space-y-2 mt-auto">
+      {/* Actions — placed directly below Notes */}
+      <div className="space-y-2">
         {/* Save Draft */}
         <button
           onClick={onSaveDraft}

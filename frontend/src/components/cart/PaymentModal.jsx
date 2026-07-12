@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, Trash2, CreditCard, Banknote, Smartphone, Building, X, CheckCircle } from 'lucide-react'
 
 const PAYMENT_OPTIONS = [
@@ -43,7 +44,7 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
     onConfirm(validRows, totalPaid)
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
@@ -175,5 +176,5 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
