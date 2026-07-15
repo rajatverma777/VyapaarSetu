@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import TopNavbar from './TopNavbar'
 import CommandPalette from '../ui/CommandPalette'
 import { Plus, ShoppingCart, ShoppingBag, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { healthAPI } from '../../services/api'
 
 // FAB quick actions
 const FAB_ACTIONS = [
@@ -57,6 +58,20 @@ export default function AppLayout() {
     try { return localStorage.getItem('sidebar-mini') === 'true' } catch { return false }
   })
   const location = useLocation()
+
+  // Background warm-up to wake up Render free tier backend instantly on mount and periodically
+  useEffect(() => {
+    const warmUp = async () => {
+      try {
+        await healthAPI.check()
+      } catch (err) {
+        // Silently handle error (health ping is best-effort)
+      }
+    }
+    warmUp()
+    const interval = setInterval(warmUp, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   // On editor pages, always force mini sidebar so the document gets max space
   // but we NEVER hide it completely — user always has the mini sidebar visible

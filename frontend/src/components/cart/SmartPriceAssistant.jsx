@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp,
   History, Star, Zap, AlertTriangle, Info, X, Package,
-  Clock, User, RotateCcw, Check
+  Clock, User, RotateCcw, Check, RefreshCw, ShoppingCart,
+  Award, Activity, BarChart2
 } from 'lucide-react'
-import { pricingAPI } from '../../services/api'
+import { pricingAPI, healthAPI } from '../../services/api'
 import PriceHistoryModal from './PriceHistoryModal'
 
 // ── Session memory: remember last chosen pricing mode ────────────────────────
@@ -27,7 +28,7 @@ function calcProfit(sellingPrice, purchasePrice) {
 // ── Margin color tier ─────────────────────────────────────────────────────────
 function marginColor(margin) {
   if (margin >= 15) return { label: 'Healthy', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800/40' }
-  if (margin >= 5) return { label: 'Low Margin', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800/40' }
+  if (margin >= 5)  return { label: 'Low Margin', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800/40' }
   return { label: margin < 0 ? 'Loss!' : 'Very Low', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800/40' }
 }
 
@@ -72,11 +73,25 @@ function QuickBtn({ label, price, active, badge, onClick, disabled }) {
   )
 }
 
+// ── Customer Insight row ──────────────────────────────────────────────────────
+function InsightRow({ icon: Icon, label, value, valueClass = '' }) {
+  if (!value && value !== 0) return null
+  return (
+    <div className="flex items-center justify-between text-[11px] py-0.5">
+      <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+        <Icon size={9} className="flex-shrink-0" />
+        {label}
+      </span>
+      <span className={`font-semibold ${valueClass || 'text-gray-800 dark:text-gray-200'}`}>{value}</span>
+    </div>
+  )
+}
+
 /**
- * SmartPriceAssistant
+ * SmartPriceAssistant – Enterprise Grade
  *
- * A fully reusable pricing panel. Slide-in on product staging, allows price selection
- * before committing to cart.
+ * Handles Render free-tier cold starts gracefully with retry + warm-up logic.
+ * Shows full customer pricing intelligence: history, insights, trends, margins.
  *
  * Props:
  *   product     – staged product object (from product search result)
@@ -86,41 +101,86 @@ function QuickBtn({ label, price, active, badge, onClick, disabled }) {
  *   onCancel    – () => void
  */
 export default function SmartPriceAssistant({ product, customer, isIgst, onConfirm, onCancel }) {
-  const [pricing, setPricing]             = useState(null)
-  const [loading, setLoading]             = useState(true)
-  const [sellingPrice, setSellingPrice]   = useState('')
-  const [qty, setQty]                     = useState(1)
-  const [expanded, setExpanded]           = useState(false)
-  const [activeMode, setActiveMode]       = useState(getSessionPricingMode())
-  const [historyOpen, setHistoryOpen]     = useState(false)
-  const [priceError, setPriceError]       = useState('')
-  const priceRef = useRef(null)
+  const [pricing, setPricing]           = useState(null)
+  const [loading, setLoading]           = useState(true)
+  const [loadingMsg, setLoadingMsg]     = useState('Loading price intelligence…')
+  const [sellingPrice, setSellingPrice] = useState('')
+  const [qty, setQty]                   = useState(1)
+  const [expanded, setExpanded]         = useState(false)
+  const [activeMode, setActiveMode]     = useState(getSessionPricingMode())
+  const [historyOpen, setHistoryOpen]   = useState(false)
+  const [priceError, setPriceError]     = useState('')
+  const [fetchError, setFetchError]     = useState(null)
+  const [retryCount, setRetryCount]     = useState(0)
+  const priceRef  = useRef(null)
+  const abortRef  = useRef(null)
 
-  // ── Load pricing history ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!product?.id) return
+  // ── Load pricing history with warm-up retry for cold starts ────────────────
+  const fetchPricing = useCallback(async (productId, customerId, attempt = 0) => {
+    // Cancel any previous in-flight request
+    if (abortRef.current) abortRef.current()
+
     setLoading(true)
+    setFetchError(null)
     setPricing(null)
     setPriceError('')
 
-    console.log("Fetching pricing history for product:", product.id, "customer:", customer?.id)
-    pricingAPI.history(product.id, customer?.id || null)
-      .then(({ data }) => {
-        console.log("Pricing history loaded successfully:", data)
-        setPricing(data)
-        // Apply initial price based on remembered mode
-        const suggestions = data.suggestions || {}
-        const mode = getSessionPricingMode()
-        const price = resolvePrice(mode, suggestions, data.selling_price)
-        setSellingPrice(Number(price || data.selling_price || 0).toFixed(2))
-      })
-      .catch((err) => {
-        console.error("Failed to load pricing history:", err)
-        // Fallback: use product's default selling price
-        setSellingPrice(Number(product.selling_price || 0).toFixed(2))
-      })
-      .finally(() => setLoading(false))
-  }, [product?.id, customer?.id])
+    if (attempt > 0) {
+      setLoadingMsg(`Connecting to server… (attempt ${attempt + 1})`)
+    } else {
+      setLoadingMsg('Loading price intelligence…')
+    }
+
+    let cancelled = false
+    abortRef.current = () => { cancelled = true }
+
+    try {
+      const { data } = await pricingAPI.history(productId, customerId || null)
+      if (cancelled) return
+
+      setPricing(data)
+      setFetchError(null)
+
+      // Apply initial price based on remembered mode
+      const suggestions = data.suggestions || {}
+      const mode  = getSessionPricingMode()
+      const price = resolvePriceFromSuggestions(mode, suggestions, data.selling_price)
+      setSellingPrice(Number(price || data.selling_price || 0).toFixed(2))
+
+    } catch (err) {
+      if (cancelled) return
+
+      // Detect network/timeout error (Render cold start)
+      const isNetworkError = !err.response || err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.message?.includes('Network Error')
+
+      if (isNetworkError && attempt < 2) {
+        // Retry after a short warm-up delay (Render free tier needs ~50s to wake)
+        setLoadingMsg('Server is waking up, please wait…')
+        await new Promise(res => setTimeout(res, 5000))
+        if (!cancelled) {
+          setRetryCount(c => c + 1)
+          return fetchPricing(productId, customerId, attempt + 1)
+        }
+        return
+      }
+
+      // Final fallback: use product's default selling price
+      setFetchError(isNetworkError
+        ? 'Server is starting up. Pricing history will load shortly. You can still set a price manually.'
+        : `Could not load pricing history. (${err.response?.data?.detail || err.message || 'Unknown error'})`)
+      setSellingPrice(Number(product?.selling_price || 0).toFixed(2))
+
+    } finally {
+      if (!cancelled) setLoading(false)
+    }
+  }, [product])
+
+  useEffect(() => {
+    if (!product?.id) return
+    setRetryCount(0)
+    fetchPricing(product.id, customer?.id)
+    return () => { if (abortRef.current) abortRef.current() }
+  }, [product?.id, customer?.id, fetchPricing])
 
   // ── Keyboard shortcut: Alt+L = last price, Alt+R = recommended ─────────────
   useEffect(() => {
@@ -138,22 +198,22 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
     return () => document.removeEventListener('keydown', handler)
   }, [pricing])
 
-  function resolvePrice(mode, suggestions, defaultPrice) {
+  function resolvePriceFromSuggestions(mode, suggestions, defaultPrice) {
     const map = {
-      recommended:     suggestions.recommended_price,
-      last_customer:   suggestions.last_customer_price,
-      last_global:     suggestions.last_global_price,
-      avg_customer:    suggestions.avg_customer_price,
-      avg_global:      suggestions.avg_global_price,
-      most_used:       suggestions.most_used_price,
-      mrp:             pricing?.mrp,
-      default:         defaultPrice,
+      recommended:   suggestions.recommended_price,
+      last_customer: suggestions.last_customer_price,
+      last_global:   suggestions.last_global_price,
+      avg_customer:  suggestions.avg_customer_price,
+      avg_global:    suggestions.avg_global_price,
+      most_used:     suggestions.most_used_price,
+      mrp:           pricing?.mrp,
+      default:       defaultPrice,
     }
     return map[mode] || defaultPrice || 0
   }
 
   function applyMode(mode, suggestions, defaultPrice) {
-    const price = resolvePrice(mode, suggestions || pricing?.suggestions || {}, defaultPrice || pricing?.selling_price)
+    const price = resolvePriceFromSuggestions(mode, suggestions || pricing?.suggestions || {}, defaultPrice || pricing?.selling_price)
     if (price && price > 0) {
       setSellingPrice(Number(price).toFixed(2))
       setActiveMode(mode)
@@ -179,22 +239,54 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
     onConfirm(product, price, qty)
   }
 
-  // ── Handle Enter key in price field ────────────────────────────────────────
   const handlePriceKey = (e) => {
     if (e.key === 'Enter') validateAndConfirm()
   }
 
+  // ── Compute smart insights from customer history ───────────────────────────
+  const getCustomerInsights = () => {
+    const history = pricing?.customer_history || []
+    if (!history.length) return null
+
+    const rates    = history.map(h => h.rate).filter(r => r > 0)
+    const qtys     = history.map(h => h.quantity).filter(q => q > 0)
+    const lastSale = history[0]
+    const firstSale = history[history.length - 1]
+
+    const avgQty   = qtys.length ? (qtys.reduce((a, b) => a + b, 0) / qtys.length).toFixed(1) : null
+    const highest  = rates.length ? Math.max(...rates) : null
+    const lowest   = rates.length ? Math.min(...rates) : null
+
+    // Price trend: compare last vs second-to-last sale
+    let trend = null
+    if (history.length >= 2) {
+      const diff = history[0].rate - history[1].rate
+      trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'stable'
+    }
+
+    return {
+      totalPurchases: history.length,
+      lastDaysAgo:    lastSale.days_ago,
+      avgQty,
+      highest,
+      lowest,
+      trend,
+      lastDiscount:   lastSale.discount_percent > 0 ? lastSale.discount_percent : null,
+    }
+  }
+
   // ── Derived values ──────────────────────────────────────────────────────────
-  const price    = parseFloat(sellingPrice) || 0
-  const purchase = pricing?.purchase_price || 0
-  const mrp      = pricing?.mrp || 0
-  const stock    = pricing?.current_stock ?? product?.current_stock ?? 0
+  const price     = parseFloat(sellingPrice) || 0
+  const purchase  = pricing?.purchase_price || 0
+  const mrp       = pricing?.mrp || 0
+  const stock     = pricing?.current_stock ?? product?.current_stock ?? 0
   const { profit, margin } = calcProfit(price, purchase)
-  const tier     = marginColor(margin)
-  const suggestions = pricing?.suggestions || {}
-  const lastCustPrice = suggestions.last_customer_price
-  const noHistory     = !loading && pricing?.customer_history?.length === 0 && !customer
-  const aboveMrp      = mrp > 0 && price > mrp
+  const tier      = marginColor(margin)
+  const suggestions    = pricing?.suggestions || {}
+  const lastCustPrice  = suggestions.last_customer_price
+  const aboveMrp       = mrp > 0 && price > mrp
+  const belowPurchase  = purchase > 0 && price > 0 && price < purchase
+  const insights       = getCustomerInsights()
 
   return (
     <>
@@ -225,7 +317,7 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
 
         <div className="p-4 space-y-4">
 
-          {/* ── Selling Price field + quick buttons ── */}
+          {/* ── Selling Price field ── */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
@@ -268,7 +360,7 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
             )}
 
             {/* Warnings */}
-            {!loading && purchase > 0 && price < purchase && price > 0 && (
+            {!loading && belowPurchase && (
               <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl px-3 py-2">
                 <AlertTriangle size={13} className="flex-shrink-0" />
                 Selling below purchase price! Loss of ₹{(purchase - price).toFixed(2)} per unit.
@@ -280,10 +372,27 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
                 Price exceeds MRP (₹{mrp.toFixed(2)})
               </div>
             )}
+
+            {/* Server wake-up error (non-blocking) */}
+            {fetchError && (
+              <div className="flex items-start gap-2 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-xl px-3 py-2">
+                <Info size={12} className="flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p>{fetchError}</p>
+                  <button
+                    type="button"
+                    onClick={() => fetchPricing(product.id, customer?.id)}
+                    className="mt-1 flex items-center gap-1 text-blue-700 dark:text-blue-300 font-semibold hover:underline"
+                  >
+                    <RefreshCw size={10} /> Retry
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Quick Suggestion Buttons ── */}
-          {!loading && (
+          {!loading && pricing && (
             <div className="flex flex-wrap gap-2">
               {lastCustPrice && (
                 <QuickBtn
@@ -365,14 +474,18 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
                 <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">👤 Customer Pricing</p>
                 {!customer ? (
                   <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">Select a customer to see their pricing history</p>
-                ) : !pricing || pricing?.customer_history?.length === 0 ? (
+                ) : !pricing ? (
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
+                    {fetchError ? 'History unavailable – server starting up' : 'Loading…'}
+                  </p>
+                ) : pricing.customer_history?.length === 0 ? (
                   <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">No previous sales to this customer for this product</p>
                 ) : (
                   <div className="space-y-1.5">
-                    {pricing?.customer_label && (
+                    {pricing.customer_label && (
                       <p className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium leading-snug">{pricing.customer_label}</p>
                     )}
-                    {pricing?.customer_history?.slice(0, 2).map((h, i) => (
+                    {pricing.customer_history?.slice(0, 2).map((h, i) => (
                       <div key={h.id || i} className="text-[11px] space-y-0.5">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 dark:text-gray-400">{i === 0 ? 'Last Sale' : 'Previous'}</span>
@@ -387,6 +500,7 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
                         <div className="text-gray-400 text-[10px]">
                           {h.invoice_number} · {h.days_ago != null ? `${h.days_ago}d ago` : ''}
                           {h.quantity ? ` · Qty: ${h.quantity}` : ''}
+                          {h.discount_percent > 0 ? ` · ${h.discount_percent}% off` : ''}
                         </div>
                       </div>
                     ))}
@@ -396,8 +510,33 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
             </div>
           )}
 
+          {/* ── Smart Insights (only shown when customer history exists) ── */}
+          {!loading && pricing && insights && customer && (
+            <div className="rounded-xl border border-violet-200/60 dark:border-violet-800/30 bg-violet-50/40 dark:bg-violet-950/10 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400 mb-2">📊 Smart Insights</p>
+              <div className="space-y-0.5">
+                <InsightRow icon={ShoppingCart} label="Total Purchases" value={`${insights.totalPurchases} time${insights.totalPurchases > 1 ? 's' : ''}`} />
+                <InsightRow icon={Clock} label="Last Purchased" value={insights.lastDaysAgo != null ? (insights.lastDaysAgo === 0 ? 'Today' : `${insights.lastDaysAgo} days ago`) : null} />
+                <InsightRow icon={Activity} label="Avg Qty / Order" value={insights.avgQty ? `${insights.avgQty} units` : null} />
+                <InsightRow icon={TrendingUp} label="Highest Price" value={insights.highest != null ? `₹${insights.highest.toFixed(2)}` : null} />
+                <InsightRow icon={TrendingDown} label="Lowest Price" value={insights.lowest != null ? `₹${insights.lowest.toFixed(2)}` : null} />
+                {insights.lastDiscount && (
+                  <InsightRow icon={Award} label="Last Discount" value={`${insights.lastDiscount}%`} valueClass="text-emerald-600 dark:text-emerald-400" />
+                )}
+                {insights.trend && insights.trend !== 'stable' && (
+                  <InsightRow
+                    icon={insights.trend === 'up' ? TrendingUp : TrendingDown}
+                    label="Price Trend"
+                    value={insights.trend === 'up' ? 'Increasing ↑' : 'Decreasing ↓'}
+                    valueClass={insights.trend === 'up' ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── Expandable global avg row ── */}
-          {!loading && (suggestions.avg_global_price || suggestions.avg_customer_price) && (
+          {!loading && pricing && (suggestions.avg_global_price || suggestions.avg_customer_price) && (
             <div>
               <button
                 type="button"
@@ -483,12 +622,12 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
             </div>
           </div>
 
-          {/* ── Loading shimmer ── */}
+          {/* ── Loading overlay ── */}
           {loading && (
             <div className="absolute inset-0 bg-white/50 dark:bg-black/30 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <div className="w-4 h-4 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
-                Loading price intelligence…
+              <div className="flex flex-col items-center gap-2 text-xs text-gray-500">
+                <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
+                <span>{loadingMsg}</span>
               </div>
             </div>
           )}
