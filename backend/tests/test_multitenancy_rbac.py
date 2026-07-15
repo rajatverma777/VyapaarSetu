@@ -2,10 +2,10 @@ import asyncio
 import httpx
 import sys
 
-async def run_tests():
+async def test_multitenancy_rbac():
     print("Starting Multi-Tenancy & RBAC Verification Tests...")
     
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
         # 1. Register Admin A
         admin_username = f"admin_a_{int(asyncio.get_event_loop().time())}"
         reg_admin_payload = {
@@ -217,7 +217,7 @@ async def run_tests():
 if __name__ == "__main__":
     import traceback
     try:
-        asyncio.run(run_tests())
+        asyncio.run(test_multitenancy_rbac())
     except Exception as e:
         traceback.print_exc()
         sys.exit(1)

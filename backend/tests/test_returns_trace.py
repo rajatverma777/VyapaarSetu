@@ -10,11 +10,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.config import settings
 
-async def main():
+async def test_returns_trace():
     client_db = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client_db[settings.MONGODB_DB_NAME]
     
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
         # 1. Register and login
         username = f"traceuser_{int(asyncio.get_event_loop().time())}"
         reg_res = await client.post("/api/auth/register", json={
@@ -252,4 +252,4 @@ async def main():
         print("ALL TESTS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(test_returns_trace())

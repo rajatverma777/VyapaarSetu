@@ -2,10 +2,10 @@ import asyncio
 import httpx
 import sys
 
-async def run_tests():
+async def test_brand_categories():
     print("Starting Brand to Category Resolution Tests...")
     
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
         # 1. Register a new Admin
         admin_username = f"admin_brand_{int(asyncio.get_event_loop().time())}"
         reg_admin_payload = {
@@ -110,4 +110,4 @@ async def run_tests():
         print("\nALL BRAND-CATEGORY VERIFICATION TESTS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
-    asyncio.run(run_tests())
+    asyncio.run(test_brand_categories())

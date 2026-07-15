@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { salesAPI, customerAPI, productAPI, settingsAPI } from '../services/api'
 import { Amount, SearchAutocomplete, GlassSelect } from '../components/ui'
 import { INDIAN_STATES } from '../services/constants'
+import SmartPriceAssistant from '../components/cart/SmartPriceAssistant'
 
 const PAYMENT_MODES = ['cash','credit','upi','card','cheque','neft']
 
@@ -40,6 +41,7 @@ export default function NewSalePage() {
   const [saving, setSaving]       = useState(false)
   const [notes, setNotes]         = useState(() => sessionStorage.getItem('pending_sale_notes') || '')
   const [company, setCompany]     = useState(null)
+  const [pendingProduct, setPendingProduct] = useState(null)  // staging for SmartPriceAssistant
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -147,6 +149,48 @@ export default function NewSalePage() {
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
   }, [items, customer, isIgst, discPct, payMode, paidAmt, notes])
+
+  // Stage product for SmartPriceAssistant instead of adding directly
+  const stageProduct = (product) => {
+    const stock = product.current_stock ?? 0
+    if (stock <= 0) {
+      toast.error('Product is out of stock!')
+      return
+    }
+    setPendingProduct(product)
+  }
+
+  // Called by SmartPriceAssistant when user confirms price + qty
+  const addProductFromAssistant = (product, price, qty) => {
+    setPendingProduct(null)
+    const stock = product.current_stock ?? 0
+    setItems(prev => {
+      const existing = prev.findIndex(i => i.product_id === product.id)
+      if (existing >= 0) {
+        const updated = [...prev]
+        const maxStock = updated[existing].max_stock ?? 999999
+        const newQty = Math.min(updated[existing].qty + qty, maxStock)
+        if (newQty > maxStock) toast.error('Cannot add more. Stock limit reached!')
+        updated[existing] = calcItem({ ...updated[existing], qty: newQty, rate: price })
+        return updated
+      }
+      return [...prev, calcItem({
+        product_id:   product.id,
+        product_name: product.name,
+        sku:          product.sku,
+        barcode:      product.barcode,
+        hsn_code:     product.hsn_code,
+        unit:         product.unit || 'PCS',
+        qty:          qty,
+        rate:         price,
+        discount_pct: 0,
+        gst_rate:     product.gst_rate || 0,
+        max_stock:    product.current_stock,
+        is_igst:      isIgst,
+      })]
+    })
+    prodSearchRef.current?.focus()
+  }
 
   const addProduct = (product) => {
     const stock = product.current_stock ?? 0
@@ -337,7 +381,7 @@ export default function NewSalePage() {
                 const { data } = await productAPI.search(query, 50)
                 return data
               }}
-              onSelect={(p) => addProduct(p)}
+              onSelect={(p) => stageProduct(p)}
               itemTemplate={(p) => (
                 <button
                   type="button"
@@ -357,6 +401,22 @@ export default function NewSalePage() {
               )}
             />
           </div>
+
+          {/* Smart Price Assistant Panel */}
+          {pendingProduct && (
+            <div className="relative z-20">
+              <SmartPriceAssistant
+                product={pendingProduct}
+                customer={customer}
+                isIgst={isIgst}
+                onConfirm={addProductFromAssistant}
+                onCancel={() => {
+                  setPendingProduct(null)
+                  prodSearchRef.current?.focus()
+                }}
+              />
+            </div>
+          )}
 
           {/* Items Table */}
           <div className="card overflow-hidden relative z-10">

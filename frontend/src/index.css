@@ -2949,6 +2949,33 @@ input[type=number] {
   border-color: rgba(16,185,129,0.25);
   color: #34d399;
 }
+.navbar-status-connecting {
+  background: rgba(245,158,11,0.08);
+  border-color: rgba(245,158,11,0.20);
+  color: #d97706;
+}
+.dark .navbar-status-connecting {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.25);
+  color: #fbbf24;
+}
+.navbar-status-connecting .live-dot {
+  background: #fbbf24;
+}
+.navbar-status-offline {
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.20);
+  color: #dc2626;
+}
+.dark .navbar-status-offline {
+  background: rgba(239,68,68,0.10);
+  border-color: rgba(239,68,68,0.25);
+  color: #f87171;
+}
+.navbar-status-offline .live-dot {
+  background: #f87171;
+  animation: none;
+}
 
 /* Navbar icon button */
 .navbar-icon-btn {

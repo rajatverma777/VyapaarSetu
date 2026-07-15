@@ -40,8 +40,9 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
   }
 
   const handleConfirm = () => {
-    const validRows = rows.filter(r => parseFloat(r.amount) > 0)
-    onConfirm(validRows, totalPaid)
+    const validRows = rows.filter(r => (parseFloat(r.amount) || 0) > 0)
+    const finalRows = validRows.length > 0 ? validRows : [{ mode: rows[0]?.mode || 'cash', amount: 0 }]
+    onConfirm(finalRows, totalPaid)
   }
 
   return createPortal(
@@ -168,7 +169,6 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
           <button onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
           <button
             onClick={handleConfirm}
-            disabled={rows.every(r => !(parseFloat(r.amount) > 0))}
             className="btn-success flex-1 text-sm font-bold justify-center"
           >
             {isFullyPaid ? '✓ Confirm Payment' : `Collect ₹${totalPaid.toFixed(2)}`}

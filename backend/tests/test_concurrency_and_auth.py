@@ -4,7 +4,7 @@ import sys
 
 async def test_auth_refresh():
     print("Testing Authentication Refresh Flow...")
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
         username = f"testuser_{int(asyncio.get_event_loop().time())}"
         reg_payload = {
             "username": username,
@@ -47,7 +47,7 @@ async def test_auth_refresh():
 
 async def test_concurrency():
     print("\nTesting Concurrent Stock Depletion & Transactions...")
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
         username = f"saleuser_{int(asyncio.get_event_loop().time())}"
         reg_res = await client.post("/api/auth/register", json={
             "username": username,

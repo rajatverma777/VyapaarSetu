@@ -161,6 +161,51 @@ export function CartProvider({ children }) {
     })
   }, [updateActive])
 
+  // ── Add Product with specific price + qty (used by SmartPriceAssistant) ──────
+  const addProductWithPrice = useCallback((product, price, qty, batchInfo = null) => {
+    updateActive(c => {
+      const isIgst = c.isIgst
+      const batchKey = batchInfo
+        ? `${product.id}_${batchInfo.batch_no}`
+        : product.id
+
+      const existing = c.items.findIndex(i => i._key === batchKey)
+      if (existing >= 0) {
+        const updated = [...c.items]
+        const newQty = updated[existing].qty + qty
+        const maxStock = batchInfo ? batchInfo.current_stock : product.current_stock
+        if (maxStock != null && newQty > maxStock) {
+          toast.error(`Stock limit: only ${maxStock} available`)
+          return { items: c.items }
+        }
+        updated[existing] = calcItem({ ...updated[existing], qty: newQty, rate: price })
+        return { items: updated }
+      }
+
+      const newItem = calcItem({
+        _key:           batchKey,
+        product_id:     product.id,
+        product_name:   product.name,
+        brand:          product.brand || '',
+        sku:            product.sku || '',
+        barcode:        product.barcode || '',
+        hsn_code:       product.hsn_code || '',
+        unit:           product.unit || 'PCS',
+        qty:            qty,
+        rate:           price,
+        purchase_price: product.purchase_price || 0,
+        discount_pct:   0,
+        gst_rate:       product.gst_rate || 0,
+        max_stock:      batchInfo ? batchInfo.current_stock : (product.current_stock ?? 999999),
+        batch_no:       batchInfo?.batch_no || product.batch_no || '',
+        expiry_date:    batchInfo?.expiry || product.expiry_date || '',
+        is_igst:        isIgst,
+        is_new:         true,
+      })
+      return { items: [...c.items, newItem] }
+    })
+  }, [updateActive])
+
   // ── Update item field ────────────────────────────────────────────────────────
   const updateItem = useCallback((idx, key, value) => {
     updateActive(c => {
@@ -274,6 +319,7 @@ export function CartProvider({ children }) {
     setCustomer,
     setIsIgst,
     addProduct,
+    addProductWithPrice,
     updateItem,
     updateItemStr,
     removeItem,

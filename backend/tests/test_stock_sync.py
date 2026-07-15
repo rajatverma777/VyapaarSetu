@@ -10,12 +10,12 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.config import settings
 
-async def main():
+async def test_stock_sync():
     client_db = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client_db[settings.MONGODB_DB_NAME]
     
     # 1. Register and login a user to get auth headers
-    async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
         username = f"syncuser_{int(asyncio.get_event_loop().time())}"
         await client.post("/api/auth/register", json={
             "username": username,
@@ -116,4 +116,4 @@ async def main():
         print("Self-healing stock sync verification PASSED successfully!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(test_stock_sync())

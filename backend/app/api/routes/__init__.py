@@ -15,3 +15,4 @@ from . import returns
 from . import traceability
 from . import ai_import
 from . import documents
+from . import pricing

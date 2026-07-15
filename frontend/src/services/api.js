@@ -309,3 +309,15 @@ export const documentsAPI = {
     return URL.createObjectURL(blob)
   }
 }
+
+// ── Pricing Intelligence ──────────────────────────────────────────────────────
+export const pricingAPI = {
+  history: (productId, customerId) =>
+    api.get('/pricing/history', {
+      params: {
+        product_id: productId,
+        ...(customerId ? { customer_id: customerId } : {}),
+        limit: 20,
+      },
+    }),
+}

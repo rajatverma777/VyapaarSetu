@@ -331,7 +331,7 @@ export default function DashboardPage() {
             {(data?.recent_sales || []).length > 0 ? (
               <div className="divide-y divide-gray-100/60 dark:divide-white/5">
                 {(data?.recent_sales || []).map(s => (
-                  <div key={s.id} className="px-5 py-3 hover:bg-white/40 dark:hover:bg-white/3 transition-colors">
+                  <div key={s.id} className="px-5 py-3 hover:bg-white/40 dark:hover:bg-white/5 transition-colors">
                     <div className="flex items-center justify-between mb-0.5">
                       <p className="text-[13px] font-semibold text-gray-900 dark:text-white truncate">{s.customer_name}</p>
                       <Amount value={s.total_amount} className="text-[13px] font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0 ml-2" />

@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { useCommandPalette } from '../../context/CommandPaletteContext'
 import { FloatingUserMenu } from '../ui'
 import { Search, Sun, Moon, Menu, Command } from 'lucide-react'
+import { healthAPI } from '../../services/api'
 
 const ROUTE_LABELS = {
   '/dashboard': 'Dashboard',
@@ -44,17 +45,49 @@ export default function TopNavbar({ onMenuToggle }) {
   const { user, logout } = useAuth()
   const { dark, toggle } = useTheme()
   const { open: openPalette } = useCommandPalette()
-  const [online, setOnline] = useState(navigator.onLine)
+  const [status, setStatus] = useState('connecting') // 'connecting' | 'online' | 'offline'
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState(null)
   const avatarRef = useRef(null)
 
   useEffect(() => {
-    const onOnline  = () => setOnline(true)
-    const onOffline = () => setOnline(false)
+    let active = true
+
+    const checkConnection = async () => {
+      if (!navigator.onLine) {
+        if (active) setStatus('offline')
+        return
+      }
+      try {
+        await healthAPI.check()
+        if (active) setStatus('online')
+      } catch (e) {
+        if (active) setStatus('offline')
+      }
+    }
+
+    // Initial check
+    checkConnection()
+
+    // Interval check every 8 seconds
+    const interval = setInterval(checkConnection, 8000)
+
+    const onOnline  = () => {
+      if (active) {
+        setStatus('connecting')
+        checkConnection()
+      }
+    }
+    const onOffline = () => {
+      if (active) setStatus('offline')
+    }
+
     window.addEventListener('online',  onOnline)
     window.addEventListener('offline', onOffline)
+
     return () => {
+      active = false
+      clearInterval(interval)
       window.removeEventListener('online',  onOnline)
       window.removeEventListener('offline', onOffline)
     }
@@ -110,11 +143,25 @@ export default function TopNavbar({ onMenuToggle }) {
         </span>
       </button>
 
-      {/* Online Status */}
-      <div className={`navbar-status-pill navbar-status-online hidden md:flex flex-shrink-0 ${!online ? 'hidden' : ''}`}>
-        <span className="live-dot" />
-        Live
-      </div>
+      {/* Connection Status */}
+      {status === 'online' && (
+        <div className="navbar-status-pill navbar-status-online hidden md:flex flex-shrink-0">
+          <span className="live-dot" />
+          Live
+        </div>
+      )}
+      {status === 'connecting' && (
+        <div className="navbar-status-pill navbar-status-connecting hidden md:flex flex-shrink-0">
+          <span className="live-dot" />
+          Connecting
+        </div>
+      )}
+      {status === 'offline' && (
+        <div className="navbar-status-pill navbar-status-offline hidden md:flex flex-shrink-0">
+          <span className="live-dot" />
+          Offline
+        </div>
+      )}
 
       {/* Theme Toggle */}
       <ThemeCycleBtn />

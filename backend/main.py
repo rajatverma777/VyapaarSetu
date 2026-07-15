@@ -11,7 +11,7 @@ from app.api.routes import (
     auth, users, products, categories, customers,
     suppliers, purchases, sales, payments,
     inventory, reports, settings, backup, returns,
-    traceability, ai_import, documents
+    traceability, ai_import, documents, pricing
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -99,6 +99,8 @@ app.include_router(returns.router,    prefix="/api/returns",    tags=["Returns"]
 app.include_router(traceability.router, prefix="/api/traceability", tags=["Traceability"])
 app.include_router(ai_import.router, prefix="/api/ai-import", tags=["AI Import"])
 app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
+app.include_router(pricing.router,   prefix="/api/pricing",   tags=["Pricing Intelligence"])
+
 
 @app.get("/api/health")
 async def health_check():

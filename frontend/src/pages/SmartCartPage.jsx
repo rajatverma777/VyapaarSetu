@@ -13,6 +13,7 @@ import CartSummaryPanel from '../components/cart/CartSummaryPanel'
 import CustomerPanel from '../components/cart/CustomerPanel'
 import BatchSelector from '../components/cart/BatchSelector'
 import CheckoutModal from '../components/cart/CheckoutModal'
+import SmartPriceAssistant from '../components/cart/SmartPriceAssistant'
 import { settingsAPI, productAPI, inventoryAPI } from '../services/api'
 
 // ── Keyboard shortcut hint bar ─────────────────────────────────────────────
@@ -269,13 +270,15 @@ function ProductCard({ product, onAddToCart }) {
 
 function SmartCartInner() {
   const navigate = useNavigate()
-  const { CART_IDS, activeId, setActiveId, activeCart, addProduct, getCartItemCount, syncCartStock } = useCart()
-  const { items, isIgst, discPct } = activeCart
+  const { CART_IDS, activeId, setActiveId, activeCart, addProduct, addProductWithPrice, getCartItemCount, syncCartStock } = useCart()
+  const { items, isIgst, discPct, customer } = activeCart
   const totals = calcTotals(items, discPct, isIgst)
 
-  const [company, setCompany]       = useState(null)
+  const [company, setCompany]           = useState(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [batchPicker, setBatchPicker]   = useState(null)
+  const [pendingProduct, setPendingProduct] = useState(null)  // staged for SmartPriceAssistant
+  const [pendingBatch, setPendingBatch]     = useState(null)   // batch resolved before staging
 
   // Product grid state
   const [allProducts, setAllProducts]     = useState([])
@@ -361,7 +364,7 @@ function SmartCartInner() {
     toast.success(`Cart ${activeId} saved as draft`, { icon: '💾' })
   }, [activeId])
 
-  // Add product with batch check
+  // Add product — fetch batch info, then stage for SmartPriceAssistant
   const handleAddToCart = useCallback(async (product) => {
     try {
       const { data } = await inventoryAPI.batches({ product_id: product.id, limit: 50 })
@@ -370,30 +373,44 @@ function SmartCartInner() {
         setBatchPicker({ product, batches })
         return
       }
-      if (batches.length === 1) {
-        addProduct(product, batches[0])
-      } else {
-        addProduct(product, null)
-      }
+      const batchInfo = batches.length === 1 ? batches[0] : null
+      setPendingBatch(batchInfo)
+      setPendingProduct(product)
     } catch {
-      addProduct(product, null)
+      setPendingBatch(null)
+      setPendingProduct(product)
     }
-    if ('vibrate' in navigator) navigator.vibrate(30)
-  }, [addProduct])
+  }, [])
 
   const handleProductSelect = useCallback((product, batchInfo) => {
-    addProduct(product, batchInfo)
+    setPendingBatch(batchInfo || null)
+    setPendingProduct(product)
     if ('vibrate' in navigator) navigator.vibrate(30)
-  }, [addProduct])
+  }, [])
 
   const handleBatchSelect = useCallback((product, batches) => {
     setBatchPicker({ product, batches })
   }, [])
 
   const handleBatchConfirm = useCallback((product, batch) => {
-    addProduct(product, batch)
+    // After batch selection, stage for SmartPriceAssistant
     setBatchPicker(null)
-  }, [addProduct])
+    setPendingBatch(batch)
+    setPendingProduct(product)
+  }, [])
+
+  // SmartPriceAssistant confirm — add with chosen price + qty
+  const handlePriceConfirm = useCallback((product, price, qty) => {
+    addProductWithPrice(product, price, qty, pendingBatch)
+    setPendingProduct(null)
+    setPendingBatch(null)
+    if ('vibrate' in navigator) navigator.vibrate(30)
+  }, [addProductWithPrice, pendingBatch])
+
+  const handlePriceCancel = useCallback(() => {
+    setPendingProduct(null)
+    setPendingBatch(null)
+  }, [])
 
   const totalItems = items.reduce((s, i) => s + i.qty, 0)
 
@@ -434,6 +451,19 @@ function SmartCartInner() {
           <div className="card p-3 relative z-30 flex-shrink-0">
             <CustomerPanel company={company} inputRef={customerSearchRef} />
           </div>
+
+          {/* Smart Price Assistant Panel — slides in when product is staged */}
+          {pendingProduct && (
+            <div className="flex-shrink-0 relative z-20">
+              <SmartPriceAssistant
+                product={pendingProduct}
+                customer={customer}
+                isIgst={isIgst}
+                onConfirm={handlePriceConfirm}
+                onCancel={handlePriceCancel}
+              />
+            </div>
+          )}
 
           {/* View toggle + product grid search */}
           <div className="flex items-center gap-2 flex-shrink-0">

@@ -23,7 +23,7 @@ async def seed_default_categories():
     count = await db.categories.count_documents({"is_active": {"$ne": False}})
     if count == 0:
         logger.info("Seeding default categories...")
-        from datetime import datetime, UTC
+        from datetime import datetime, timezone
         default_cats = [
             {"name": "YASH SURGICAL HOUSE", "description": "Products supplied by Yash Surgical House", "is_active": True},
             {"name": "R B HEALTHCARE", "description": "Products supplied by R B Healthcare", "is_active": True}
@@ -33,7 +33,7 @@ async def seed_default_categories():
             if existing:
                 await db.categories.update_one({"_id": existing["_id"]}, {"$set": {"is_active": True}})
             else:
-                cat["created_at"] = datetime.now(UTC)
+                cat["created_at"] = datetime.now(timezone.utc)
                 await db.categories.insert_one(cat)
         logger.info("Default categories seeded successfully")
 
