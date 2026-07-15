@@ -103,8 +103,10 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
     setPricing(null)
     setPriceError('')
 
+    console.log("Fetching pricing history for product:", product.id, "customer:", customer?.id)
     pricingAPI.history(product.id, customer?.id || null)
       .then(({ data }) => {
+        console.log("Pricing history loaded successfully:", data)
         setPricing(data)
         // Apply initial price based on remembered mode
         const suggestions = data.suggestions || {}
@@ -112,7 +114,8 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
         const price = resolvePrice(mode, suggestions, data.selling_price)
         setSellingPrice(Number(price || data.selling_price || 0).toFixed(2))
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load pricing history:", err)
         // Fallback: use product's default selling price
         setSellingPrice(Number(product.selling_price || 0).toFixed(2))
       })
