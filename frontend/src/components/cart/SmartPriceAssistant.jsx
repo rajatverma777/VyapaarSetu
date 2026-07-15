@@ -319,7 +319,7 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
               {pricing?.selling_price > 0 && (
                 <QuickBtn
                   label="Default"
-                  price={pricing.selling_price}
+                  price={pricing?.selling_price}
                   active={activeMode === 'default'}
                   onClick={() => applyMode('default', suggestions, pricing?.selling_price)}
                 />
@@ -362,14 +362,14 @@ export default function SmartPriceAssistant({ product, customer, isIgst, onConfi
                 <p className="text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">👤 Customer Pricing</p>
                 {!customer ? (
                   <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">Select a customer to see their pricing history</p>
-                ) : pricing?.customer_history?.length === 0 ? (
+                ) : !pricing || pricing?.customer_history?.length === 0 ? (
                   <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">No previous sales to this customer for this product</p>
                 ) : (
                   <div className="space-y-1.5">
-                    {pricing.customer_label && (
+                    {pricing?.customer_label && (
                       <p className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium leading-snug">{pricing.customer_label}</p>
                     )}
-                    {pricing.customer_history?.slice(0, 2).map((h, i) => (
+                    {pricing?.customer_history?.slice(0, 2).map((h, i) => (
                       <div key={h.id || i} className="text-[11px] space-y-0.5">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500 dark:text-gray-400">{i === 0 ? 'Last Sale' : 'Previous'}</span>
