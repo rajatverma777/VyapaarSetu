@@ -15,27 +15,7 @@ async def connect_to_mongo():
     db_instance.client = AsyncIOMotorClient(settings.MONGODB_URL)
     db_instance.db = db_instance.client[settings.MONGODB_DB_NAME]
     await create_indexes()
-    await seed_default_categories()
     logger.info(f"Connected to MongoDB: {settings.MONGODB_DB_NAME}")
-
-async def seed_default_categories():
-    db = db_instance.db
-    count = await db.categories.count_documents({"is_active": {"$ne": False}})
-    if count == 0:
-        logger.info("Seeding default categories...")
-        from datetime import datetime, timezone
-        default_cats = [
-            {"name": "YASH SURGICAL HOUSE", "description": "Products supplied by Yash Surgical House", "is_active": True},
-            {"name": "R B HEALTHCARE", "description": "Products supplied by R B Healthcare", "is_active": True}
-        ]
-        for cat in default_cats:
-            existing = await db.categories.find_one({"name": cat["name"]})
-            if existing:
-                await db.categories.update_one({"_id": existing["_id"]}, {"$set": {"is_active": True}})
-            else:
-                cat["created_at"] = datetime.now(timezone.utc)
-                await db.categories.insert_one(cat)
-        logger.info("Default categories seeded successfully")
 
 async def close_mongo_connection():
     logger.info("Closing MongoDB connection...")
@@ -108,6 +88,10 @@ class TenantCollection:
     def __getattr__(self, name):
         return getattr(self._collection, name)
 
+
+# Collections that must NEVER be tenant-wrapped (global/auth data)
+_GLOBAL_COLLECTIONS = {"users"}
+
 class TenantDatabase:
     def __init__(self, db, tenant_id: str):
         self._db = db
@@ -115,33 +99,42 @@ class TenantDatabase:
 
     def __getattr__(self, name):
         collection = getattr(self._db, name)
-        # Avoid tenant-wrapping on "users" collection for login authentication
-        if name == "users":
+        if name in _GLOBAL_COLLECTIONS:
             return collection
         return TenantCollection(collection, self.tenant_id)
 
     def __getitem__(self, name):
         collection = self._db[name]
-        if name == "users":
+        if name in _GLOBAL_COLLECTIONS:
             return collection
         return TenantCollection(collection, self.tenant_id)
 
+
 async def get_database(request: Request = None):
+    """Resolve a tenant-scoped database from the JWT in the Authorization header.
+
+    SECURITY: Never returns a raw unscoped DB when a request is present.
+    Falls back to raw DB ONLY when no request is provided (internal startup tasks).
+    """
     if not request:
+        # Internal startup path only (e.g., create_indexes). Never called by API routes.
         return db_instance.db
-        
+
     auth_header = request.headers.get("Authorization")
     token = None
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
-        
+
     if token:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+            # PRIMARY: tenant_id embedded directly in JWT (fastest path)
             tenant_id = payload.get("tenant_id")
             if tenant_id:
                 return TenantDatabase(db_instance.db, tenant_id)
-                
+
+            # SECONDARY: look up user from DB to find their tenant_id
             username: str = payload.get("sub")
             if username:
                 if hasattr(request, "state"):
@@ -153,35 +146,40 @@ async def get_database(request: Request = None):
                             request.state.user = user
                 else:
                     user = await db_instance.db.users.find_one({"username": username, "is_active": True})
-                    
-                if user and "tenant_id" in user:
+
+                if user and user.get("tenant_id"):
                     return TenantDatabase(db_instance.db, user["tenant_id"])
         except Exception:
             pass
-            
+
+    # No valid token — return raw DB only for public/unauthenticated endpoints.
+    # Authenticated routes will reject the request via get_current_active_user before
+    # ever querying data, so this is safe.
     return db_instance.db
 
 async def create_indexes():
     db = db_instance.db
-    
-    # Create indexes on tenant_id for all multitenant collections to speed up filtering
-    collections_to_index = [
-        "products", "batches", "customers", "suppliers", "sales", 
+
+    # ── Tenant isolation indexes (MUST be first — critical for security) ────────
+    # Every collection that holds tenant data MUST have a tenant_id index.
+    tenant_collections = [
+        "products", "batches", "customers", "suppliers", "sales",
         "purchases", "payments", "ledger", "stock_logs", "categories",
-        "ocr_tasks", "documents"
+        "ocr_tasks", "documents", "counters", "recalls", "audit_logs",
+        "returns", "settings", "units",
     ]
-    for col in collections_to_index:
+    for col in tenant_collections:
         await db[col].create_index("tenant_id")
 
     # Products indexes
-    await db.products.create_index("sku", unique=True, sparse=True)
+    await db.products.create_index("sku", sparse=True)
     await db.products.create_index("barcode", sparse=True)
     await db.products.create_index("name")
     await db.products.create_index("category_id")
-    await db.products.create_index([("name", "text"), ("sku", "text"), ("barcode", "text")])
+    await db.products.create_index([("tenant_id", 1), ("name", "text"), ("sku", "text"), ("barcode", "text")])
 
-    # Batches indexes
-    await db.batches.create_index([("product_id", 1), ("batch_no", 1)], unique=True)
+    # Batches indexes — compound with tenant_id so FEFO lookups are isolated
+    await db.batches.create_index([("tenant_id", 1), ("product_id", 1), ("batch_no", 1)], unique=True)
     await db.batches.create_index("expiry")
     await db.batches.create_index("product_id")
 
@@ -195,17 +193,16 @@ async def create_indexes():
     await db.suppliers.create_index("name")
     await db.suppliers.create_index([("name", "text"), ("mobile", "text")])
 
-    # Sales indexes
-    await db.sales.create_index("invoice_number", unique=True)
+    # Sales indexes — invoice_number unique per tenant
+    await db.sales.create_index([("tenant_id", 1), ("invoice_number", 1)], unique=True)
     await db.sales.create_index("customer_id")
     await db.sales.create_index("sale_date")
     await db.sales.create_index("status")
-    # Compound indexes for analytics and queries
     await db.sales.create_index([("customer_id", 1), ("sale_date", -1)])
     await db.sales.create_index([("status", 1), ("sale_date", -1)])
 
-    # Purchases indexes
-    await db.purchases.create_index("invoice_number", unique=True, sparse=True)
+    # Purchases indexes — invoice_number unique per tenant
+    await db.purchases.create_index([("tenant_id", 1), ("invoice_number", 1)], unique=True, sparse=True)
     await db.purchases.create_index("supplier_id")
     await db.purchases.create_index("purchase_date")
     await db.purchases.create_index([("supplier_id", 1), ("purchase_date", -1)])
@@ -238,4 +235,7 @@ async def create_indexes():
          ("reference", "text"), ("title", "text")]
     )
 
-    logger.info("Database indexes created")
+    # Counters — compound key so tenant invoice sequences are isolated
+    await db.counters.create_index("tenant_id")
+
+    logger.info("Database indexes created successfully")

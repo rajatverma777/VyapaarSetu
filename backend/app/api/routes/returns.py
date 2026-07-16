@@ -10,11 +10,12 @@ import os
 
 router = APIRouter()
 
-async def get_next_note_number(db, prefix="CN") -> str:
+async def get_next_note_number(db, prefix="CN", tenant_id: str = "") -> str:
     today = datetime.utcnow()
     year = today.strftime("%y")
     month = today.strftime("%m")
-    counter_key = f"{prefix}-{year}{month}"
+    # SECURITY: Prefix with tenant_id to isolate return note sequences per company.
+    counter_key = f"{tenant_id}-{prefix}-{year}{month}"
     result = await db.counters.find_one_and_update(
         {"_id": counter_key},
         {"$inc": {"seq": 1}},
@@ -314,7 +315,7 @@ async def create_customer_return(
     total_amount = round(subtotal + total_tax, 2)
     balance = round(total_amount - data.paid_amount, 2)
 
-    note_number = await get_next_note_number(db, "CN")
+    note_number = await get_next_note_number(db, "CN", tenant_id=current_user.get("tenant_id", ""))
     now = data.date or datetime.utcnow()
 
     return_doc = {
@@ -501,7 +502,7 @@ async def create_supplier_return(
     total_amount = round(subtotal + total_tax, 2)
     balance = round(total_amount - data.paid_amount, 2)
 
-    note_number = await get_next_note_number(db, "DN")
+    note_number = await get_next_note_number(db, "DN", tenant_id=current_user.get("tenant_id", ""))
     now = data.date or datetime.utcnow()
 
     return_doc = {

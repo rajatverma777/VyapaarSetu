@@ -8,11 +8,12 @@ from typing import Optional
 
 router = APIRouter()
 
-async def get_next_purchase_number(db) -> str:
+async def get_next_purchase_number(db, tenant_id: str = "") -> str:
     today = datetime.utcnow()
     year = today.strftime("%y")
     month = today.strftime("%m")
-    counter_key = f"PUR-{year}{month}"
+    # SECURITY: Prefix with tenant_id to isolate purchase sequences per company.
+    counter_key = f"{tenant_id}-PUR-{year}{month}"
     result = await db.counters.find_one_and_update(
         {"_id": counter_key},
         {"$inc": {"seq": 1}},
@@ -139,7 +140,7 @@ async def create_purchase(
     total_amount = round(total_taxable + total_tax, 2)
     balance = round(total_amount - data.paid_amount, 2)
 
-    sys_invoice = await get_next_purchase_number(db)
+    sys_invoice = await get_next_purchase_number(db, tenant_id=current_user.get("tenant_id", ""))
     invoice_number = data.invoice_number or sys_invoice
     now = data.purchase_date or datetime.utcnow()
 

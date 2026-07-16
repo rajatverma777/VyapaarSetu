@@ -11,11 +11,12 @@ from app.api.routes.products import parse_expiry_string
 
 router = APIRouter()
 
-async def get_next_invoice_number(db, prefix="INV") -> str:
+async def get_next_invoice_number(db, prefix="INV", tenant_id: str = "") -> str:
     today = datetime.utcnow()
     year = today.strftime("%y")
     month = today.strftime("%m")
-    counter_key = f"{prefix}-{year}{month}"
+    # SECURITY: Prefix with tenant_id so each company has its own isolated invoice sequence.
+    counter_key = f"{tenant_id}-{prefix}-{year}{month}"
     result = await db.counters.find_one_and_update(
         {"_id": counter_key},
         {"$inc": {"seq": 1}},
@@ -167,7 +168,11 @@ async def create_sale(
     total_amount = round(total_taxable - disc_amt + total_tax, 2)
     balance = round(total_amount - data.paid_amount, 2)
 
-    invoice_number = await get_next_invoice_number(db, "INV" if data.sale_type == "sale" else "SRN")
+    invoice_number = await get_next_invoice_number(
+        db,
+        "INV" if data.sale_type == "sale" else "SRN",
+        tenant_id=current_user.get("tenant_id", "")
+    )
     now = data.sale_date or datetime.utcnow()
 
     # Get customer info

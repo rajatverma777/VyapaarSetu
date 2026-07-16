@@ -31,9 +31,31 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
+    // ── Auth tokens ──────────────────────────────────────────────────────────
     localStorage.removeItem('token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
+
+    // ── Business data (SECURITY: must be wiped on every logout) ──────────────
+    // Cart state — contains customer, products, draft invoices
+    localStorage.removeItem('smart_cart_state')
+    // Customer panel — favorites and recently-viewed customers
+    localStorage.removeItem('cpc_favorites')
+    localStorage.removeItem('cpc_recent')
+    // Wipe any tenant-namespaced keys that might have been written
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (
+        key.startsWith('smart_cart_state_') ||
+        key.startsWith('cpc_favorites_') ||
+        key.startsWith('cpc_recent_')
+      )) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k))
+
     setToken(null)
     setUser(null)
     toast.success('Logged out')

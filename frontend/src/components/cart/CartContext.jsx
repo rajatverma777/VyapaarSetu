@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
+import { useAuth } from '../../context/AuthContext'
 
 const CART_IDS = ['A', 'B', 'C']
-const STORAGE_KEY = 'smart_cart_state'
+// SECURITY: Storage key is namespaced per tenant so carts never leak across accounts.
+const getStorageKey = (tenantId) => tenantId ? `smart_cart_state_${tenantId}` : null
 
 // ── Calculation ───────────────────────────────────────────────────────────────
 export function calcItem(item) {
@@ -43,17 +45,28 @@ function makeDefaultCart(id) {
 }
 
 // ── Load / Save localStorage ──────────────────────────────────────────────────
-function loadState() {
+function loadState(tenantId) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const key = getStorageKey(tenantId)
+    if (!key) return null
+    const raw = localStorage.getItem(key)
     if (!raw) return null
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    // SECURITY: Double-check the stored tenant matches the current session.
+    // If tenant_id is missing from stored data (legacy) or doesn't match, discard.
+    if (parsed.tenant_id && parsed.tenant_id !== tenantId) {
+      localStorage.removeItem(key)
+      return null
+    }
+    return parsed
   } catch { return null }
 }
 
-function saveState(carts, activeId) {
+function saveState(carts, activeId, tenantId) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ carts, activeId, ts: Date.now() }))
+    const key = getStorageKey(tenantId)
+    if (!key) return
+    localStorage.setItem(key, JSON.stringify({ carts, activeId, tenant_id: tenantId, ts: Date.now() }))
   } catch { /* quota exceeded – ignore */ }
 }
 
@@ -61,7 +74,17 @@ function saveState(carts, activeId) {
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const saved = loadState()
+  const { user } = useAuth()
+  const tenantId = user?.tenant_id || ''
+
+  // Load state for the CURRENT tenant only
+  const saved = loadState(tenantId)
+
+  const makeDefaults = () => {
+    const defaults = {}
+    for (const id of CART_IDS) defaults[id] = makeDefaultCart(id)
+    return defaults
+  }
 
   const [carts, setCarts] = useState(() => {
     if (saved?.carts) {
@@ -72,19 +95,41 @@ export function CartProvider({ children }) {
       }
       return merged
     }
-    const defaults = {}
-    for (const id of CART_IDS) defaults[id] = makeDefaultCart(id)
-    return defaults
+    return makeDefaults()
   })
 
   const [activeId, setActiveId] = useState(() => saved?.activeId || 'A')
 
-  // Persist on every change
+  // When the tenant changes (login/logout), reset the cart entirely
+  useEffect(() => {
+    if (!tenantId) {
+      // No user logged in — reset to empty defaults
+      setCarts(makeDefaults())
+      setActiveId('A')
+      return
+    }
+    // Load carts for new tenant
+    const newSaved = loadState(tenantId)
+    if (newSaved?.carts) {
+      const merged = {}
+      for (const id of CART_IDS) {
+        merged[id] = newSaved.carts[id] || makeDefaultCart(id)
+      }
+      setCarts(merged)
+      setActiveId(newSaved.activeId || 'A')
+    } else {
+      setCarts(makeDefaults())
+      setActiveId('A')
+    }
+  }, [tenantId])
+
+  // Persist on every change, keyed to current tenant
   const saveRef = useRef(null)
   useEffect(() => {
+    if (!tenantId) return // don’t persist when no user is logged in
     clearTimeout(saveRef.current)
-    saveRef.current = setTimeout(() => saveState(carts, activeId), 200)
-  }, [carts, activeId])
+    saveRef.current = setTimeout(() => saveState(carts, activeId, tenantId), 200)
+  }, [carts, activeId, tenantId])
 
   // ── Getters ─────────────────────────────────────────────────────────────────
   const activeCart = carts[activeId]

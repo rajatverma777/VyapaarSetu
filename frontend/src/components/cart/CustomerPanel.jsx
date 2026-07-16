@@ -9,6 +9,7 @@ import {
 import { customerAPI, salesAPI } from '../../services/api'
 import { Modal, Spinner } from '../ui'
 import { useCart } from './CartContext'
+import { useAuth } from '../../context/AuthContext'
 import { INDIAN_STATES } from '../../services/constants'
 
 // ── Date formatter ─────────────────────────────────────────────────────────────
@@ -372,12 +373,19 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
   const [showDropdown, setShowDropdown] = useState(false)
   const [cardVisible, setCardVisible]   = useState(false)
 
+  const { user: authUser } = useAuth()
+  const tenantId = authUser?.tenant_id || ''
+
+  // SECURITY: Namespace favorites/recent by tenant_id so they never leak across accounts
+  const favKey    = tenantId ? `cpc_favorites_${tenantId}` : 'cpc_favorites'
+  const recentKey = tenantId ? `cpc_recent_${tenantId}`    : 'cpc_recent'
+
   // Favorites (localStorage)
   const [favorites, setFavorites] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cpc_favorites') || '[]') } catch { return [] }
+    try { return JSON.parse(localStorage.getItem(favKey) || '[]') } catch { return [] }
   })
   const [recentCustomers, setRecentCustomers] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cpc_recent') || '[]') } catch { return [] }
+    try { return JSON.parse(localStorage.getItem(recentKey) || '[]') } catch { return [] }
   })
   const [isPinned, setIsPinned] = useState(false)
 
@@ -442,7 +450,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
     // Update recent customers list
     setRecentCustomers(prev => {
       const updated = [cust, ...prev.filter(c => c.id !== cust.id)].slice(0, 8)
-      try { localStorage.setItem('cpc_recent', JSON.stringify(updated)) } catch {}
+      try { localStorage.setItem(recentKey, JSON.stringify(updated)) } catch {}
       return updated
     })
   }, [setCustomer, autoSetIgst, onCustomerChange])
@@ -489,7 +497,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
     setFavorites(prev => {
       const isFav = prev.some(f => f.id === customer.id)
       const updated = isFav ? prev.filter(f => f.id !== customer.id) : [customer, ...prev].slice(0, 10)
-      try { localStorage.setItem('cpc_favorites', JSON.stringify(updated)) } catch {}
+      try { localStorage.setItem(favKey, JSON.stringify(updated)) } catch {}
       setIsPinned(!isFav)
       return updated
     })

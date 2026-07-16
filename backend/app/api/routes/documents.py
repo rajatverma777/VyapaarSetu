@@ -70,9 +70,10 @@ class DocumentUpdate(BaseModel):
 
 # ── Reference Number Generator ────────────────────────────────────────────────
 
-async def get_next_doc_reference(db, prefix: str = "DOC") -> str:
+async def get_next_doc_reference(db, prefix: str = "DOC", tenant_id: str = "") -> str:
     year = datetime.utcnow().strftime("%Y")
-    counter_key = f"{prefix}-{year}"
+    # SECURITY: Prefix with tenant_id to isolate document sequences per company.
+    counter_key = f"{tenant_id}-{prefix}-{year}"
     result = await db.counters.find_one_and_update(
         {"_id": counter_key},
         {"$inc": {"seq": 1}},
@@ -140,10 +141,9 @@ async def create_document(
     db=Depends(get_database),
     current_user=Depends(get_current_active_user),
 ):
-    # Fetch document prefix from settings
     settings_doc = await db.settings.find_one({"type": "company"}) or {}
     prefix = settings_doc.get("document_prefix", "DOC")
-    reference = await get_next_doc_reference(db, prefix)
+    reference = await get_next_doc_reference(db, prefix, tenant_id=current_user.get("tenant_id", ""))
 
     now = datetime.utcnow()
     doc = {
@@ -260,7 +260,7 @@ async def duplicate_document(
 
     settings_doc = await db.settings.find_one({"type": "company"}) or {}
     prefix = settings_doc.get("document_prefix", "DOC")
-    reference = await get_next_doc_reference(db, prefix)
+    reference = await get_next_doc_reference(db, prefix, tenant_id=current_user.get("tenant_id", ""))
 
     now = datetime.utcnow()
     new_doc = {
