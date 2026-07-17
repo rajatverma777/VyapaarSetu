@@ -160,6 +160,12 @@ async def get_database(request: Request = None):
 async def create_indexes():
     db = db_instance.db
 
+    async def safe_create_index(col, *args, **kwargs):
+        try:
+            await db[col].create_index(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"Index creation skipped/failed on {col} index specs: {e}")
+
     # ── Tenant isolation indexes (MUST be first — critical for security) ────────
     # Every collection that holds tenant data MUST have a tenant_id index.
     tenant_collections = [
@@ -169,73 +175,74 @@ async def create_indexes():
         "returns", "settings", "units",
     ]
     for col in tenant_collections:
-        await db[col].create_index("tenant_id")
+        await safe_create_index(col, "tenant_id")
 
     # Products indexes
-    await db.products.create_index("sku", sparse=True)
-    await db.products.create_index("barcode", sparse=True)
-    await db.products.create_index("name")
-    await db.products.create_index("category_id")
-    await db.products.create_index([("tenant_id", 1), ("name", "text"), ("sku", "text"), ("barcode", "text")])
+    await safe_create_index("products", "sku", unique=True, sparse=True)
+    await safe_create_index("products", "barcode", sparse=True)
+    await safe_create_index("products", "name")
+    await safe_create_index("products", "category_id")
+    await safe_create_index("products", [("tenant_id", 1), ("name", "text"), ("sku", "text"), ("barcode", "text")])
 
     # Batches indexes — compound with tenant_id so FEFO lookups are isolated
-    await db.batches.create_index([("tenant_id", 1), ("product_id", 1), ("batch_no", 1)], unique=True)
-    await db.batches.create_index("expiry")
-    await db.batches.create_index("product_id")
+    await safe_create_index("batches", [("tenant_id", 1), ("product_id", 1), ("batch_no", 1)], unique=True)
+    await safe_create_index("batches", "expiry")
+    await safe_create_index("batches", "product_id")
 
     # Customers indexes
-    await db.customers.create_index("mobile", sparse=True)
-    await db.customers.create_index("name")
-    await db.customers.create_index([("name", "text"), ("mobile", "text"), ("email", "text")])
+    await safe_create_index("customers", "mobile", sparse=True)
+    await safe_create_index("customers", "name")
+    await safe_create_index("customers", [("name", "text"), ("mobile", "text"), ("email", "text")])
 
     # Suppliers indexes
-    await db.suppliers.create_index("mobile", sparse=True)
-    await db.suppliers.create_index("name")
-    await db.suppliers.create_index([("name", "text"), ("mobile", "text")])
+    await safe_create_index("suppliers", "mobile", sparse=True)
+    await safe_create_index("suppliers", "name")
+    await safe_create_index("suppliers", [("name", "text"), ("mobile", "text")])
 
     # Sales indexes — invoice_number unique per tenant
-    await db.sales.create_index([("tenant_id", 1), ("invoice_number", 1)], unique=True)
-    await db.sales.create_index("customer_id")
-    await db.sales.create_index("sale_date")
-    await db.sales.create_index("status")
-    await db.sales.create_index([("customer_id", 1), ("sale_date", -1)])
-    await db.sales.create_index([("status", 1), ("sale_date", -1)])
+    await safe_create_index("sales", [("tenant_id", 1), ("invoice_number", 1)], unique=True)
+    await safe_create_index("sales", "customer_id")
+    await safe_create_index("sales", "sale_date")
+    await safe_create_index("sales", "status")
+    await safe_create_index("sales", [("customer_id", 1), ("sale_date", -1)])
+    await safe_create_index("sales", [("status", 1), ("sale_date", -1)])
 
     # Purchases indexes — invoice_number unique per tenant
-    await db.purchases.create_index([("tenant_id", 1), ("invoice_number", 1)], unique=True, sparse=True)
-    await db.purchases.create_index("supplier_id")
-    await db.purchases.create_index("purchase_date")
-    await db.purchases.create_index([("supplier_id", 1), ("purchase_date", -1)])
+    await safe_create_index("purchases", [("tenant_id", 1), ("invoice_number", 1)], unique=True, sparse=True)
+    await safe_create_index("purchases", "supplier_id")
+    await safe_create_index("purchases", "purchase_date")
+    await safe_create_index("purchases", [("supplier_id", 1), ("purchase_date", -1)])
 
     # Payments indexes
-    await db.payments.create_index("party_id")
-    await db.payments.create_index("payment_date")
-    await db.payments.create_index([("party_id", 1), ("payment_date", -1)])
+    await safe_create_index("payments", "party_id")
+    await safe_create_index("payments", "payment_date")
+    await safe_create_index("payments", [("party_id", 1), ("payment_date", -1)])
 
     # Ledger indexes
-    await db.ledger.create_index("party_id")
-    await db.ledger.create_index("date")
-    await db.ledger.create_index([("party_id", 1), ("date", -1)])
+    await safe_create_index("ledger", "party_id")
+    await safe_create_index("ledger", "date")
+    await safe_create_index("ledger", [("party_id", 1), ("date", -1)])
 
     # Stock logs indexes
-    await db.stock_logs.create_index("product_id")
-    await db.stock_logs.create_index("created_at")
+    await safe_create_index("stock_logs", "product_id")
+    await safe_create_index("stock_logs", "created_at")
 
     # Users indexes
-    await db.users.create_index("username", unique=True)
-    await db.users.create_index("email", unique=True, sparse=True)
+    await safe_create_index("users", "username", unique=True)
+    await safe_create_index("users", "email", unique=True, sparse=True)
 
     # Documents indexes
-    await db.documents.create_index("reference", sparse=True)
-    await db.documents.create_index("status")
-    await db.documents.create_index("created_at")
-    await db.documents.create_index([("customer_name", 1), ("created_at", -1)])
-    await db.documents.create_index(
+    await safe_create_index("documents", "reference", sparse=True)
+    await safe_create_index("documents", "status")
+    await safe_create_index("documents", "created_at")
+    await safe_create_index("documents", [("customer_name", 1), ("created_at", -1)])
+    await safe_create_index(
+        "documents",
         [("customer_name", "text"), ("subject", "text"),
          ("reference", "text"), ("title", "text")]
     )
 
     # Counters — compound key so tenant invoice sequences are isolated
-    await db.counters.create_index("tenant_id")
+    await safe_create_index("counters", "tenant_id")
 
     logger.info("Database indexes created successfully")

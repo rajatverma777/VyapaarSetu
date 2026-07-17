@@ -2383,17 +2383,37 @@ input[type=number] {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   COMPANY LETTERHEAD / PRINT SYSTEM
+   COMPANY LETTERHEAD / PRINT SYSTEM  v2 — Multi-Paper-Size Engine
+   Supports: A4 Portrait · A4 Landscape · A5 Portrait · A5 Landscape
+   Root fix: NO hardcoded width/height. Dimensions come from the
+   .print-preview-* wrapper (screen) or @page size (print).
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── A4 Paper on Screen ──────────────────────────────────────────────────────── */
+/* ── Paper preview wrappers (screen only) ────────────────────────────────────
+   These outer divs size the visible paper sheet on screen.
+   The .print-page inside is always 100%×100% of this wrapper.
+   ─────────────────────────────────────────────────────────────────────────── */
+.print-preview-a4-portrait  { width: 210mm; min-height: 297mm; }
+.print-preview-a4-landscape { width: 297mm; min-height: 210mm; }
+.print-preview-a5-portrait  { width: 148mm; min-height: 210mm; }
+.print-preview-a5-landscape { width: 210mm; min-height: 148mm; }
+
+/* ── .print-page — paper sheet ───────────────────────────────────────────────
+   On screen: fills its .print-preview-* parent.
+   At @media print: fills the physical @page (100% × 100vh).
+   NO fixed width or height — those are set by the wrapper or @page.
+   ─────────────────────────────────────────────────────────────────────────── */
 .print-page {
-  width: 210mm;
-  min-height: 297mm;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
   background: #ffffff;
   color: #0d1b3e;
+  /* Layout: flex column so footer is always pushed to bottom */
+  display: flex;
+  flex-direction: column;
   position: relative;
-  padding: 25mm 20mm;
+  /* padding is supplied by inline style from PrintLayout docPrefs margins */
   margin: 0 auto;
   box-shadow: 0 4px 40px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
   border-radius: 4px;
@@ -2698,19 +2718,26 @@ input[type=number] {
 .print-page:focus-visible { outline: 2px solid #6366f1; outline-offset: 4px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   @MEDIA PRINT — Professional A4 Output
-   Hides all UI chrome; only document visible.
-   Forces light color scheme to prevent dark mode from bleeding.
+   @MEDIA PRINT — Professional Multi-Paper-Size Engine  v2
+   A4 Portrait · A4 Landscape · A5 Portrait · A5 Landscape
+
+   ARCHITECTURE:
+   • @page { size } is injected dynamically by PrintLayout.jsx via a
+     <style id="vyapaar-print-page-size"> tag before window.print().
+   • This block only handles chrome-hiding, body resets, and layout rules.
+   • .print-page uses width:100% + flex-column — never a fixed mm width.
+   • Footer/Signature are flex-flow (margin-top: auto) — never absolute.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media print {
-  /* Force light mode on print regardless of system preference */
+
+  /* ── 1. Force light color scheme — prevent dark-mode bleed ─────────────── */
   * {
     color-scheme: light !important;
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
   }
 
-  /* Hide ALL UI chrome */
+  /* ── 2. Hide ALL UI chrome ──────────────────────────────────────────────── */
   .no-print,
   nav, aside,
   [class*="sidebar"],
@@ -2727,7 +2754,7 @@ input[type=number] {
     display: none !important;
   }
 
-  /* Show print-only content */
+  /* ── 3. Show print-only content ─────────────────────────────────────────── */
   .print-only {
     display: block !important;
     margin: 0 !important;
@@ -2736,56 +2763,112 @@ input[type=number] {
     overflow: visible !important;
   }
 
-  /* Strip background, border, shadows, height-locks from React root / layout wrappers during print */
+  /* ── 4. Strip layout wrappers — React root, AppLayout, flex containers ── */
   #root,
   .ambient-bg,
   [class*="AppLayout"],
-  main,
-  .flex-1 {
+  main {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    width: auto !important;
+    width: 100% !important;
     height: auto !important;
-    min-height: auto !important;
-    max-height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     overflow: visible !important;
+    display: block !important;
   }
 
-  /* Reset page */
-  @page {
-    size: A4 portrait;
-    margin: 0 !important;
-  }
-
+  /* ── 5. html / body reset ──────────────────────────────────────────────── */
   html, body {
     background: white !important;
     color: #0d1b3e !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
     font-size: 10pt !important;
   }
 
-  /* Paper styling */
+  /* ── 6. @page base rule (size is overridden by JS-injected <style> tag) ── */
+  @page {
+    /* Default fallback — JS always overrides this before window.print() */
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* ── 7. .print-page — the paper sheet ──────────────────────────────────── */
+  /*
+   * ROOT FIX: width is 100% of the @page viewport, NOT a fixed 210mm.
+   * This means the same HTML renders correctly on A4, A5, or any size
+   * because the browser's @page { size } drives the physical dimensions.
+   *
+   * height: auto allows multi-page content to flow.
+   * min-height: 100vh fills at least one physical page (prevents blank
+   * trailing pages when content is short).
+   */
   .print-page {
+    /* Paper-size-agnostic: fills whatever @page size is active */
     width: 100% !important;
-    min-height: 100vh !important; /* Take exactly the page viewport height */
-    height: 100vh !important;     /* Lock to exactly one page to avoid blank trailing page */
+    min-height: 100vh !important;
+    height: auto !important;
+    box-sizing: border-box !important;
     margin: 0 !important;
-    /* padding is controlled dynamically by inline styles */
+    /* padding driven by docPrefs inline style — no override here */
     box-shadow: none !important;
     border-radius: 0 !important;
     border: none !important;
     background: white !important;
     color: #0d1b3e !important;
+    /* Kill any screen-only scale transform */
     transform: none !important;
+    zoom: unset !important;
+    /* Keep flex-column layout for footer push-to-bottom */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+    /* Avoid trailing blank page */
     page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* ── 8. Print content area — flex-grow fills space between header & footer */
+  .print-content-area {
+    flex: 1 !important;
+    padding-bottom: 0 !important; /* was 55mm — footer is now in-flow */
+    overflow: visible !important;
+  }
+
+  /* ── 9. Signature row — in-flow, pushed to bottom via margin-top: auto ── */
+  /*
+   * ROOT FIX for signature/footer clipping:
+   * position: absolute with a hardcoded bottom: Xmm fails on A5 because
+   * the page is shorter. Flex + margin-top: auto always anchors to bottom
+   * regardless of paper height.
+   */
+  .print-signature-row {
+    position: static !important;
+    margin-top: auto !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    padding-top: 6mm !important;
+  }
+
+  /* ── 10. Footer — in-flow, after signature ─────────────────────────────── */
+  .print-footer {
+    position: static !important;
+    margin-top: 4mm !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
     box-sizing: border-box !important;
   }
 
-  /* Watermark: absolute position inside print-page container */
+  /* ── 11. Watermark — absolute within print-page (already position:relative) */
   .print-watermark {
     position: absolute !important;
     inset: 0 !important;
@@ -2793,18 +2876,41 @@ input[type=number] {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    pointer-events: none !important;
   }
 
-  /* Ensure colors render in print */
+  /* ── 12. CONFIDENTIAL overlay — absolute within print-page ─────────────── */
+  .print-confidential-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+
+  /* ── 13. Company header — ensure colors render correctly ─────────────────── */
   .company-header-divider {
     background: #cbd5e1 !important;
     print-color-adjust: exact !important;
   }
 
-  /* Prevent content from being cut off mid-element */
-  p, li, tr { page-break-inside: avoid; }
-  h1, h2, h3 { page-break-after: avoid; }
-  table { page-break-inside: auto; }
+  /* ── 14. Table of items — allow multi-page flow ─────────────────────────── */
+  p, li { page-break-inside: avoid; break-inside: avoid; }
+  h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+  table { page-break-inside: auto; break-inside: auto; }
+  tr    { page-break-inside: avoid; break-inside: avoid; }
+
+  /* ── 15. Preview wrapper classes are screen-only — strip on print ──────── */
+  .print-preview-a4-portrait,
+  .print-preview-a4-landscape,
+  .print-preview-a5-portrait,
+  .print-preview-a5-landscape {
+    width: 100% !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+  }
 }
 
 

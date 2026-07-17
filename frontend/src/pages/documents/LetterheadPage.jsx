@@ -20,7 +20,7 @@ import { TableHeader } from '@tiptap/extension-table-header'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { documentsAPI, settingsAPI, customerAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
-import PrintLayout from '../../components/print/PrintLayout'
+import PrintLayout, { injectPrintPageSize } from '../../components/print/PrintLayout'
 import { ConfirmDialog } from '../../components/ui'
 
 const FontSizeMark = Mark.create({
@@ -60,6 +60,22 @@ const FontSizeMark = Mark.create({
 })
 
 const ZOOM_OPTIONS = ['auto', 50, 75, 100, 125, 150]
+
+/* ── Paper size configuration ─────────────────────────────────────────────────────
+   w/h in mm (portrait convention). Used to drive preview dimensions
+   and the autoZoom calculation independently of the hardcoded 794px.
+   ─────────────────────────────────────────────────────────────────── */
+const PAPER_CONFIG = {
+  'A4':           { w: 210, h: 297, label: 'A4 Portrait' },
+  'A4 portrait':  { w: 210, h: 297, label: 'A4 Portrait' },
+  'A4 landscape': { w: 297, h: 210, label: 'A4 Landscape' },
+  'A5':           { w: 148, h: 210, label: 'A5 Portrait' },
+  'A5 portrait':  { w: 148, h: 210, label: 'A5 Portrait' },
+  'A5 landscape': { w: 210, h: 148, label: 'A5 Landscape' },
+}
+
+// 1mm = 3.7795px at 96dpi
+const MM_TO_PX = 3.7795
 
 const DEFAULT_DOC = {
   title: '',
@@ -234,20 +250,24 @@ export default function LetterheadPage() {
   }, [handleMouseMove, handleMouseUp])
 
   // Auto-adjust preview zoom to fit layout width
+  // ROOT FIX: was hardcoded to a4Width=794px. Now uses the actual paper width
+  // from PAPER_CONFIG so the zoom is correct for A5 (=148mm≈4559px) too.
   useEffect(() => {
     if (!showPreview || !previewContainerRef.current) return
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const containerWidth = entry.contentRect.width
-        const a4Width = 794
-        // Calculate scale factor minus padding allowance
-        const scale = (containerWidth - 32) / a4Width
+        const paperDims = PAPER_CONFIG[doc.paper_size] || PAPER_CONFIG['A4']
+        // Convert paper width from mm to px at browser resolution
+        const paperWidthPx = paperDims.w * MM_TO_PX
+        const scale = (containerWidth - 32) / paperWidthPx
         setAutoZoom(Math.max(Math.min(scale, 1.2), 0.35))
       }
     })
     observer.observe(previewContainerRef.current)
     return () => observer.disconnect()
-  }, [showPreview])
+  // Re-run when paper_size changes so zoom snaps immediately
+  }, [showPreview, doc.paper_size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── TipTap editor ────────────────────────────────────────────────────────────
   const editor = useEditor({
@@ -425,6 +445,10 @@ export default function LetterheadPage() {
   // ── Print ─────────────────────────────────────────────────────────────────────
   const handlePrint = async () => {
     if (isEdit) await documentsAPI.recordPrint(id).catch(() => {})
+    // ROOT FIX: inject the correct @page { size } CSS before calling print.
+    // This overrides the static fallback in index.css and ensures the browser
+    // print dialog defaults to the user's selected paper size.
+    injectPrintPageSize(doc.paper_size || 'A4')
     window.print()
   }
 
@@ -825,6 +849,39 @@ export default function LetterheadPage() {
                   ))}
 
                   <div className="border-t dark:border-white/5 pt-3 space-y-3">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Paper Size</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        ['A4 portrait',  'A4 Portrait'],
+                        ['A4 landscape', 'A4 Landscape'],
+                        ['A5 portrait',  'A5 Portrait'],
+                        ['A5 landscape', 'A5 Landscape'],
+                      ].map(([value, label]) => {
+                        const currentSize = (doc.paper_size || 'A4').toLowerCase()
+                        // Normalise: bare 'a4'/'a5' keys default to portrait
+                        const isActive =
+                          currentSize === value ||
+                          (currentSize === 'a4' && value === 'a4 portrait') ||
+                          (currentSize === 'a5' && value === 'a5 portrait')
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setField('paper_size', value)}
+                            className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg border transition-all duration-150 text-center ${
+                              isActive
+                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                                : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-400 hover:text-indigo-600'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="border-t dark:border-white/5 pt-3 space-y-3">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Margins (mm)</p>
                     <div className="grid grid-cols-2 gap-2">
                       {[['margin_top','Top'],['margin_right','Right'],['margin_bottom','Bottom'],['margin_left','Left']].map(([k,l]) => (
@@ -1036,8 +1093,8 @@ export default function LetterheadPage() {
               >
                 <div
                   style={{
-                    width: `${210 * previewZoom}mm`,
-                    height: `${297 * previewZoom}mm`,
+                    width: `${(PAPER_CONFIG[doc.paper_size] || PAPER_CONFIG['A4']).w * previewZoom}mm`,
+                    height: `${(PAPER_CONFIG[doc.paper_size] || PAPER_CONFIG['A4']).h * previewZoom}mm`,
                     overflow: 'hidden',
                     flexShrink: 0
                   }}
@@ -1047,11 +1104,11 @@ export default function LetterheadPage() {
                     style={{
                       transform: `scale(${previewZoom})`,
                       transformOrigin: 'top left',
-                      width: '210mm',
-                      height: '297mm',
+                      width: `${(PAPER_CONFIG[doc.paper_size] || PAPER_CONFIG['A4']).w}mm`,
+                      height: `${(PAPER_CONFIG[doc.paper_size] || PAPER_CONFIG['A4']).h}mm`,
                     }}
                   >
-                    <PrintLayout settings={settings} docPrefs={doc} zoom={1}>
+                    <PrintLayout settings={settings} docPrefs={doc}>
                       {/* Meta block */}
                       <div className="print-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '0.5px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -1115,7 +1172,7 @@ export default function LetterheadPage() {
 
       {/* ── Print-only view ────────────────────────────────────────────────── */}
       <div className="print-only">
-        <PrintLayout settings={settings} docPrefs={doc} zoom={1}>
+        <PrintLayout settings={settings} docPrefs={doc}>
           {/* Meta block */}
           <div className="print-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '0.5px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
