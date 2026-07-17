@@ -179,6 +179,7 @@ export default function LetterheadPage() {
   const [showDocPanel, setShowDocPanel] = useState(true)
   const [activeTab, setActiveTab] = useState('content') // 'content' | 'settings'
   const [showPrintConfirm, setShowPrintConfirm] = useState(false)
+  const [printDebug, setPrintDebug] = useState(false)
   const [autoZoom, setAutoZoom] = useState(0.5)
   const [previewWidth, setPreviewWidth] = useState(600) // default 600px width
   const previewContainerRef = useRef(null)
@@ -848,6 +849,25 @@ export default function LetterheadPage() {
                     </label>
                   ))}
 
+                  <div className="border-t dark:border-white/5 pt-3">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-sm font-bold text-orange-600 dark:text-orange-400">Print Diagnostics</span>
+                      <button
+                        role="switch"
+                        aria-checked={printDebug}
+                        onClick={() => setPrintDebug(p => !p)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 border ${
+                          printDebug ? 'bg-orange-500 border-transparent' : 'bg-gray-200 dark:bg-white/10 border-gray-200 dark:border-white/5'
+                        }`}
+                      >
+                        <span
+                          className="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 shadow"
+                          style={{ transform: printDebug ? 'translateX(18px)' : 'translateX(2px)' }}
+                        />
+                      </button>
+                    </label>
+                  </div>
+
                   <div className="border-t dark:border-white/5 pt-3 space-y-3">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Paper Size</p>
                     <div className="grid grid-cols-2 gap-2">
@@ -1108,7 +1128,7 @@ export default function LetterheadPage() {
                       height: `${(PAPER_CONFIG[doc.paper_size] || PAPER_CONFIG['A4']).h}mm`,
                     }}
                   >
-                    <PrintLayout settings={settings} docPrefs={doc}>
+                    <PrintLayout settings={settings} docPrefs={doc} printDebug={printDebug}>
                       {/* Meta block */}
                       <div className="print-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '0.5px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -1172,7 +1192,7 @@ export default function LetterheadPage() {
 
       {/* ── Print-only view ────────────────────────────────────────────────── */}
       <div className="print-only">
-        <PrintLayout settings={settings} docPrefs={doc}>
+        <PrintLayout settings={settings} docPrefs={doc} printDebug={printDebug}>
           {/* Meta block */}
           <div className="print-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '0.5px solid #f1f5f9', paddingBottom: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>

@@ -2767,7 +2767,8 @@ input[type=number] {
   #root,
   .ambient-bg,
   [class*="AppLayout"],
-  main {
+  main,
+  body :has(.print-only) {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -2779,6 +2780,9 @@ input[type=number] {
     max-height: none !important;
     overflow: visible !important;
     display: block !important;
+    position: static !important;
+    transform: none !important;
+    filter: none !important;
   }
 
   /* ── 5. html / body reset ──────────────────────────────────────────────── */
@@ -2910,6 +2914,65 @@ input[type=number] {
     border-radius: 0 !important;
     border: none !important;
     overflow: visible !important;
+  }
+
+  /* ── 16. Print Debug / Diagnostics CSS ────────────────────────────────── */
+  .print-page.print-debug {
+    border: 2px dashed #ef4444 !important; /* Page printable limit (red) */
+    background: rgba(239, 68, 68, 0.02) !important;
+    position: relative !important;
+  }
+  .print-page.print-debug::after {
+    content: "PRINTABLE PAGE BOUNDARY (MARGIN OUTER LIMIT)";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #ef4444;
+    z-index: 9999;
+    background: white;
+    padding: 1px 4px;
+    border: 1px solid #ef4444;
+    pointer-events: none;
+  }
+  .print-page.print-debug .print-content-area {
+    border: 1.5px dashed #3b82f6 !important; /* Content boundary (blue) */
+    background: rgba(255, 255, 255, 0.95) !important;
+    position: relative !important;
+  }
+  .print-page.print-debug .print-content-area::after {
+    content: "CONTENT BOUNDARY LIMIT";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #3b82f6;
+    z-index: 9999;
+    background: white;
+    padding: 1px 4px;
+    border: 1px solid #3b82f6;
+    pointer-events: none;
+  }
+  .print-page.print-debug .company-header {
+    border: 1px dotted #10b981 !important; /* Header boundary */
+  }
+  .print-page.print-debug .print-signature-row {
+    border: 1px dotted #f59e0b !important; /* Signature boundary */
+  }
+  .print-page.print-debug .print-footer {
+    border: 1px dotted #8b5cf6 !important; /* Footer boundary */
+  }
+
+  /* Prevent elements from exceeding horizontal print limits */
+  .print-body * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .print-body img, .print-body table {
+    max-width: 100% !important;
+    height: auto !important;
   }
 }
 
