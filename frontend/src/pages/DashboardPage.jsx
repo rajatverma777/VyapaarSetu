@@ -33,8 +33,8 @@ function useCountUp(target, duration = 1200) {
   return count
 }
 
-// ── Premium Stat Card ────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, sub, accentColor, onClick, trend, trendLabel, sparkData }) {
+// ── Premium Stat Card (Apple Human Interface Guidelines) ─────────────────────
+function StatCard({ icon: Icon, label, value, sub, accentColor = '#0071e3', onClick, trend, trendLabel, sparkData }) {
   const numericValue = typeof value === 'number' ? value : null
   const displayValue = numericValue !== null
     ? new Intl.NumberFormat('en-IN').format(numericValue)
@@ -44,36 +44,33 @@ function StatCard({ icon: Icon, label, value, sub, accentColor, onClick, trend, 
   const trendClass = trend === 'up' ? 'trend-up' : trend === 'down' ? 'trend-down' : 'trend-neutral'
 
   return (
-    <button onClick={onClick} className="stat-card-v2 text-left w-full" aria-label={label}>
-      {/* Left accent bar */}
-      <div className="stat-card-accent" style={{ background: accentColor }} />
-
+    <button onClick={onClick} className="stat-card-v2 text-left w-full relative overflow-hidden group" aria-label={label}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">
+          <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
             {label}
           </p>
-          <p className="text-2xl font-black text-gray-900 dark:text-white animated-counter leading-none" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em' }}>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white animated-counter leading-none tracking-tight">
             {displayValue}
           </p>
-          {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>}
+          {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">{sub}</p>}
         </div>
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: accentColor + '18', color: accentColor }}
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.08] transition-transform duration-200 group-hover:scale-105"
+          style={{ color: accentColor }}
         >
-          <Icon size={18} />
+          <Icon size={18} strokeWidth={2} />
         </div>
       </div>
 
       {/* Sparkline if data provided */}
       {sparkData && sparkData.length > 1 && (
-        <div className="mb-2 opacity-60">
-          <ResponsiveContainer width="100%" height={32}>
+        <div className="mb-2 opacity-50">
+          <ResponsiveContainer width="100%" height={28}>
             <AreaChart data={sparkData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={`spark-${label.replace(/\s/g,'')}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={accentColor} stopOpacity={0.35}/>
+                  <stop offset="0%" stopColor={accentColor} stopOpacity={0.25}/>
                   <stop offset="100%" stopColor={accentColor} stopOpacity={0}/>
                 </linearGradient>
               </defs>
@@ -93,7 +90,7 @@ function StatCard({ icon: Icon, label, value, sub, accentColor, onClick, trend, 
 
       {/* Trend badge */}
       {trend && trendLabel && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 mt-2">
           <span className={`trend-badge ${trendClass}`}>
             <TrendIcon size={10} />
             {trendLabel}
@@ -217,7 +214,7 @@ export default function DashboardPage() {
           label="Today's Sales"
           value={<Amount value={data?.today_sales?.amount} />}
           sub={`${data?.today_sales?.count || 0} invoices`}
-          accentColor="#6366f1"
+          accentColor="#0071e3"
           sparkData={sparkSales}
           trend="up" trendLabel="+12%"
           onClick={() => navigate('/sales')}
@@ -227,7 +224,7 @@ export default function DashboardPage() {
           label="Today's Purchases"
           value={<Amount value={data?.today_purchases?.amount} />}
           sub={`${data?.today_purchases?.count || 0} entries`}
-          accentColor="#a855f7"
+          accentColor="#0071e3"
           trend="neutral" trendLabel="—"
           onClick={() => navigate('/purchases')}
         />
@@ -236,7 +233,7 @@ export default function DashboardPage() {
           label="Customer Dues"
           value={<Amount value={data?.customer_outstanding} />}
           sub="Total receivable"
-          accentColor="#f59e0b"
+          accentColor="#d97706"
           trend="down" trendLabel="-3%"
           onClick={() => navigate('/reports')}
         />
@@ -245,7 +242,7 @@ export default function DashboardPage() {
           label="Supplier Dues"
           value={<Amount value={data?.supplier_outstanding} />}
           sub="Total payable"
-          accentColor="#ef4444"
+          accentColor="#64748b"
           trend="neutral" trendLabel="—"
           onClick={() => navigate('/reports')}
         />
@@ -253,19 +250,19 @@ export default function DashboardPage() {
 
       {/* ── KPI Row 2: Counts ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users}         label="Customers"  value={data?.total_customers}  accentColor="#10b981" onClick={() => navigate('/customers')} />
-        <StatCard icon={Package}       label="Products"   value={data?.total_products}   accentColor="#6366f1" onClick={() => navigate('/products')} />
+        <StatCard icon={Users}         label="Customers"  value={data?.total_customers}  accentColor="#0071e3" onClick={() => navigate('/customers')} />
+        <StatCard icon={Package}       label="Products"   value={data?.total_products}   accentColor="#0071e3" onClick={() => navigate('/products')} />
         <StatCard
           icon={AlertTriangle}
           label="Low Stock"
           value={data?.low_stock_count}
           sub="Items below threshold"
-          accentColor="#ef4444"
+          accentColor="#e11d48"
           trend={data?.low_stock_count > 0 ? 'down' : 'neutral'}
           trendLabel={data?.low_stock_count > 0 ? 'Action needed' : 'All good'}
           onClick={() => navigate('/inventory')}
         />
-        <StatCard icon={Users}         label="Suppliers"  value={data?.total_suppliers}  accentColor="#a855f7" onClick={() => navigate('/suppliers')} />
+        <StatCard icon={Users}         label="Suppliers"  value={data?.total_suppliers}  accentColor="#64748b" onClick={() => navigate('/suppliers')} />
       </div>
 
       {/* ── Charts + Recent Sales ────────────────────────────────────────────── */}

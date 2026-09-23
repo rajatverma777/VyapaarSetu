@@ -6,11 +6,11 @@ import CommandPalette from '../ui/CommandPalette'
 import { Plus, ShoppingCart, ShoppingBag, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { healthAPI } from '../../services/api'
 
-// FAB quick actions
+// FAB quick actions — Apple Liquid Glass
 const FAB_ACTIONS = [
-  { label: 'New Sale',     to: '/sales/new',    icon: ShoppingCart, bg: 'linear-gradient(135deg,#10b981,#059669)' },
-  { label: 'New Purchase', to: '/purchases/new', icon: ShoppingBag,  bg: 'linear-gradient(135deg,#f59e0b,#d97706)' },
-  { label: 'New Document', to: '/documents/new', icon: FileText,     bg: 'linear-gradient(135deg,#6366f1,#4f46e5)' },
+  { label: 'New Sale',     to: '/sales/new',     icon: ShoppingCart, colorClass: 'fab-action-sale' },
+  { label: 'New Purchase', to: '/purchases/new',  icon: ShoppingBag,  colorClass: 'fab-action-purchase' },
+  { label: 'New Document', to: '/documents/new',  icon: FileText,     colorClass: 'fab-action-doc' },
 ]
 
 function QuickActionFAB() {
@@ -32,17 +32,27 @@ function QuickActionFAB() {
             {FAB_ACTIONS.map((action, i) => {
               const Icon = action.icon
               return (
-                <div key={action.to} className="fab-action-item" style={{ animationDelay: `${i * 40}ms` }}>
+                <button
+                  key={action.to}
+                  type="button"
+                  onClick={() => { navigate(action.to); setOpen(false) }}
+                  className={`fab-action-item ${action.colorClass}`}
+                  style={{ animationDelay: `${i * 35}ms` }}
+                >
                   <span className="fab-action-label">{action.label}</span>
-                  <button className="fab-action-btn" onClick={() => { navigate(action.to); setOpen(false) }} style={{ background: action.bg }}>
-                    <Icon size={16} />
-                  </button>
-                </div>
+                  <div className="fab-action-btn">
+                    <Icon size={17} strokeWidth={2.2} />
+                  </div>
+                </button>
               )
             })}
           </div>
         )}
-        <button className="fab-main" onClick={() => setOpen(o => !o)} aria-label="Quick actions">
+        <button
+          className={`fab-main ${open ? 'fab-main--open' : ''}`}
+          onClick={() => setOpen(o => !o)}
+          aria-label="Quick actions"
+        >
           <div style={{ transform: open ? 'rotate(45deg)' : 'rotate(0)', transition: 'transform 250ms cubic-bezier(0.34,1.56,0.64,1)' }}>
             {open ? <X size={20} /> : <Plus size={20} />}
           </div>
@@ -76,6 +86,7 @@ export default function AppLayout() {
   // On editor pages, always force mini sidebar so the document gets max space
   // but we NEVER hide it completely — user always has the mini sidebar visible
   const isEditorPage = location.pathname.startsWith('/documents/') && location.pathname !== '/documents'
+  const isPosPage = location.pathname === '/sales/new'
   const effectiveMini = isEditorPage ? true : sidebarMini
 
   // Page-transition key
@@ -149,14 +160,14 @@ export default function AppLayout() {
 
       {/* ── MAIN CONTENT ────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 p-3.5 lg:p-4 min-w-0">
-        <main className="flex-1 overflow-hidden bg-white/45 dark:bg-white/[0.03] border border-white/60 dark:border-white/10 rounded-[20px] shadow-[inset_0_1.5px_1.5px_rgba(255,255,255,0.3)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] flex flex-col min-h-0">
+        <main className="flex-1 overflow-hidden bg-white/65 dark:bg-[#121316] border border-black/[0.06] dark:border-white/[0.08] rounded-[20px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_24px_64px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.10)] flex flex-col min-h-0" style={{ backdropFilter: 'blur(36px) saturate(160%)', WebkitBackdropFilter: 'blur(36px) saturate(160%)' }}>
 
           {/* TopNavbar inside glass panel */}
           <TopNavbar onMenuToggle={() => setMobileOpen(o => !o)} />
 
           {/* Scrollable page content */}
-          <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div key={pageKey} className="page-transition-enter">
+          <div className={`flex-1 min-h-0 ${isPosPage ? 'overflow-hidden p-2.5 lg:p-3 flex flex-col' : 'overflow-y-auto p-4 lg:p-6'}`}>
+            <div key={pageKey} className="page-transition-enter flex-1 flex flex-col min-h-0">
               <Outlet />
             </div>
           </div>

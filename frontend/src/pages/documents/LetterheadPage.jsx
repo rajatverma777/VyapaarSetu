@@ -108,10 +108,10 @@ function ToolbarBtn({ onClick, active, title, children, disabled }) {
       disabled={disabled}
       title={title}
       className={`
-        flex items-center justify-center w-8 h-8 rounded-lg text-sm transition-all duration-150 flex-shrink-0
+        flex items-center justify-center w-8 h-8 rounded-lg text-sm transition-all duration-150 flex-shrink-0 cursor-pointer
         ${active
-          ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300'
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+          ? 'bg-[#0071e3]/10 dark:bg-[#0a84ff]/20 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20 dark:border-[#0a84ff]/30 shadow-xs'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-black/[0.04] dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white border border-transparent'
         }
         ${disabled ? 'opacity-30 cursor-not-allowed' : ''}
       `}
@@ -126,33 +126,40 @@ function TableModal({ onInsert, onClose }) {
   const [rows, setRows] = useState(3)
   const [cols, setCols] = useState(3)
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-      <div className="card p-5 w-64 space-y-4 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-sm">Insert Table</h3>
-          <button onClick={onClose} className="icon-btn"><X size={14} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in p-4">
+      <div className="card p-6 w-full max-w-xs space-y-4 shadow-2xl relative">
+        <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.08]">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20 dark:border-[#0a84ff]/25">
+              <Table size={15} />
+            </div>
+            <h3 className="font-bold text-sm text-gray-900 dark:text-white">Insert Table</h3>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-black/[0.05] dark:hover:bg-white/10 transition-colors cursor-pointer">
+            <X size={15} />
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Rows</label>
+            <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 block mb-1">Rows</label>
             <input
               type="number" min={1} max={20} value={rows}
               onChange={e => setRows(+e.target.value)}
-              className="input text-center"
+              className="input text-center font-semibold"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Columns</label>
+            <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 block mb-1">Columns</label>
             <input
               type="number" min={1} max={10} value={cols}
               onChange={e => setCols(+e.target.value)}
-              className="input text-center"
+              className="input text-center font-semibold"
             />
           </div>
         </div>
         <button
           onClick={() => { onInsert(rows, cols); onClose() }}
-          className="btn-primary w-full justify-center"
+          className="btn-primary w-full justify-center py-2"
         >
           Insert Table
         </button>
@@ -521,7 +528,7 @@ export default function LetterheadPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 opacity-30" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#6366f1] opacity-30" />
           <div className="text-sm text-gray-400">Loading editor…</div>
         </div>
       </div>
@@ -595,10 +602,10 @@ export default function LetterheadPage() {
           {/* Settings panel toggle */}
           <button
             onClick={() => setShowDocPanel(p => !p)}
-            className={`p-2 rounded-xl transition-all duration-150 flex-shrink-0 ${
+            className={`p-2 rounded-xl transition-all duration-150 flex-shrink-0 cursor-pointer ${
               showDocPanel
-                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-650 dark:text-indigo-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'
+                ? 'bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20 dark:border-[#0a84ff]/25'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/[0.04] dark:hover:bg-white/5 border border-transparent'
             }`}
             title="Toggle settings panel"
             id="btn-toggle-options-panel"
@@ -609,10 +616,10 @@ export default function LetterheadPage() {
           {/* Preview toggle */}
           <button
             onClick={() => setShowPreview(p => !p)}
-            className={`p-2 rounded-xl transition-all duration-150 flex-shrink-0 ${
+            className={`p-2 rounded-xl transition-all duration-150 flex-shrink-0 cursor-pointer ${
               showPreview
-                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-650 dark:text-indigo-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5'
+                ? 'bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20 dark:border-[#0a84ff]/25'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/[0.04] dark:hover:bg-white/5 border border-transparent'
             }`}
             title="Toggle live preview"
           >
@@ -745,7 +752,7 @@ export default function LetterheadPage() {
                         autoComplete="off"
                       />
                       {showCustSuggestions && customerSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-60 overflow-y-auto">
+                        <div className="search-glass-dropdown top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto">
                           {customerSuggestions.map((cust) => (
                             <button
                               key={cust.id}
@@ -754,10 +761,15 @@ export default function LetterheadPage() {
                                 setField('customer_name', cust.name)
                                 setShowCustSuggestions(false)
                               }}
-                              className="w-full px-4 py-2 text-left text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex justify-between border-b border-gray-100 dark:border-gray-700/50 last:border-0"
+                              className="w-full px-3.5 py-2.5 text-left text-xs hover:bg-[#0071e3]/10 dark:hover:bg-[#0a84ff]/15 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] last:border-0 transition-colors cursor-pointer"
                             >
-                              <span className="font-medium text-gray-900 dark:text-white">{cust.name}</span>
-                              {cust.mobile && <span className="text-gray-500 text-[10px] ml-2">{cust.mobile}</span>}
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20 dark:border-[#0a84ff]/25 flex-shrink-0">
+                                  {cust.name ? cust.name.charAt(0).toUpperCase() : 'C'}
+                                </div>
+                                <span className="font-medium text-gray-900 dark:text-white truncate">{cust.name}</span>
+                              </div>
+                              {cust.mobile && <span className="text-gray-400 font-mono text-[11px] ml-2 flex-shrink-0">{cust.mobile}</span>}
                             </button>
                           ))}
                         </div>
@@ -837,8 +849,8 @@ export default function LetterheadPage() {
                         role="switch"
                         aria-checked={!!doc[key]}
                         onClick={() => setField(key, !doc[key])}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 border ${
-                          doc[key] ? 'bg-indigo-600 border-transparent' : 'bg-gray-200 dark:bg-white/10 border-gray-200 dark:border-white/5'
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 border cursor-pointer ${
+                          doc[key] ? 'bg-[#34c759] border-transparent shadow-xs' : 'bg-black/10 dark:bg-white/10 border-black/10 dark:border-white/10'
                         }`}
                       >
                         <span
@@ -849,15 +861,15 @@ export default function LetterheadPage() {
                     </label>
                   ))}
 
-                  <div className="border-t dark:border-white/5 pt-3">
+                  <div className="border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
                     <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-sm font-bold text-orange-600 dark:text-orange-400">Print Diagnostics</span>
+                      <span className="text-sm font-bold text-amber-600 dark:text-amber-400">Print Diagnostics</span>
                       <button
                         role="switch"
                         aria-checked={printDebug}
                         onClick={() => setPrintDebug(p => !p)}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 border ${
-                          printDebug ? 'bg-orange-500 border-transparent' : 'bg-gray-200 dark:bg-white/10 border-gray-200 dark:border-white/5'
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 border cursor-pointer ${
+                          printDebug ? 'bg-amber-500 border-transparent shadow-xs' : 'bg-black/10 dark:bg-white/10 border-black/10 dark:border-white/10'
                         }`}
                       >
                         <span
@@ -868,8 +880,8 @@ export default function LetterheadPage() {
                     </label>
                   </div>
 
-                  <div className="border-t dark:border-white/5 pt-3 space-y-3">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Paper Size</p>
+                  <div className="border-t border-black/[0.06] dark:border-white/[0.08] pt-3 space-y-3">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Paper Size</p>
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         ['A4 portrait',  'A4 Portrait'],
@@ -888,10 +900,10 @@ export default function LetterheadPage() {
                             key={value}
                             type="button"
                             onClick={() => setField('paper_size', value)}
-                            className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg border transition-all duration-150 text-center ${
+                            className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg border transition-all duration-150 text-center cursor-pointer ${
                               isActive
-                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                                : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-indigo-400 hover:text-indigo-600'
+                                ? 'bg-[#0071e3] dark:bg-[#0a84ff] border-transparent text-white shadow-sm'
+                                : 'border-black/[0.08] dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-[#0071e3]/40 hover:text-[#0071e3] dark:hover:text-[#0a84ff] bg-black/[0.02] dark:bg-white/[0.04]'
                             }`}
                           >
                             {label}
@@ -1088,7 +1100,7 @@ export default function LetterheadPage() {
           {showPreview && (
             <div
               onMouseDown={startResizing}
-              className="w-1.5 hover:w-2 bg-transparent hover:bg-indigo-500/30 cursor-col-resize active:bg-indigo-650 transition-all duration-150 no-print self-stretch flex-shrink-0"
+              className="w-1.5 hover:w-2 bg-transparent hover:bg-[#0071e3]/30 cursor-col-resize active:bg-[#0071e3] transition-all duration-150 no-print self-stretch flex-shrink-0"
               style={{ zIndex: 10, margin: '0 -3px' }}
             />
           )}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
-import { Plus, Upload, Download, Edit2, Trash2, Package, RefreshCw, Settings, FolderPlus, ChevronUp, ChevronDown, Sparkles } from 'lucide-react'
+import { Plus, Upload, Download, Edit2, Trash2, Package, RefreshCw, Settings, FolderPlus, ChevronUp, ChevronDown, Sparkles, Warehouse, TrendingUp, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { productAPI, categoryAPI, inventoryAPI } from '../services/api'
 import AIImportModal from '../components/products/AIImportModal'
@@ -32,6 +32,16 @@ export default function ProductsPage() {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
   const [sortBy, setSortBy]       = useState('name')
   const [sortOrder, setSortOrder] = useState(1) // 1 = asc, -1 = desc
+  const [inventoryStats, setInventoryStats] = useState(null)
+
+  const loadInventoryStats = async () => {
+    try {
+      const { data } = await inventoryAPI.status()
+      setInventoryStats(data)
+    } catch (err) {
+      // non-critical
+    }
+  }
 
 
   const [showForm, setShowForm]         = useState(false)
@@ -161,7 +171,7 @@ export default function ProductsPage() {
     }
   }
 
-  useEffect(() => { loadCategories() }, [])
+  useEffect(() => { loadCategories(); loadInventoryStats() }, [])
   useEffect(() => { load() }, [search, catFilter, lowStock, page, sortBy, sortOrder])
   useEffect(() => {
     const handleGlobalClick = () => {
@@ -187,23 +197,23 @@ export default function ProductsPage() {
     return (
       <th 
         onClick={() => handleSort(field)}
-        className={`group cursor-pointer select-none hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors ${isRight ? 'text-right' : ''}`}
+        className={`group cursor-pointer select-none hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-colors ${isRight ? 'text-right' : ''}`}
       >
-        <div className={`flex items-center gap-2 ${isRight ? 'justify-end' : ''}`}>
+        <div className={`flex items-center gap-1.5 ${isRight ? 'justify-end' : ''}`}>
           <span className="group-hover:text-gray-950 dark:group-hover:text-white transition-colors">
             {label}
           </span>
           <span className={`
             inline-flex items-center justify-center 
-            w-5 h-5 rounded-md 
-            bg-indigo-500/10 dark:bg-indigo-400/10 
+            w-4 h-4 rounded-md 
+            bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 
             backdrop-blur-sm 
-            border border-indigo-500/20 dark:border-indigo-400/20 
-            text-indigo-600 dark:text-indigo-400 
-            transition-all duration-300 ease-out 
+            border border-[#0071e3]/20 dark:border-[#0a84ff]/25 
+            text-[#0071e3] dark:text-[#0a84ff] 
+            transition-all duration-200 ease-out 
             ${active ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-40 group-hover:scale-90'}
           `}>
-            <Icon size={12} strokeWidth={2.5} />
+            <Icon size={11} strokeWidth={2.5} />
           </span>
         </div>
       </th>
@@ -253,6 +263,7 @@ export default function ProductsPage() {
       }
       setShowForm(false)
       load()
+      loadInventoryStats()
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Save failed')
     } finally { setSaving(false) }
@@ -263,6 +274,7 @@ export default function ProductsPage() {
       await productAPI.delete(id)
       toast.success('Product deleted')
       load()
+      loadInventoryStats()
     } catch { toast.error('Delete failed') }
   }
 
@@ -290,6 +302,7 @@ export default function ProductsPage() {
       toast.success(`Deleted ${selectedIds.length} products`, { id: toastId })
       setSelectedIds([])
       load()
+      loadInventoryStats()
     } catch {
       toast.error('Delete failed', { id: toastId })
     }
@@ -396,6 +409,7 @@ export default function ProductsPage() {
         toast.success(`Imported ${data.imported} products`, { id: toastId })
         if (data.errors.length) toast.error(`${data.errors.length} errors`)
         load()
+        loadInventoryStats()
       } catch { toast.error('Import failed', { id: toastId }) }
     }
     e.target.value = ''
@@ -455,6 +469,7 @@ export default function ProductsPage() {
       setShowPreviewModal(false)
       setImportPreviewItems([])
       load()
+      loadInventoryStats()
       
       const successCount = results.length
       const failCount = errors.length
@@ -486,7 +501,7 @@ export default function ProductsPage() {
           )}
           <input type="file" ref={fileRef} onChange={handleBulkImport} accept=".xlsx,.xls,.png,.jpg,.jpeg,.pdf" className="hidden" />
           <button onClick={() => setShowAIImportModal(true)} className="btn-secondary flex items-center gap-1.5">
-            <Sparkles size={15} className="text-indigo-500 animate-pulse" /> Import via AI
+            <Sparkles size={15} className="text-[#0071e3] dark:text-[#0a84ff]" /> Import via AI
           </button>
           <button onClick={() => fileRef.current.click()} className="btn-secondary">
             <Upload size={15} /> Bulk Import
@@ -494,6 +509,82 @@ export default function ProductsPage() {
           <button onClick={openAdd} className="btn-primary">
             <Plus size={16} /> Add Product
           </button>
+        </div>
+      </div>
+
+      {/* Inventory KPI Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Products</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/15 border border-blue-500/20 dark:border-blue-400/25">
+              <Package size={16} className="text-[#0071e3] dark:text-[#0a84ff]" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {inventoryStats?.total_products ?? total}
+            </div>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 font-medium">Catalog SKUs listed</p>
+          </div>
+        </div>
+
+        <div className="card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Healthy Stock</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-emerald-500/10 dark:bg-emerald-400/15 border border-emerald-500/20 dark:border-emerald-400/25">
+              <TrendingUp size={16} className="text-[#34c759] dark:text-[#30d158]" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-[#34c759] dark:text-[#30d158]">
+              {inventoryStats ? Math.max(0, inventoryStats.total_products - inventoryStats.low_stock) : '—'}
+            </div>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 font-medium">Adequate stock count</p>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => { setLowStock(prev => !prev); setPage(1) }}
+          className={`card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group select-none ${
+            lowStock ? 'ring-2 ring-amber-500/40 border-amber-500/50 bg-amber-500/[0.04]' : ''
+          }`}
+          title="Click to toggle low stock filter"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Low Stock Alert</span>
+              {lowStock && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              )}
+            </div>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-amber-500/10 dark:bg-amber-400/15 border border-amber-500/20 dark:border-amber-400/25 group-hover:scale-105 transition-transform">
+              <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+              {inventoryStats?.low_stock ?? 0}
+            </div>
+            <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-1 font-medium">
+              {lowStock ? 'Filter active (click to clear)' : 'Click to filter list'}
+            </p>
+          </div>
+        </div>
+
+        <div className="card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Stock Valuation</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/15 border border-blue-500/20 dark:border-blue-400/25">
+              <Warehouse size={16} className="text-[#0071e3] dark:text-[#0a84ff]" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {inventoryStats ? <Amount value={inventoryStats.total_value} /> : '—'}
+            </div>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 font-medium">Purchase asset value</p>
+          </div>
         </div>
       </div>
 
@@ -515,11 +606,25 @@ export default function ProductsPage() {
             <Settings size={15} />
           </button>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
-          <input type="checkbox" checked={lowStock} onChange={e => { setLowStock(e.target.checked); setPage(1) }} className="rounded" />
-          Low Stock Only
-        </label>
-        <button onClick={load} className="filter-icon-glass" title="Refresh"><RefreshCw size={15} /></button>
+        <button
+          type="button"
+          onClick={() => { setLowStock(v => !v); setPage(1) }}
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold transition-all duration-200 border cursor-pointer ${
+            lowStock
+              ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-400 shadow-sm ring-2 ring-amber-500/20'
+              : 'bg-white/40 dark:bg-white/5 border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-white/10'
+          }`}
+          title={lowStock ? "Showing only low stock products" : "Filter low stock products"}
+        >
+          <span className={`w-2 h-2 rounded-full transition-colors ${lowStock ? 'bg-amber-500 animate-pulse' : 'bg-gray-400 dark:bg-gray-500'}`} />
+          <span>Low Stock Only</span>
+          {inventoryStats?.low_stock > 0 && (
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${lowStock ? 'bg-amber-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
+              {inventoryStats.low_stock}
+            </span>
+          )}
+        </button>
+        <button onClick={() => { load(); loadInventoryStats() }} className="filter-icon-glass" title="Refresh"><RefreshCw size={15} /></button>
       </div>
 
       {/* Table */}
@@ -577,25 +682,51 @@ export default function ProductsPage() {
                   </td>
                   <td>
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{p.name}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-gray-500">
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">{p.name}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs">
                         {p.category_name && (
                           <span className="cat-glass-chip">
                             {p.category_name}
                           </span>
                         )}
+                        {p.sku && (
+                          <span className="font-mono text-[10px] text-gray-500 dark:text-gray-400 bg-black/[0.04] dark:bg-white/[0.06] px-1.5 py-0.5 rounded border border-black/[0.04] dark:border-white/[0.06]">
+                            #{p.sku}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td>{p.pack || '—'}</td>
-                  <td>{p.cases !== null && p.cases !== undefined ? p.cases : '—'}</td>
+                  <td>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {p.pack || '—'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {p.cases !== null && p.cases !== undefined ? p.cases : '—'}
+                    </span>
+                  </td>
                   <td className="text-right">
-                    <div className="text-right">
-                      <span className={`font-medium ${p.current_stock <= p.min_stock_alert ? 'text-red-600 font-semibold' : 'text-gray-900 dark:text-white'}`}>
-                        {p.current_stock} PCS
-                      </span>
+                    <div className="flex flex-col items-end gap-1">
+                      {p.current_stock <= 0 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          0 {p.unit || 'PCS'}
+                        </span>
+                      ) : p.current_stock <= (p.min_stock_alert ?? 10) ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          {p.current_stock} {p.unit || 'PCS'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold text-gray-900 dark:text-white bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.08]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {p.current_stock} {p.unit || 'PCS'}
+                        </span>
+                      )}
                       {p.pack && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
                           {(() => {
                             const match = p.pack.match(/\d+$/);
                             const packSize = match ? parseInt(match[0]) : 1;
@@ -613,16 +744,46 @@ export default function ProductsPage() {
                       )}
                     </div>
                   </td>
-                  <td className="text-right"><Amount value={p.purchase_price} /></td>
-                  <td className="text-right font-semibold text-primary-600"><Amount value={p.selling_price} /></td>
-                  <td>{p.batch || '—'}</td>
-                  <td className="font-semibold text-orange-600 dark:text-orange-400">{p.expiry || '—'}</td>
-                  <td>{p.gst_rate}%</td>
-                  <td><StatusBadge status={p.is_active ? 'active' : 'inactive'} /></td>
+                  <td className="text-right text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <Amount value={p.purchase_price} />
+                  </td>
+                  <td className="text-right text-xs font-semibold text-[#0071e3] dark:text-[#0a84ff]">
+                    <Amount value={p.selling_price} />
+                  </td>
+                  <td>
+                    <span className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                      {p.batch || '—'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      {p.expiry || '—'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {p.gst_rate}%
+                    </span>
+                  </td>
+                  <td>
+                    <StatusBadge status={p.is_active ? 'active' : 'inactive'} />
+                  </td>
                   <td>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => openEdit(p)} className="btn-icon text-indigo-600 dark:text-indigo-400"><Edit2 size={14} /></button>
-                      <button onClick={() => setDeleteTarget(p)} className="btn-icon text-red-500"><Trash2 size={14} /></button>
+                      <button 
+                        onClick={() => openEdit(p)} 
+                        className="btn-icon text-[#0071e3] dark:text-[#0a84ff] hover:bg-blue-500/10"
+                        title="Edit product"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        onClick={() => setDeleteTarget(p)} 
+                        className="btn-icon text-rose-500 hover:bg-rose-500/10"
+                        title="Delete product"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </td>
                 </tr>

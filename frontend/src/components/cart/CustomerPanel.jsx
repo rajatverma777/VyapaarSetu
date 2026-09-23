@@ -51,20 +51,30 @@ const getGradient = (name = '') => {
 
 // ── Customer type badge config ─────────────────────────────────────────────────
 const TYPE_BADGE = {
-  retail:      { label: 'Retail',      bg: '#dbeafe', text: '#1d4ed8', dark: 'rgba(59,130,246,0.20)', darkText: '#93c5fd' },
-  wholesale:   { label: 'Wholesale',   bg: '#ede9fe', text: '#6d28d9', dark: 'rgba(139,92,246,0.20)', darkText: '#c4b5fd' },
-  distributor: { label: 'Distributor', bg: '#ffedd5', text: '#c2410c', dark: 'rgba(249,115,22,0.20)', darkText: '#fdba74' },
-  hospital:    { label: 'Hospital',    bg: '#dcfce7', text: '#15803d', dark: 'rgba(34,197,94,0.20)',  darkText: '#86efac' },
-  vip:         { label: 'VIP',         bg: '#fef9c3', text: '#a16207', dark: 'rgba(234,179,8,0.20)', darkText: '#fde047' },
+  retail:      { label: 'Retail',      bg: 'rgba(0,113,227,0.10)', text: '#0071e3', dark: 'rgba(10,132,255,0.18)', darkText: '#0a84ff' },
+  wholesale:   { label: 'Wholesale',   bg: 'rgba(0,113,227,0.12)', text: '#0071e3', dark: 'rgba(10,132,255,0.18)', darkText: '#0a84ff' },
+  distributor: { label: 'Distributor', bg: 'rgba(255,149,0,0.12)', text: '#ff9500', dark: 'rgba(255,159,10,0.18)', darkText: '#ff9f0a' },
+  hospital:    { label: 'Hospital',    bg: 'rgba(52,199,89,0.12)', text: '#34c759', dark: 'rgba(48,209,88,0.18)',  darkText: '#30d158' },
+  vip:         { label: 'VIP',         bg: 'rgba(255,204,0,0.15)', text: '#b28600', dark: 'rgba(255,214,10,0.18)', darkText: '#ffd60a' },
 }
 
 // ── Health Score ───────────────────────────────────────────────────────────────
 function getHealthScore(customer, creditExceeded) {
   const balance = customer?.current_balance || 0
   const limit   = customer?.credit_limit    || 0
-  if (creditExceeded) return { label: 'At Risk', color: '#ef4444', icon: AlertCircle, bg: 'rgba(239,68,68,0.08)' }
-  if (limit > 0 && balance > limit * 0.7) return { label: 'Good', color: '#f59e0b', icon: Activity, bg: 'rgba(245,158,11,0.08)' }
-  return { label: 'Excellent', color: '#10b981', icon: CheckCircle2, bg: 'rgba(16,185,129,0.08)' }
+  if (creditExceeded || (limit > 0 && balance > limit)) {
+    return { label: 'Credit Exceeded', color: '#ff3b30', icon: AlertCircle, bg: 'rgba(255,59,48,0.10)' }
+  }
+  if (limit > 0 && balance > limit * 0.7) {
+    return { label: 'High Exposure', color: '#ff9500', icon: AlertCircle, bg: 'rgba(255,149,0,0.10)' }
+  }
+  if (balance > 100000) {
+    return { label: 'High Dues', color: '#ff9500', icon: AlertCircle, bg: 'rgba(255,149,0,0.10)' }
+  }
+  if (balance > 0) {
+    return { label: 'Pending Dues', color: '#ff9500', icon: Activity, bg: 'rgba(255,149,0,0.10)' }
+  }
+  return { label: 'All Clear', color: '#34c759', icon: CheckCircle2, bg: 'rgba(52,199,89,0.10)' }
 }
 
 // ── Avatar Component ───────────────────────────────────────────────────────────
@@ -171,7 +181,7 @@ const FinancialWidget = memo(({ outstanding, creditLimit, creditExceeded, cartTo
       {creditLimit > 0 && (
         <div className="mt-2 space-y-1">
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-gray-500 dark:text-indigo-300/60">Credit Utilization</span>
+            <span className="text-gray-500 dark:text-gray-400">Credit Utilization</span>
             <span style={{ color: status.color }} className="font-semibold">{usedPct.toFixed(0)}%</span>
           </div>
           <div className="cpc-credit-bar-track">
@@ -544,197 +554,187 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
   if (customer) {
     return (
       <>
-        <div className={`cpc-card-root ${cardVisible ? 'cpc-card-visible' : 'cpc-card-hidden'}`}>
+        <div className={`cpc-card-root ${cardVisible ? 'cpc-card-visible' : 'cpc-card-hidden'} p-2.5 sm:p-3`}>
 
-        {/* ── Three-column profile layout ──────────────────────────────── */}
-        <div className="cpc-three-col">
+          {/* ── Sleek, Horizontal Apple Customer Strip ── */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
 
-          {/* ── LEFT: Identity ───────────────────────────────────────── */}
-          <div className="cpc-left-col">
-            {/* Avatar + pin */}
-            <div className="relative self-start">
-              <CustomerAvatar name={customer.name} size={52} animate={cardVisible} />
+            {/* ── LEFT: Identity ── */}
+            <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
+              {/* Avatar + pin */}
+              <div className="relative flex-shrink-0">
+                <CustomerAvatar name={customer.name} size={40} animate={cardVisible} />
+                <button
+                  type="button"
+                  onClick={toggleFavorite}
+                  title={isPinned ? 'Remove from favorites' : 'Add to favorites'}
+                  className="cpc-pin-btn"
+                  style={{ color: isPinned ? '#f59e0b' : undefined }}
+                >
+                  <Star size={9} fill={isPinned ? '#f59e0b' : 'none'} />
+                </button>
+              </div>
+
+              {/* Name + badges + contact */}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-sm text-gray-900 dark:text-white tracking-tight truncate max-w-[160px] sm:max-w-[200px]">
+                    {customer.name}
+                  </span>
+                  {customer.price_level && <TypeBadge type={customer.price_level} />}
+                  {health && (
+                    <span
+                      className="inline-flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border"
+                      style={{ background: health.bg, color: health.color, borderColor: `${health.color}33` }}
+                    >
+                      <health.icon size={9} />
+                      <span>{health.label}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Contact info row */}
+                <div className="flex items-center gap-2.5 mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap">
+                  {customer.mobile && (
+                    <span className="flex items-center gap-1">
+                      <Phone size={10} className="text-[#0071e3] dark:text-[#0a84ff]" />
+                      <span>{customer.mobile}</span>
+                    </span>
+                  )}
+                  {customer.gstin && (
+                    <span className="flex items-center gap-1 font-mono text-[10px] text-gray-400">
+                      <CreditCard size={10} />
+                      <span>{customer.gstin}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ── CENTER: Non-redundant Financial Metrics ── */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Outstanding Balance */}
+              <div className="rounded-xl px-3 py-1.5 bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.08] min-w-[125px]">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                  Outstanding Due
+                </span>
+                <span className={`block font-bold text-xs mt-0.5 ${outstanding > 0 ? 'text-[#ff9500] dark:text-[#ff9f0a]' : 'text-[#34c759]'}`}>
+                  {fmtCurrency(outstanding)}
+                </span>
+              </div>
+
+              {/* Credit Limit */}
+              <div className="rounded-xl px-3 py-1.5 bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.08] min-w-[110px]">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                  Credit Limit
+                </span>
+                <span className="block font-semibold text-xs text-gray-800 dark:text-gray-200 mt-0.5">
+                  {creditLimit > 0 ? fmtCurrency(creditLimit) : 'No Limit (Open)'}
+                </span>
+              </div>
+
+              {/* Last Purchase or Lifetime */}
+              {customer.last_purchase_date ? (
+                <div className="hidden xl:block rounded-xl px-3 py-1.5 bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.08] min-w-[100px]">
+                  <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                    Last Order
+                  </span>
+                  <span className="block font-semibold text-xs text-gray-700 dark:text-gray-300 mt-0.5">
+                    {daysSince(customer.last_purchase_date)}
+                  </span>
+                </div>
+              ) : customer.lifetime_purchase != null && (
+                <div className="hidden xl:block rounded-xl px-3 py-1.5 bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.08] min-w-[100px]">
+                  <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                    Lifetime
+                  </span>
+                  <span className="block font-semibold text-xs text-gray-700 dark:text-gray-300 mt-0.5">
+                    {fmtCurrency(customer.lifetime_purchase)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* ── RIGHT: Compact Apple Quick Actions + Close ── */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 self-end lg:self-center">
+              {/* Ledger */}
               <button
                 type="button"
-                onClick={toggleFavorite}
-                title={isPinned ? 'Remove from favorites' : 'Add to favorites'}
-                className="cpc-pin-btn"
-                style={{ color: isPinned ? '#f59e0b' : undefined }}
+                onClick={openLedger}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20 dark:border-[#0a84ff]/25 hover:bg-[#0071e3]/20 transition-all cursor-pointer shadow-xs"
+                title="Customer Ledger"
               >
-                <Star size={11} fill={isPinned ? '#f59e0b' : 'none'} />
+                <BookOpen size={12} />
+                <span>Ledger</span>
+              </button>
+
+              {/* History */}
+              <button
+                type="button"
+                onClick={openHistory}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.08] text-gray-700 dark:text-gray-200 hover:bg-black/[0.06] dark:hover:bg-white/10 transition-all cursor-pointer"
+                title="Sales History"
+              >
+                <History size={12} />
+                <span className="hidden sm:inline">History</span>
+              </button>
+
+              {/* WhatsApp */}
+              {customer.mobile && (
+                <button
+                  type="button"
+                  onClick={() => window.open(`https://wa.me/91${customer.mobile.replace(/\D/g, '')}`, '_blank')}
+                  className="w-7 h-7 rounded-xl flex items-center justify-center bg-[#25d366]/10 text-[#25d366] border border-[#25d366]/20 hover:bg-[#25d366]/20 transition-all cursor-pointer"
+                  title="WhatsApp"
+                >
+                  <MessageCircle size={13} />
+                </button>
+              )}
+
+              {/* Call */}
+              {customer.mobile && (
+                <button
+                  type="button"
+                  onClick={() => window.location.href = `tel:${customer.mobile}`}
+                  className="w-7 h-7 rounded-xl flex items-center justify-center bg-[#34c759]/10 text-[#34c759] border border-[#34c759]/20 hover:bg-[#34c759]/20 transition-all cursor-pointer"
+                  title="Call Customer"
+                >
+                  <Phone size={12} />
+                </button>
+              )}
+
+              {/* Edit */}
+              <button
+                type="button"
+                onClick={openEdit}
+                className="w-7 h-7 rounded-xl flex items-center justify-center bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.08] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all cursor-pointer"
+                title="Edit Customer Details"
+              >
+                <Edit3 size={12} />
+              </button>
+
+              {/* Change / Deselect Customer */}
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="w-7 h-7 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
+                title="Change Customer (Deselect)"
+              >
+                <X size={14} />
               </button>
             </div>
 
-            {/* Name + badge */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-2 flex-wrap">
-                <span className="cpc-customer-name">{customer.name}</span>
-              </div>
-              {customer.price_level && (
-                <div className="mt-1">
-                  <TypeBadge type={customer.price_level} />
-                </div>
-              )}
-              {/* Contact details */}
-              <div className="mt-2 space-y-1">
-                {customer.mobile && (
-                  <p className="cpc-contact-row">
-                    <Phone size={10} className="flex-shrink-0 opacity-70" />
-                    <span>{customer.mobile}</span>
-                  </p>
-                )}
-                {customer.gstin && (
-                  <p className="cpc-contact-row font-mono">
-                    <CreditCard size={10} className="flex-shrink-0 opacity-70" />
-                    <span>{customer.gstin}</span>
-                  </p>
-                )}
-                {customer.email && (
-                  <p className="cpc-contact-row truncate">
-                    <span className="opacity-70">@</span>
-                    <span className="truncate">{customer.email}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Health score */}
-              {health && (
-                <div
-                  className="cpc-health-chip mt-2"
-                  style={{ background: health.bg, color: health.color, borderColor: `${health.color}33` }}
-                >
-                  <health.icon size={10} />
-                  <span>{health.label}</span>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* ── CENTER: Stats ─────────────────────────────────────────── */}
-          <div className="cpc-center-col">
-            {/* Financial Widget */}
-            <FinancialWidget
-              outstanding={outstanding}
-              creditLimit={creditLimit}
-              creditExceeded={creditExceeded}
-              cartTotal={cartTotal}
-            />
-
-            {/* Stat grid */}
-            <div className="cpc-stat-grid">
-              <StatChip
-                label="Outstanding"
-                value={fmtCurrency(outstanding)}
-                accent={outstanding > 0 ? '#f59e0b' : '#10b981'}
-              />
-              <StatChip
-                label="Credit Limit"
-                value={creditLimit > 0 ? fmtCurrency(creditLimit) : '—'}
-                accent="#6366f1"
-              />
-              <StatChip
-                label="Avail Credit"
-                value={creditLimit > 0 ? fmtCurrency(availCredit) : '∞'}
-                accent={creditExceeded ? '#ef4444' : '#10b981'}
-              />
-              {customer.lifetime_purchase != null && (
-                <StatChip
-                  label="Lifetime"
-                  value={fmtCurrency(customer.lifetime_purchase)}
-                  accent="#6366f1"
-                />
-              )}
-              {customer.last_purchase_date && (
-                <StatChip
-                  label="Last Purchase"
-                  value={daysSince(customer.last_purchase_date)}
-                  sub={customer.last_invoice_no ? `#${customer.last_invoice_no}` : undefined}
-                  accent="#3b82f6"
-                />
-              )}
-              {customer.avg_order_value != null && (
-                <StatChip
-                  label="Avg Order"
-                  value={fmtCurrency(customer.avg_order_value)}
-                  accent="#8b5cf6"
-                />
-              )}
+          {/* Credit exceeded warning banner (if any) */}
+          {creditExceeded && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-1.5 animate-in fade-in">
+              <AlertTriangle size={13} className="flex-shrink-0" />
+              <span className="font-semibold">Credit Limit Exceeded! Current exposure {fmtCurrency(totalExposure)}</span>
             </div>
+          )}
 
-            {/* Credit exceeded banner */}
-            {creditExceeded && (
-              <div className="cpc-danger-banner">
-                <AlertTriangle size={12} className="flex-shrink-0" />
-                <span>Credit exceeded! Total exposure {fmtCurrency(totalExposure)}</span>
-              </div>
-            )}
-          </div>
-
-          {/* ── RIGHT: Actions + close ────────────────────────────────── */}
-          <div className="cpc-right-col">
-            {/* Close btn */}
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="cpc-close-btn"
-              title="Change customer"
-            >
-              <X size={13} />
-            </button>
-
-            {/* Action buttons */}
-            <div className="cpc-action-grid">
-              <ActionBtn
-                icon={Edit3}
-                label="Edit"
-                accent="#6366f1"
-                onClick={openEdit}
-              />
-              <ActionBtn
-                icon={History}
-                label="History"
-                accent="#3b82f6"
-                onClick={openHistory}
-              />
-              <ActionBtn
-                icon={BookOpen}
-                label="Ledger"
-                accent="#8b5cf6"
-                onClick={openLedger}
-              />
-              <ActionBtn
-                icon={Wallet}
-                label="Outstanding"
-                accent={outstanding > 0 ? '#f59e0b' : '#10b981'}
-                onClick={openOutstanding}
-              />
-              <ActionBtn
-                icon={Phone}
-                label="Call"
-                accent="#10b981"
-                onClick={() => customer.mobile && (window.location.href = `tel:${customer.mobile}`)}
-              />
-              <ActionBtn
-                icon={MessageCircle}
-                label="WhatsApp"
-                accent="#25d366"
-                onClick={() => customer.mobile && window.open(`https://wa.me/91${customer.mobile.replace(/\D/g, '')}`, '_blank')}
-              />
-            </div>
-
-            {/* Tags */}
-            {customer.tags?.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {customer.tags.slice(0, 3).map((tag, i) => (
-                  <span key={i} className="cpc-tag">
-                    <Tag size={8} /> {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
-      </div>
 
       {/* ══════════ EDIT CUSTOMER MODAL ══════════ */}
       <Modal open={editModal} onClose={() => setEditModal(false)} title={`Edit - ${customer?.name}`} size="lg"
@@ -821,24 +821,24 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
               <tbody>
                 {historyData.map(s => (
                   <tr key={s.id}>
-                    <td className="font-mono font-semibold text-indigo-600 dark:text-indigo-400">{s.invoice_no || `#${s.id}`}</td>
+                    <td className="font-mono font-semibold text-[#0071e3] dark:text-[#0a84ff]">{s.invoice_no || `#${s.id}`}</td>
                     <td>{fmtDate(s.invoice_date || s.created_at)}</td>
                     <td className="text-right font-bold">₹{(s.grand_total || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                     <td className="capitalize text-sm text-gray-500">{s.payment_mode || '—'}</td>
                     <td>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                        s.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400' :
-                        s.payment_status === 'partial' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400' :
-                        'bg-red-50 text-red-700 dark:bg-red-900/25 dark:text-red-400'
+                        s.payment_status === 'paid' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                        s.payment_status === 'partial' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                        'bg-red-500/10 text-red-600 dark:text-red-400'
                       }`}>{s.payment_status || 'pending'}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-indigo-200/40 dark:border-indigo-700/30 bg-indigo-50/30 dark:bg-indigo-900/10">
+                <tr className="border-t border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02]">
                   <td colSpan={2} className="px-4 py-2.5 text-xs font-semibold text-gray-500">{historyData.length} invoices</td>
-                  <td className="px-4 py-2.5 text-right font-bold text-indigo-700 dark:text-indigo-300">
+                  <td className="px-4 py-2.5 text-right font-bold text-gray-900 dark:text-white">
                     ₹{historyData.reduce((s, i) => s + (i.grand_total || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
                   <td colSpan={2} />
@@ -863,16 +863,16 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
             {/* Summary cards */}
             <div className="grid grid-cols-3 gap-3">
               <div className="card p-4 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500 mb-1">Current Balance</p>
-                <p className="text-lg font-black text-indigo-700 dark:text-indigo-300">₹{(ledgerData.customer?.current_balance || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Current Balance</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">₹{(ledgerData.customer?.current_balance || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
               </div>
               <div className="card p-4 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-1">Credit Limit</p>
-                <p className="text-lg font-black text-emerald-700 dark:text-emerald-300">₹{(ledgerData.customer?.credit_limit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Credit Limit</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">₹{(ledgerData.customer?.credit_limit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
               </div>
               <div className="card p-4 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500 mb-1">Price Level</p>
-                <p className="text-lg font-black text-orange-700 dark:text-orange-300 capitalize">{ledgerData.customer?.price_level || '—'}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Price Level</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white capitalize">{ledgerData.customer?.price_level || '—'}</p>
               </div>
             </div>
             {/* Ledger table */}
@@ -936,8 +936,8 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
                 </p>
               </div>
               <div className="card p-5 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Credit Limit</p>
-                <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Credit Limit</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   ₹{(outstandingData.customer?.credit_limit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">Available: ₹{Math.max(0, (outstandingData.customer?.credit_limit || 0) - (outstandingData.customer?.current_balance || 0)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
@@ -945,9 +945,9 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
             </div>
             {/* Recent unpaid entries */}
             {outstandingData.entries?.filter(e => e.debit > 0).length > 0 && (
-              <div className="overflow-x-auto rounded-xl border border-orange-200/50 dark:border-orange-800/30">
+              <div className="overflow-x-auto rounded-xl border border-gray-200/50 dark:border-white/8">
                 <table className="table w-full text-sm">
-                  <thead className="bg-orange-50/50 dark:bg-orange-900/10">
+                  <thead className="bg-black/[0.02] dark:bg-white/[0.02]">
                     <tr>
                       <th>Date</th>
                       <th>Reference</th>
@@ -960,7 +960,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
                       <tr key={i}>
                         <td className="text-sm">{fmtDate(e.date)}</td>
                         <td className="text-sm text-gray-500">{e.reference || '—'}</td>
-                        <td className="text-right text-orange-600 font-semibold">₹{e.debit.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                        <td className="text-right text-amber-600 dark:text-amber-400 font-semibold">₹{e.debit.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                         <td className="text-right font-semibold">₹{(e.balance || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                       </tr>
                     ))}
@@ -969,7 +969,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
               </div>
             )}
             {!outstandingData.entries?.filter(e => e.debit > 0).length && (
-              <div className="text-center py-8 text-emerald-600">
+              <div className="text-center py-8 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 size={36} className="mx-auto mb-2" />
                 <p className="font-semibold">All clear! No pending dues.</p>
               </div>
@@ -991,7 +991,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
       <div className="cpc-searchbar-wrap">
         {/* Left icon + divider */}
         <div className="flex items-center gap-2.5 flex-shrink-0 pl-3.5">
-          <Search size={15} className="text-indigo-400/80 dark:text-indigo-300/60" />
+          <Search size={15} className="text-gray-400 dark:text-gray-400" />
           <div className="w-px h-4 bg-gray-200/80 dark:bg-white/10" />
         </div>
 
@@ -1012,7 +1012,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
         {/* Right side */}
         <div className="flex items-center gap-1.5 pr-2 flex-shrink-0">
           {searching && (
-            <div className="w-4 h-4 border-2 border-indigo-400/40 border-t-indigo-500 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
           )}
           {searchQuery && !searching && (
             <button
@@ -1039,7 +1039,7 @@ export default function CustomerPanel({ company, onCustomerChange, inputRef: ext
           ) : results.length === 0 ? (
             <div className="cpc-empty-state">
               <div className="cpc-empty-icon">
-                <Users size={22} className="text-indigo-400" />
+                <Users size={22} className="text-gray-400 dark:text-gray-500" />
               </div>
               <p className="cpc-empty-title">No customers found</p>
               <p className="cpc-empty-sub">Try a different name, phone, or GSTIN</p>

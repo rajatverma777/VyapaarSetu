@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FileText, Plus, Search, Filter, Calendar, User,
-  Hash, MoreHorizontal, Copy, Trash2, Eye, Printer,
-  Download, ChevronLeft, ChevronRight, Archive
+  Hash, Copy, Trash2, Eye, Download, ChevronLeft, ChevronRight,
+  Archive, CheckCircle2, Clock, X, ArrowUpRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
 import { documentsAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { EmptyState } from '../../components/ui'
 
 const STATUS_CONFIG = {
   draft:    { label: 'Draft',    className: 'badge-amber' },
@@ -65,6 +66,23 @@ export default function DocumentsListPage() {
   useEffect(() => { loadDocs() }, [loadDocs])
   useEffect(() => { setPage(1) }, [debouncedSearch, status])
 
+  const summaryMetrics = useMemo(() => {
+    let finalCount = 0
+    let draftCount = 0
+    let archivedCount = 0
+    docs.forEach(d => {
+      if (d.status === 'final') finalCount++
+      else if (d.status === 'archived') archivedCount++
+      else draftCount++
+    })
+    return {
+      total: total || docs.length,
+      finalCount,
+      draftCount,
+      archivedCount
+    }
+  }, [docs, total])
+
   const handleDuplicate = async (e, id) => {
     e.stopPropagation()
     try {
@@ -114,37 +132,144 @@ export default function DocumentsListPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="page-title">Documents</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Company letterheads, formal letters &amp; official communications
+          <h1 className="page-title text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+            Documents & Letterheads
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Company letterheads, formal letters, and official communications
           </p>
         </div>
         <button
           onClick={() => navigate('/documents/new')}
-          className="btn-primary"
+          className="btn-primary gap-2 cursor-pointer shadow-lg shadow-blue-500/20"
           id="btn-new-letter"
         >
-          <Plus size={15} />
-          New Letterhead
+          <Plus size={16} /> New Letterhead
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
+      {/* 4 Executive KPI Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Total Documents */}
+        <div
+          onClick={() => setStatus('')}
+          className={`card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group ${
+            status === '' ? 'ring-2 ring-blue-500/40 border-blue-500/50 bg-blue-500/[0.04]' : ''
+          }`}
+          title="Click to view all documents"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Letters</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/15 border border-blue-500/20 dark:border-blue-400/25 group-hover:scale-105 transition-transform">
+              <FileText size={16} className="text-[#0071e3] dark:text-[#0a84ff]" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {summaryMetrics.total}
+            </div>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 font-medium flex items-center gap-1 group-hover:text-[#0071e3] dark:group-hover:text-[#0a84ff] transition-colors">
+              All official documents <ArrowUpRight size={12} />
+            </p>
+          </div>
+        </div>
+
+        {/* Final Documents */}
+        <div
+          onClick={() => setStatus(status === 'final' ? '' : 'final')}
+          className={`card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group ${
+            status === 'final' ? 'ring-2 ring-emerald-500/40 border-emerald-500/50 bg-emerald-500/[0.04]' : ''
+          }`}
+          title="Click to filter final approved documents"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Final / Approved</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-emerald-500/10 dark:bg-emerald-400/15 border border-emerald-500/20 dark:border-emerald-400/25 group-hover:scale-105 transition-transform">
+              <CheckCircle2 size={16} className="text-[#34c759] dark:text-[#30d158]" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-emerald-650 dark:text-emerald-400">
+              {summaryMetrics.finalCount}
+            </div>
+            <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-1 font-medium">
+              Issued & signed documents
+            </p>
+          </div>
+        </div>
+
+        {/* Drafts */}
+        <div
+          onClick={() => setStatus(status === 'draft' ? '' : 'draft')}
+          className={`card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group ${
+            status === 'draft' ? 'ring-2 ring-amber-500/40 border-amber-500/50 bg-amber-500/[0.04]' : ''
+          }`}
+          title="Click to filter draft documents"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Drafts Pending</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-amber-500/10 dark:bg-amber-400/15 border border-amber-500/20 dark:border-amber-400/25 group-hover:scale-105 transition-transform">
+              <Clock size={16} className="text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+              {summaryMetrics.draftCount}
+            </div>
+            <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-1 font-medium">
+              Work in progress
+            </p>
+          </div>
+        </div>
+
+        {/* Archived */}
+        <div
+          onClick={() => setStatus(status === 'archived' ? '' : 'archived')}
+          className={`card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group ${
+            status === 'archived' ? 'ring-2 ring-gray-400/40 border-gray-400/50 bg-gray-500/[0.04]' : ''
+          }`}
+          title="Click to filter archived documents"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Archived</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 group-hover:scale-105 transition-transform">
+              <Archive size={16} className="text-gray-500 dark:text-gray-400" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-gray-700 dark:text-gray-300">
+              {summaryMetrics.archivedCount}
+            </div>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 font-medium">
+              Archived letters
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Glass Bar */}
+      <div className="filter-glass-bar flex items-center justify-between flex-wrap gap-3">
         <div className="relative flex-1 min-w-[220px]">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
-            className="input pl-9 w-full"
-            placeholder="Search by reference, title, customer, subject…"
+            className="input pl-8 py-1.5 text-xs w-full"
+            placeholder="Search by reference, title, customer, or subject…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             id="doc-search-input"
           />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
+            >
+              <X size={13} />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={14} className="text-gray-400" />
           <select
-            className="select"
+            className="select text-xs py-1.5"
             value={status}
             onChange={e => setStatus(e.target.value)}
             id="doc-status-filter"
@@ -154,43 +279,56 @@ export default function DocumentsListPage() {
             <option value="final">Final</option>
             <option value="archived">Archived</option>
           </select>
+          {(status || search) && (
+            <button
+              onClick={() => { setStatus(''); setSearch('') }}
+              className="btn-secondary text-xs px-2.5 py-1.5"
+            >
+              Clear
+            </button>
+          )}
         </div>
-        <p className="text-xs text-gray-400 ml-auto">
-          {total} document{total !== 1 ? 's' : ''}
+        <p className="text-xs text-gray-400 ml-auto font-medium">
+          Showing {docs.length} of {total} document{total !== 1 ? 's' : ''}
         </p>
       </div>
 
-      {/* Table */}
-      <div className="card">
+      {/* Single-Surface Liquid Glass Table */}
+      <div className="card overflow-hidden">
         <div className="table-container">
           <table className="table">
             <thead>
               <tr>
-                <th><Hash size={12} className="inline mr-1" />Reference</th>
+                <th>Reference</th>
                 <th>Title</th>
-                <th><User size={12} className="inline mr-1" />Customer / To</th>
+                <th>Recipient / Customer</th>
                 <th>Subject</th>
-                <th><Calendar size={12} className="inline mr-1" />Date</th>
+                <th>Date</th>
                 <th>Status</th>
-                <th>Prints</th>
-                <th>Actions</th>
+                <th className="text-center">Prints</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading
-                ? [...Array(8)].map((_, i) => <DocumentSkeleton key={i} />)
+                ? [...Array(6)].map((_, i) => <DocumentSkeleton key={i} />)
                 : docs.length === 0
                   ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-14 text-gray-400">
-                        <FileText size={36} className="mx-auto mb-3 opacity-30" />
-                        <p className="text-sm font-medium">No documents found</p>
-                        <button
-                          onClick={() => navigate('/documents/new')}
-                          className="btn-primary mt-4 mx-auto"
-                        >
-                          Create your first letterhead
-                        </button>
+                      <td colSpan={8}>
+                        <EmptyState
+                          icon={FileText}
+                          title="No documents found"
+                          description="Create formal letterheads, business agreements, or certificates."
+                          action={
+                            <button
+                              onClick={() => navigate('/documents/new')}
+                              className="btn-primary"
+                            >
+                              Create your first letterhead
+                            </button>
+                          }
+                        />
                       </td>
                     </tr>
                   )
@@ -200,51 +338,58 @@ export default function DocumentsListPage() {
                       <tr
                         key={doc.id}
                         onClick={() => navigate(`/documents/${doc.id}`)}
-                        className="cursor-pointer hover:bg-indigo-50/30 dark:hover:bg-white/[0.02] transition-colors"
+                        className="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
                       >
                         <td>
-                          <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-300">
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-lg bg-blue-500/10 dark:bg-blue-400/15 border border-blue-500/20 text-[#0071e3] dark:text-[#0a84ff]">
                             {doc.reference}
                           </span>
                         </td>
-                        <td className="font-medium max-w-[200px] truncate">{doc.title}</td>
-                        <td className="text-sm text-gray-500">{doc.customer_name || '—'}</td>
-                        <td className="text-sm max-w-[180px] truncate text-gray-600 dark:text-gray-400">
-                          {doc.subject}
+                        <td className="font-semibold text-gray-900 dark:text-white max-w-[200px] truncate">{doc.title}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-bold text-gray-700 dark:text-gray-300">
+                              {(doc.customer_name || 'C')[0]?.toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{doc.customer_name || '—'}</span>
+                          </div>
                         </td>
-                        <td className="text-sm text-gray-500">{formatDate(doc.date)}</td>
+                        <td className="text-sm max-w-[180px] truncate text-gray-500 dark:text-gray-400">
+                          {doc.subject || '—'}
+                        </td>
+                        <td className="text-xs text-gray-500">{formatDate(doc.date)}</td>
                         <td>
                           <span className={`badge text-[10px] font-bold uppercase tracking-wide ${statusCfg.className}`}>
                             {statusCfg.label}
                           </span>
                         </td>
-                        <td className="text-sm text-gray-400 text-center">{doc.print_count || 0}</td>
-                        <td>
-                          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                        <td className="text-xs text-gray-400 text-center font-mono">{doc.print_count || 0}</td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => navigate(`/documents/${doc.id}`)}
-                              className="icon-btn"
-                              title="Edit"
+                              className="btn-icon p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-white"
+                              title="Edit / View"
                             >
                               <Eye size={14} />
                             </button>
                             <button
                               onClick={e => handleDownloadPdf(e, doc.id, doc.reference)}
-                              className="icon-btn"
+                              className="btn-icon p-1.5 text-blue-600 hover:bg-blue-500/10"
                               title="Download PDF"
                             >
                               <Download size={14} />
                             </button>
                             <button
                               onClick={e => handleDuplicate(e, doc.id)}
-                              className="icon-btn"
+                              className="btn-icon p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-white"
                               title="Duplicate"
                             >
                               <Copy size={14} />
                             </button>
                             <button
                               onClick={e => handleDelete(e, doc.id)}
-                              className="icon-btn text-red-500 hover:text-red-700 hover:bg-red-500/10 dark:hover:bg-red-500/20"
+                              className="btn-icon p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-500/10"
                               title="Delete Document"
                             >
                               <Trash2 size={14} />
@@ -262,26 +407,27 @@ export default function DocumentsListPage() {
 
       {/* Pagination */}
       {pages > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 pt-2">
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="icon-btn"
+            className="btn-secondary text-xs p-2 disabled:opacity-40"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={15} />
           </button>
-          <span className="text-sm text-gray-500">
+          <span className="text-xs text-gray-500 font-medium">
             Page {page} of {pages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(pages, p + 1))}
             disabled={page === pages}
-            className="icon-btn"
+            className="btn-secondary text-xs p-2 disabled:opacity-40"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={15} />
           </button>
         </div>
       )}
     </div>
   )
 }
+

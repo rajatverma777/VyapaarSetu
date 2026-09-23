@@ -35,7 +35,7 @@ export default function BatchSelector({ product, batches, onSelect, onClose }) {
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
+      <div className="relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720] text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/70 dark:border-white/10">
@@ -44,7 +44,7 @@ export default function BatchSelector({ product, batches, onSelect, onClose }) {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{product.name}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-950/40 px-2 py-1 rounded-lg font-medium">
+            <span className="text-xs text-[#0071e3] bg-[#0071e3]/10 dark:text-[#0a84ff] dark:bg-[#0a84ff]/15 px-2 py-1 rounded-lg font-medium">
               FEFO recommended
             </span>
             <button onClick={onClose} className="btn-icon w-7 h-7 p-1 text-gray-400 dark:text-gray-500 hover:dark:text-gray-300">
@@ -66,10 +66,10 @@ export default function BatchSelector({ product, batches, onSelect, onClose }) {
                 key={batch.batch_no || i}
                 type="button"
                 onClick={() => setSelectedBatch(batch)}
-                className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-all duration-150 ${
+                className={`w-full rounded-xl border px-4 py-3 text-left transition-all duration-150 ${
                   isSelected
-                    ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40'
-                    : 'border-transparent bg-gray-50/80 hover:border-gray-200 hover:bg-gray-100/60 dark:bg-white/5 dark:hover:bg-white/10'
+                    ? 'border-[#0071e3] bg-[#0071e3]/5 dark:border-[#0a84ff] dark:bg-[#0a84ff]/10 shadow-xs'
+                    : 'border-black/[0.06] bg-black/[0.02] hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -112,7 +112,7 @@ export default function BatchSelector({ product, batches, onSelect, onClose }) {
                       <AlertTriangle size={14} className="text-red-500" />
                     )}
                     {isSelected && (
-                      <CheckCircle2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                      <CheckCircle2 size={18} className="text-[#0071e3] dark:text-[#0a84ff]" />
                     )}
                   </div>
                 </div>

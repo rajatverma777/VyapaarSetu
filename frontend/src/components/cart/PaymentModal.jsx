@@ -50,7 +50,7 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-md rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
+        className="relative w-full max-w-md rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720] text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/70 dark:border-white/10">
@@ -100,7 +100,7 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
                   <button
                     type="button"
                     onClick={() => fillBalance(i)}
-                    className="text-[10px] text-indigo-500 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 font-semibold px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 transition-colors flex-shrink-0"
+                    className="text-[10px] text-[#0071e3] hover:text-[#0077ed] dark:text-[#0a84ff] dark:hover:text-[#409cff] font-semibold px-2 py-1 rounded-lg bg-[#0071e3]/10 hover:bg-[#0071e3]/15 dark:bg-[#0a84ff]/15 dark:hover:bg-[#0a84ff]/25 transition-colors flex-shrink-0"
                     title="Fill remaining balance"
                   >
                     Fill
@@ -124,7 +124,7 @@ export default function PaymentModal({ grandTotal, initialPayments = [], onConfi
           {rows.length < PAYMENT_OPTIONS.length && (
             <button
               onClick={addRow}
-              className="flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold py-1 transition-colors"
+              className="flex items-center gap-2 text-xs text-[#0071e3] hover:text-[#0077ed] dark:text-[#0a84ff] dark:hover:text-[#409cff] font-semibold py-1 transition-colors"
             >
               <Plus size={14} />
               Add payment method (split)

@@ -130,12 +130,12 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
   return (
     <div className="relative w-full">
       {/* Search Input */}
-      <div className={`relative flex items-center transition-all duration-200 ${focused ? 'ring-2 ring-indigo-500/30 rounded-[13px]' : ''}`}>
-        <div className="absolute left-3.5 text-gray-400 dark:text-indigo-300/70 pointer-events-none">
+      <div className={`relative flex items-center transition-all duration-200 ${focused ? 'ring-2 ring-[#0071e3]/30 dark:ring-[#0a84ff]/30 rounded-[13px]' : ''}`}>
+        <div className="absolute left-3.5 text-gray-400 dark:text-gray-400 pointer-events-none">
           {loading
-            ? <div className="w-4 h-4 border-2 border-indigo-400/40 border-t-indigo-500 rounded-full animate-spin" />
+            ? <div className="w-4 h-4 border-2 border-[#0071e3]/40 border-t-[#0071e3] rounded-full animate-spin" />
             : barcodeMode
-            ? <Barcode size={16} className="text-indigo-500" />
+            ? <Barcode size={16} className="text-[#0071e3] dark:text-[#0a84ff]" />
             : <Search size={16} />
           }
         </div>
@@ -154,7 +154,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
         {query && (
           <button
             onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus() }}
-            className="absolute right-3 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
           >
             <X size={15} />
           </button>
@@ -165,7 +165,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
       {results.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-2xl border border-gray-200/60 dark:border-white/10 max-h-80 overflow-y-auto bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
+          className="search-glass-dropdown !max-h-80"
         >
           {results.map((p, i) => (
             <button
@@ -173,15 +173,15 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
               ref={el => listRefs.current[i] = el}
               type="button"
               onClick={() => handleSelect(p)}
-              className={`w-full px-4 py-2.5 text-left flex items-center gap-3 border-b border-gray-100/80 dark:border-white/5 last:border-0 transition-colors duration-100 ${
-                i === activeIdx ? 'bg-indigo-50/90 dark:bg-indigo-900/30 text-indigo-950 dark:text-white' : 'hover:bg-gray-50/80 dark:hover:bg-white/5 text-gray-700 dark:text-gray-250'
+              className={`w-full px-4 py-2.5 text-left flex items-center gap-3 border-b border-black/[0.04] dark:border-white/5 last:border-0 rounded-xl transition-colors duration-100 ${
+                i === activeIdx ? 'bg-black/[0.04] dark:bg-white/[0.08] text-gray-900 dark:text-white' : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300'
               }`}
             >
               {/* Product icon */}
               <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-bold ${
                 p.current_stock <= 0
-                  ? 'bg-red-100 dark:bg-red-950/40 text-red-500 dark:text-red-300'
-                  : 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-300'
+                  ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-gray-500 dark:text-gray-400'
               }`}>
                 {p.current_stock <= 0 ? <AlertCircle size={14} /> : <Package size={14} />}
               </div>
@@ -191,7 +191,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
                 <div className="flex items-baseline gap-2">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{p.name}</p>
                   {p.brand && (
-                    <span className="text-[10px] text-indigo-600 dark:text-indigo-300 font-medium bg-indigo-55 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded-md flex-shrink-0">{p.brand}</span>
+                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-300 bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] px-1.5 py-0.5 rounded-md flex-shrink-0">{p.brand}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
@@ -208,7 +208,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
 
               {/* Prices + stock */}
               <div className="text-right flex-shrink-0">
-                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">₹{(p.selling_price || 0).toFixed(2)}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">₹{(p.selling_price || 0).toFixed(2)}</p>
                 <p className={`text-[11px] font-medium ${getStockColor(p.current_stock)}`}>
                   Stock: {p.current_stock ?? 0} {p.unit || ''}
                 </p>
@@ -221,7 +221,7 @@ export default function ProductSearchBar({ onSelect, onBatchSelect, autoFocus = 
       {/* Empty state when typing but no results */}
       {focused && query.length >= 2 && results.length === 0 && !loading && (
         <div
-          className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-[16px] overflow-hidden shadow-xl border border-gray-200/60 dark:border-white/10 bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
+          className="search-glass-dropdown"
         >
           <div className="px-4 py-6 text-center">
             <Package size={24} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />

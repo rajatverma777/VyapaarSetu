@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Trash2, Save, X } from 'lucide-react'
+import { Search, Trash2, Save, X, Truck, PackagePlus, Receipt, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { purchaseAPI, supplierAPI, productAPI, settingsAPI } from '../services/api'
 import { Amount, SearchAutocomplete, DatePicker, GlassSelect } from '../components/ui'
@@ -192,12 +192,28 @@ export default function NewPurchasePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="page-title">New Purchase</h1>
-        <div className="flex gap-2">
+      {/* Top Header & Breadcrumbs */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+            <button 
+              type="button" 
+              onClick={() => navigate('/purchases')} 
+              className="hover:text-[#0071e3] dark:hover:text-[#0a84ff] transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              Purchases
+            </button>
+            <span>/</span>
+            <span className="text-gray-800 dark:text-gray-200">New Purchase</span>
+          </div>
+          <h1 className="page-title text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+            New Inward Purchase
+          </h1>
+        </div>
+        <div className="flex items-center gap-2.5">
           <button onClick={handleCancel} className="btn-secondary">Cancel</button>
           <button onClick={handleSave} disabled={saving} className="btn-primary">
-            <Save size={16} />{saving ? 'Saving…' : 'Save Purchase'}
+            <Save size={15} />{saving ? 'Saving…' : 'Save Purchase'}
           </button>
         </div>
       </div>
@@ -205,35 +221,79 @@ export default function NewPurchasePage() {
       <div className="grid md:grid-cols-4 gap-4">
         <div className="md:col-span-3 space-y-4">
           {/* Supplier + Invoice Details */}
-          <div className="card p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-30">
+          <div className="card p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-30">
             <div className="sm:col-span-2">
-              <label className="label text-xs">Supplier *</label>
+              <label className="label text-xs flex items-center gap-1.5">
+                <Truck size={12} className="text-[#0071e3] dark:text-[#0a84ff]" />
+                Supplier *
+              </label>
               {supplier ? (
-                <div className="flex items-center justify-between input">
-                  <span className="font-medium">{supplier.name}</span>
-                  <button onClick={() => setSupplier(null)} className="text-gray-400 hover:text-gray-600"><X size={14}/></button>
+                <div className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-[#0071e3]/8 dark:bg-[#0a84ff]/10 border border-[#0071e3]/20 dark:border-[#0a84ff]/25 backdrop-blur-md">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs bg-[#0071e3]/15 dark:bg-[#0a84ff]/20 text-[#0071e3] dark:text-[#0a84ff] flex-shrink-0">
+                      {supplier.name ? supplier.name.charAt(0).toUpperCase() : 'S'}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">{supplier.name}</span>
+                        {supplier.gstin ? (
+                          <span className="font-mono text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.08] text-gray-600 dark:text-gray-300">
+                            {supplier.gstin}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {supplier.mobile && <span>{supplier.mobile}</span>}
+                        {supplier.address?.city && <span>· {supplier.address.city}</span>}
+                        {supplier.address?.state && <span>, {supplier.address.state}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSupplier(null)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors ml-2 flex-shrink-0 cursor-pointer"
+                    title="Change supplier"
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
               ) : (
                 <SearchAutocomplete
                   className="w-full"
-                  placeholder="Search supplier…"
+                  placeholder="Search supplier by name or mobile…"
                   onSearch={async (query) => {
                     const { data } = await supplierAPI.list({ search: query, limit: 50 })
                     return data.items
                   }}
                   onSelect={(s) => setSupplier(s)}
                   itemTemplate={(s) => (
-                    <button type="button" className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex justify-between">
-                      <span className="font-medium text-gray-900 dark:text-white">{s.name}</span>
-                      {s.mobile && <span className="text-gray-500 dark:text-gray-400 text-xs ml-2">{s.mobile}</span>}
-                    </button>
+                    <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 dark:border-[#0a84ff]/25 text-[#0071e3] dark:text-[#0a84ff] flex-shrink-0">
+                          {s.name ? s.name.charAt(0).toUpperCase() : 'S'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm text-gray-900 dark:text-white truncate">{s.name}</div>
+                          <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                            {s.gstin ? <span className="font-mono">GST: {s.gstin}</span> : <span>Unregistered</span>}
+                            {s.address?.city && <span>· {s.address.city}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      {s.mobile && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
+                          {s.mobile}
+                        </span>
+                      )}
+                    </div>
                   )}
                 />
               )}
             </div>
             <div>
               <label className="label text-xs">Invoice No.</label>
-              <input className="input" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} placeholder="Supplier's invoice no." />
+              <input className="input font-mono text-sm" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} placeholder="Supplier's bill no." />
             </div>
             <div>
               <label className="label text-xs">Purchase Date</label>
@@ -243,85 +303,153 @@ export default function NewPurchasePage() {
 
           {/* Product Search */}
           <div className="card p-4 relative z-20">
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <PackagePlus size={13} className="text-[#0071e3] dark:text-[#0a84ff]" />
+              Add Products
+            </div>
             <SearchAutocomplete
               className="w-full"
-              placeholder="Search product to add…"
+              placeholder="Search product by name, brand or SKU to add to order…"
               onSearch={async (query) => {
                 const { data } = await productAPI.search(query, 50)
                 return data
               }}
               onSelect={(p) => addProduct(p)}
               itemTemplate={(p) => (
-                <button type="button" className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{p.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{p.brand ? `${p.brand} · ` : ''}{p.unit} · GST {p.gst_rate}%</p>
+                <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 dark:border-[#0a84ff]/25 text-[#0071e3] dark:text-[#0a84ff] flex-shrink-0">
+                      {p.name ? p.name.charAt(0).toUpperCase() : 'P'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{p.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-xs text-gray-500 dark:text-gray-400">
+                        {p.brand && (
+                          <span className="px-1.5 py-0.2 rounded bg-black/[0.04] dark:bg-white/[0.06] text-gray-600 dark:text-gray-300 font-medium text-[11px]">
+                            {p.brand}
+                          </span>
+                        )}
+                        <span>{p.unit || 'PCS'}</span>
+                        <span>·</span>
+                        <span>GST {p.gst_rate}%</span>
+                        {p.hsn_code && <span>· HSN {p.hsn_code}</span>}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-primary-600">₹{p.purchase_price?.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Stock: {p.current_stock}</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-[#0071e3] dark:text-[#0a84ff]">₹{(p.purchase_price || 0).toFixed(2)}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                      Stock: <span className="font-medium text-gray-700 dark:text-gray-300">{p.current_stock ?? 0}</span>
+                    </p>
                   </div>
-                </button>
+                </div>
               )}
             />
           </div>
 
           {/* Items Table */}
-          <div className="card overflow-hidden relative z-10">
+          <div className="table-container relative overflow-hidden z-10">
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>#</th><th>Product</th><th>Batch No</th><th>Expiry</th><th>Unit</th>
-                    <th className="w-24 text-center">Qty</th><th className="w-28 text-right">Rate ₹</th>
-                    <th className="w-20 text-center">Disc%</th><th className="text-right">Taxable</th>
-                    <th className="text-right">Tax</th><th className="text-right">Total</th><th></th>
+                    <th className="w-10">#</th>
+                    <th>Product</th>
+                    <th>Batch No</th>
+                    <th>Expiry</th>
+                    <th>Unit</th>
+                    <th className="w-24 text-center">Qty</th>
+                    <th className="w-28 text-right">Rate ₹</th>
+                    <th className="w-20 text-center">Disc%</th>
+                    <th className="text-right">Taxable</th>
+                    <th className="text-right">Tax</th>
+                    <th className="text-right">Total</th>
+                    <th className="w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.length === 0 ? (
-                    <tr><td colSpan={12} className="text-center py-10 text-sm text-gray-400">Search and add products above</td></tr>
+                    <tr>
+                      <td colSpan={12} className="py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] mb-3">
+                            <PackagePlus size={22} />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">No products added yet</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-sm">
+                            Search and select products in the search bar above to build this inward purchase order.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
                   ) : items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="text-gray-400 text-xs">{idx+1}</td>
+                    <tr key={idx} className="animate-fade-in">
+                      <td className="text-gray-400 text-xs font-mono">{idx + 1}</td>
                       <td>
-                        <p className="font-medium text-sm">{item.product_name}</p>
-                        {item.hsn_code && <p className="text-xs text-gray-500">HSN: {item.hsn_code}</p>}
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">{item.product_name}</p>
+                        {item.hsn_code && <p className="text-[11px] font-mono text-gray-400">HSN: {item.hsn_code}</p>}
                       </td>
                       <td>
-                        <input type="text" value={item.batch_no || ''}
+                        <input
+                          type="text"
+                          value={item.batch_no || ''}
                           onChange={e => updateItem(idx, 'batch_no', e.target.value)}
                           placeholder="DEFAULT"
-                          className="input w-24 p-1.5 text-sm" />
+                          className="input w-24 p-1.5 text-xs text-center font-mono"
+                        />
                       </td>
                       <td>
-                        <input type="date" value={item.expiry || ''}
+                        <input
+                          type="date"
+                          value={item.expiry || ''}
                           onChange={e => updateItem(idx, 'expiry', e.target.value)}
-                          className="input w-32 p-1.5 text-sm" />
+                          className="input w-32 p-1.5 text-xs font-mono"
+                        />
                       </td>
-                      <td className="text-sm">{item.unit}</td>
+                      <td className="text-xs font-medium text-gray-600 dark:text-gray-300">{item.unit}</td>
                       <td>
-                        <input type="number" min="0.01" step="0.01" value={item.qty}
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={item.qty}
                           onChange={e => updateItem(idx, 'qty', e.target.value)}
-                          className="input w-20 text-center p-1.5 text-sm" />
+                          className="input w-20 text-center p-1.5 text-sm font-semibold"
+                        />
                       </td>
                       <td>
-                        <input type="number" min="0" step="0.01" value={item.rate}
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.rate}
                           onChange={e => updateItem(idx, 'rate', e.target.value)}
-                          className="input w-24 p-1.5 text-sm text-right" />
+                          className="input w-24 p-1.5 text-sm text-right font-semibold"
+                        />
                       </td>
                       <td>
-                        <input type="number" min="0" max="100" step="0.1" value={item.discount_pct}
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={item.discount_pct}
                           onChange={e => updateItem(idx, 'discount_pct', e.target.value)}
-                          className="input w-16 p-1.5 text-sm text-center" />
+                          className="input w-16 p-1.5 text-xs text-center"
+                        />
                       </td>
-                      <td className="text-right text-sm">₹{item.taxable.toFixed(2)}</td>
-                      <td className="text-right text-xs text-gray-500">
+                      <td className="text-right text-sm font-medium">₹{item.taxable.toFixed(2)}</td>
+                      <td className="text-right text-xs text-gray-500 dark:text-gray-400">
                         {isIgst ? `₹${item.igst.toFixed(2)}` : `₹${(item.cgst + item.sgst).toFixed(2)}`}
                       </td>
-                      <td className="text-right font-semibold">₹{item.total.toFixed(2)}</td>
+                      <td className="text-right font-bold text-gray-900 dark:text-white">₹{item.total.toFixed(2)}</td>
                       <td>
-                        <button onClick={() => setItems(p => p.filter((_, i) => i !== idx))} className="btn-icon text-red-400">
+                        <button
+                          type="button"
+                          onClick={() => setItems(p => p.filter((_, i) => i !== idx))}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          title="Remove item"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </td>
@@ -333,22 +461,25 @@ export default function NewPurchasePage() {
           </div>
         </div>
 
-        {/* RIGHT: Summary */}
+        {/* RIGHT: Summary & Actions */}
         <div className="space-y-4">
-          <div className="card p-4 space-y-3">
-            <h3 className="text-sm font-semibold">Tax Type</h3>
+          {/* Tax Type */}
+          <div className="card p-4 space-y-2.5">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tax Type</h3>
             <div className="tax-toggle-track">
               <div
                 className="tax-toggle-pill"
                 style={{ transform: isIgst ? 'translateX(100%)' : 'translateX(0%)' }}
               />
               <button
+                type="button"
                 onClick={() => setIsIgst(false)}
                 className={`tax-toggle-btn ${!isIgst ? 'tax-toggle-active' : ''}`}
               >
                 CGST + SGST
               </button>
               <button
+                type="button"
                 onClick={() => setIsIgst(true)}
                 className={`tax-toggle-btn ${isIgst ? 'tax-toggle-active' : ''}`}
               >
@@ -357,54 +488,100 @@ export default function NewPurchasePage() {
             </div>
           </div>
 
-          <div className="card p-4 space-y-2.5">
-            <h3 className="text-sm font-semibold">Summary</h3>
-            {[
-              ['Taxable', totalTaxable],
-              ...(isIgst ? [['IGST', totalIgst]] : [['CGST', totalCgst], ['SGST', totalSgst]]),
-            ].map(([l, v]) => (
-              <div key={l} className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">{l}</span>
-                <Amount value={v} />
-              </div>
-            ))}
-            <div className="border-t pt-2 flex justify-between font-bold text-lg">
-              <span>Total</span>
-              <Amount value={grandTotal} className="text-primary-600" />
-            </div>
-          </div>
-
+          {/* Summary */}
           <div className="card p-4 space-y-3">
-            <h3 className="text-sm font-semibold">Payment</h3>
-            <GlassSelect
-              value={payMode}
-              onChange={setPayMode}
-              options={PAYMENT_MODES.map(m => ({ value: m, label: m.toUpperCase() }))}
-              placeholder="Select Payment Mode"
-              className="w-full"
-            />
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Order Summary</span>
+              <Receipt size={13} className="text-[#0071e3] dark:text-[#0a84ff]" />
+            </h3>
+            <div className="space-y-2 text-sm">
+              {[
+                ['Taxable Value', totalTaxable],
+                ...(isIgst ? [['IGST', totalIgst]] : [['CGST', totalCgst], ['SGST', totalSgst]]),
+              ].map(([l, v]) => (
+                <div key={l} className="flex justify-between items-center text-gray-600 dark:text-gray-400">
+                  <span>{l}</span>
+                  <Amount value={v} />
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-black/[0.06] dark:border-white/[0.08] pt-3 flex justify-between items-baseline">
+              <span className="font-semibold text-base text-gray-900 dark:text-white">Grand Total</span>
+              <Amount value={grandTotal} className="text-[#0071e3] dark:text-[#0a84ff] text-xl font-bold" />
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div className="card p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment Details</h3>
             <div>
-              <label className="label text-xs">Paid ₹</label>
-              <input type="number" min="0" className="input" value={paidAmt} onChange={e => setPaidAmt(e.target.value)} />
+              <label className="label text-xs">Payment Mode</label>
+              <GlassSelect
+                value={payMode}
+                onChange={setPayMode}
+                options={PAYMENT_MODES.map(m => ({ value: m, label: m.toUpperCase() }))}
+                placeholder="Select Payment Mode"
+                className="w-full"
+              />
             </div>
-            <div className="flex justify-between text-sm font-medium text-orange-600">
-              <span>Balance</span>
-              <Amount value={grandTotal - (parseFloat(paidAmt) || 0)} />
+            <div>
+              <label className="label text-xs">Paid Amount (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="input font-semibold"
+                value={paidAmt}
+                onChange={e => setPaidAmt(e.target.value)}
+              />
             </div>
+            {(() => {
+              const balance = grandTotal - (parseFloat(paidAmt) || 0)
+              const isSettled = balance <= 0
+              return (
+                <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-semibold ${
+                  isSettled 
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-[#34c759] dark:text-[#30d158]' 
+                    : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                }`}>
+                  <span>{isSettled ? 'Paid in Full' : 'Pending Balance'}</span>
+                  <Amount value={Math.max(0, balance)} />
+                </div>
+              )
+            })()}
           </div>
 
-          <div className="card p-4">
-            <label className="label text-xs">Notes</label>
-            <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+          {/* Notes */}
+          <div className="card p-4 space-y-2">
+            <label className="label text-xs">Notes & Terms</label>
+            <textarea
+              className="input resize-none"
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Add optional purchase notes..."
+            />
           </div>
 
-          <button onClick={handleSave} disabled={saving}
-            className="btn-primary w-full justify-center py-3">
-            <Save size={16} />{saving ? 'Saving…' : 'Save Purchase'}
-          </button>
-          <button onClick={handleCancel} className="btn-secondary w-full justify-center">Cancel</button>
+          {/* Action Buttons */}
+          <div className="space-y-2 pt-1">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary w-full justify-center py-3 font-semibold shadow-lg shadow-blue-500/20 cursor-pointer"
+            >
+              <Save size={16} />{saving ? 'Saving Purchase…' : 'Save Purchase'}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="btn-secondary w-full justify-center py-2.5 cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
+

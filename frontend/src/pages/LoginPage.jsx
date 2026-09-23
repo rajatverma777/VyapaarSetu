@@ -3,7 +3,7 @@ import { Navigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { authAPI, healthAPI } from '../services/api'
-import { Building2, Eye, EyeOff, Loader2, Sun, Moon, User, Lock, Mail, Phone, Home } from 'lucide-react'
+import { Building2, Eye, EyeOff, Loader2, Sun, Moon, User, Lock, Mail, Phone, Home, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -141,8 +141,8 @@ export default function LoginPage() {
         {/* Logo Header */}
         <Link to="/" className="flex items-center justify-center gap-3.5 mb-8 px-2 hover:opacity-85 transition-opacity select-none cursor-pointer group">
           <div className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0 shadow-lg" style={{
-            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-            boxShadow: '0 8px 32px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.2)'
+            background: 'linear-gradient(135deg, #0071e3, #6366f1)',
+            boxShadow: '0 8px 32px rgba(0,113,227,0.35), inset 0 1px 0 rgba(255,255,255,0.3)'
           }}>
             <Building2 size={22} className="text-white" />
           </div>
@@ -155,45 +155,54 @@ export default function LoginPage() {
         </Link>
 
         {/* Card */}
-        <div className="card shadow-2xl p-8" style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), inset 0 2px 2px rgba(255,255,255,0.9)' }}>
+        <div className="card p-8 shadow-2xl backdrop-blur-3xl">
 
           {showCodeModal ? (
             <div className="space-y-6 text-center animate-modal-in">
-              <div className="w-16 h-16 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-500/20">
-                <Building2 size={32} />
+              <div className="w-16 h-16 bg-[#34c759]/10 dark:bg-[#34c759]/15 text-[#34c759] rounded-2xl flex items-center justify-center mx-auto mb-2 border border-[#34c759]/20 shadow-sm">
+                <Building2 size={30} />
               </div>
               
               <div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Business Registered!</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Your business has been successfully registered. Share the code below with your staff so they can connect.
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 max-w-sm mx-auto">
+                  Your business has been registered. Share this unique code with your staff members so they can join your workspace.
                 </p>
               </div>
 
-              <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 rounded-2xl p-6 select-all cursor-pointer group hover:border-indigo-400/40 transition-all duration-300">
-                <span className="text-[10px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider block mb-1">
-                  Your Company Code
-                </span>
-                <span className="text-3xl font-black font-mono tracking-widest text-indigo-600 dark:text-indigo-300">
-                  {newCompanyCode}
-                </span>
+              {/* Apple Liquid Glass Callout Card for Company Code */}
+              <div className="apple-callout-card p-6 select-all cursor-pointer transition-all duration-300 relative overflow-hidden">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="badge-blue text-[10px] px-2.5 py-0.5 font-bold tracking-wider uppercase">
+                    Your Company Code
+                  </span>
+                </div>
+                <div className="my-3">
+                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-[0.25em] text-[#0071e3] dark:text-[#0a84ff] drop-shadow-sm select-all">
+                    {newCompanyCode}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                  Tap below to copy or save this code for team onboarding
+                </p>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(newCompanyCode)
                     toast.success('Company code copied to clipboard!')
                   }}
-                  className="btn-secondary w-full py-2.5 justify-center"
+                  className="btn-secondary w-full py-2.5 justify-center gap-2 font-medium"
                 >
-                  Copy Company Code
+                  <Copy size={15} />
+                  <span>Copy Company Code</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleCloseCodeModal}
-                  className="btn-primary w-full py-2.5 justify-center"
+                  className="btn-primary w-full py-2.5 justify-center font-medium shadow-md"
                 >
                   Continue to Application
                 </button>
@@ -295,7 +304,7 @@ export default function LoginPage() {
                     setError('')
                     setRegisterMode(false)
                   }}
-                  className="text-xs text-indigo-650 dark:text-indigo-400 font-bold hover:underline block text-center w-full mt-2"
+                  className="text-xs text-[#0071e3] dark:text-[#0a84ff] font-semibold hover:underline block text-center w-full mt-2"
                 >
                   Back to Sign In
                 </button>
@@ -361,7 +370,7 @@ export default function LoginPage() {
                     setRegForm({ username: '', password: '', full_name: '', email: '', mobile: '', company_name: '', company_code: '' })
                     setRegisterMode(true)
                   }}
-                  className="text-xs text-indigo-650 dark:text-indigo-400 font-bold hover:underline block text-center w-full mt-3"
+                  className="text-xs text-[#0071e3] dark:text-[#0a84ff] font-semibold hover:underline block text-center w-full mt-3"
                 >
                   Don't have an account? Sign Up
                 </button>
@@ -371,7 +380,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setRegisterMode(true)}
-                  className="text-xs text-indigo-650 dark:text-indigo-400 font-bold hover:underline block text-center w-full mt-2"
+                  className="text-xs text-[#0071e3] dark:text-[#0a84ff] font-semibold hover:underline block text-center w-full mt-2"
                 >
                   First-time Setup: Create Admin Account
                 </button>
@@ -381,7 +390,7 @@ export default function LoginPage() {
 
           {needSetup && (
             <div className="card mt-6 p-4">
-              <p className="text-xs text-indigo-650 dark:text-indigo-400 font-bold mb-1">First time setup?</p>
+              <p className="text-xs text-[#0071e3] dark:text-[#0a84ff] font-bold mb-1">First time setup?</p>
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 Create your first admin account directly using the form above.
               </p>

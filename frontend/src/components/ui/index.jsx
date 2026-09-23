@@ -303,7 +303,7 @@ export function SearchAutocomplete({ onSelect, onSearch, placeholder = 'Searchâ€
   return (
     <div className={`search-glass-wrap relative ${className}`} ref={containerRef}>
       <Search size={15} 
-              className="search-glass-icon cursor-pointer hover:text-indigo-500 transition-colors pointer-events-auto" 
+              className="search-glass-icon cursor-pointer hover:text-[#0071e3] dark:hover:text-[#0a84ff] transition-colors pointer-events-auto" 
               onClick={triggerSearchAll} 
       />
       <input 
@@ -316,7 +316,10 @@ export function SearchAutocomplete({ onSelect, onSearch, placeholder = 'Searchâ€
         className="search-glass-input" 
       />
       {showDrop && results.length > 0 && (
-        <div ref={listRef} className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-60 overflow-y-auto">
+        <div 
+          ref={listRef} 
+          className="search-glass-dropdown"
+        >
           {results.map((item, idx) => {
             const isFocused = idx === focusedIdx
             return (
@@ -324,7 +327,7 @@ export function SearchAutocomplete({ onSelect, onSearch, placeholder = 'Searchâ€
                 key={item.id || idx}
                 onClick={() => { onSelect(item); setSearch(''); setResults([]); setShowDrop(false); setFocusedIdx(0) }}
                 onMouseEnter={() => setFocusedIdx(idx)}
-                className={`cursor-pointer transition-colors duration-150 ${isFocused ? 'bg-indigo-50 dark:bg-indigo-900/35 border-l-2 border-indigo-600 dark:border-indigo-400' : 'border-l-2 border-transparent'}`}
+                className={`search-glass-dropdown-item ${isFocused ? 'is-focused' : ''}`}
               >
                 {itemTemplate(item)}
               </div>
@@ -596,10 +599,10 @@ export function DatePicker({ value, onChange, className = '' }) {
         onClick={() => handleSelectDay(d)}
         className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all ${
           isSelected
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+            ? 'bg-[#0071e3] dark:bg-[#0a84ff] text-white shadow-md shadow-[#0071e3]/25'
             : isToday
-            ? 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/30'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+            ? 'bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/30 dark:border-[#0a84ff]/30'
+            : 'hover:bg-black/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300'
         }`}
       >
         {d}
@@ -754,31 +757,37 @@ export function FloatingUserMenu({ isOpen, onClose, anchorRect, user, dark, onTo
         width: `${menuWidth}px`,
         zIndex: 99999,
         opacity: mounted ? 1 : 0,
-        transform: mounted ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(5px)',
+        transform: mounted ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(4px)',
         transition: 'opacity 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.2)',
+        backdropFilter: 'blur(28px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
       }}
-      className="p-1.5 bg-slate-900/95 dark:bg-[#0c101d]/95 border border-white/[0.08] rounded-2xl backdrop-blur-xl flex flex-col gap-1 text-slate-100"
+      className="p-1.5 bg-white/85 dark:bg-[#16181d] border border-black/[0.08] dark:border-white/[0.12] rounded-[16px] shadow-[0_16px_36px_-6px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_#ffffff] dark:shadow-[0_24px_48px_-6px_rgba(0,0,0,0.7),0_4px_16px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.15)] flex flex-col gap-0.5 text-gray-800 dark:text-gray-100"
     >
-      <div className="px-3 py-2.5 border-b border-white/[0.06] pb-2 mb-1">
-        <p className="text-sm font-bold text-white tracking-tight leading-tight">{user?.full_name}</p>
-        <p className="text-[9px] text-indigo-400 font-extrabold uppercase tracking-widest mt-1">{user?.role}</p>
+      {/* User Info Header */}
+      <div className="px-3 py-2 border-b border-black/[0.06] dark:border-white/[0.08] mb-1">
+        <p className="text-[13px] font-semibold text-gray-900 dark:text-white tracking-tight leading-tight">{user?.full_name}</p>
+        <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-wider uppercase bg-black/[0.04] dark:bg-white/[0.08] text-gray-600 dark:text-gray-300 border border-black/[0.04] dark:border-white/[0.06]">
+          {user?.role}
+        </span>
       </div>
 
+      {/* Navigation link */}
       <Link
         to="/"
         onClick={onClose}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] active:scale-[0.98] transition-all text-left"
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-xs font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.98] transition-all text-left"
       >
-        <Home size={14} className="text-slate-400" />
+        <Home size={14} className="text-gray-500 dark:text-gray-400" />
         <span>Home Website</span>
       </Link>
 
+      {/* Logout button */}
       <button
         onClick={() => { onLogout(); onClose() }}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-[0.98] transition-all text-left border-t border-white/[0.06] pt-2 mt-1"
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-xs font-medium text-[#ff3b30] dark:text-[#ff453a] hover:bg-rose-500/10 dark:hover:bg-rose-500/15 active:scale-[0.98] transition-all text-left border-t border-black/[0.06] dark:border-white/[0.08] pt-1.5 mt-0.5"
       >
-        <LogOut size={14} />
+        <LogOut size={14} className="text-[#ff3b30] dark:text-[#ff453a]" />
         <span>Log Out</span>
       </button>
     </div>,

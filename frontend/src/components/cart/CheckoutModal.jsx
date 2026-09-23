@@ -93,7 +93,7 @@ export default function CheckoutModal({ onClose, onSuccess }) {
 
       {step !== 2 && (
         <div
-          className="relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720]/95 text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
+          className="relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 overflow-hidden animate-modal-in bg-white/95 dark:bg-[#161720] text-gray-900 dark:text-gray-100 backdrop-blur-2xl"
         >
           {/* Step 1: Review */}
           {step === 1 && (
@@ -104,9 +104,9 @@ export default function CheckoutModal({ onClose, onSuccess }) {
               </div>
               <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
                 {/* Customer */}
-                <div className="flex items-center gap-3 bg-gray-50/80 dark:bg-white/5 rounded-xl p-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                    <User size={14} className="text-white" />
+                <div className="flex items-center gap-3 bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] rounded-xl p-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff]">
+                    <User size={14} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">{customer?.name || 'Walk-in Customer'}</p>
@@ -120,7 +120,7 @@ export default function CheckoutModal({ onClose, onSuccess }) {
                     {items.length} items
                   </p>
                   {items.slice(0, 5).map((item, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-white/5 last:border-0">
+                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-black/[0.04] dark:border-white/5 last:border-0">
                       <div className="flex items-center gap-2 min-w-0">
                         <Package size={12} className="text-gray-400 flex-shrink-0" />
                         <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{item.product_name}</span>
@@ -137,7 +137,7 @@ export default function CheckoutModal({ onClose, onSuccess }) {
                 </div>
 
                 {/* Totals */}
-                <div className="bg-indigo-50/60 dark:bg-indigo-900/20 rounded-xl p-4 space-y-2">
+                <div className="bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] rounded-xl p-4 space-y-2">
                   <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                     <span>Taxable</span>
                     <span className="font-medium">₹{totalTaxable.toFixed(2)}</span>
@@ -150,14 +150,14 @@ export default function CheckoutModal({ onClose, onSuccess }) {
                       </>
                   }
                   {invDisc > 0 && (
-                    <div className="flex justify-between text-sm text-emerald-600">
+                    <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400 font-medium">
                       <span>Discount ({discPct}%)</span>
                       <span>-₹{invDisc.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="border-t border-indigo-200/60 dark:border-indigo-500/20 pt-2 flex justify-between font-bold text-base">
+                  <div className="border-t border-black/[0.08] dark:border-white/[0.08] pt-2 flex justify-between font-bold text-base">
                     <span>Grand Total</span>
-                    <span className="text-indigo-700 dark:text-indigo-400">₹{grandTotal.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white">₹{grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function CheckoutModal({ onClose, onSuccess }) {
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Invoice Created!</h3>
               {savedSale?.invoice_number && (
-                <p className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold mb-1">{savedSale.invoice_number}</p>
+                <p className="text-sm text-[#0071e3] dark:text-[#0a84ff] font-semibold mb-1">{savedSale.invoice_number}</p>
               )}
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">PDF opened in a new tab</p>
               <button onClick={onClose} className="btn-primary w-full justify-center">

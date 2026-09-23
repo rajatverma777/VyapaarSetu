@@ -20,36 +20,40 @@ import { settingsAPI, productAPI, inventoryAPI } from '../services/api'
 function ShortcutBar() {
   const shortcuts = [['F2','Search'],['F4','Customer'],['F8','Draft'],['F9','Checkout']]
   return (
-    <div className="hidden lg:flex items-center gap-3.5 text-[10px] text-gray-500 dark:text-indigo-300/85 bg-indigo-50/40 dark:bg-indigo-500/5 px-3.5 py-1.5 rounded-xl border border-indigo-100/50 dark:border-indigo-500/15">
+    <div className="hidden lg:flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400 bg-black/[0.03] dark:bg-white/[0.05] px-3 py-1.5 rounded-xl border border-black/[0.04] dark:border-white/[0.08] backdrop-blur-md">
       {shortcuts.map(([key, label]) => (
-        <span key={key} className="flex items-center gap-1.5">
-          <kbd className="px-1.5 py-0.5 bg-white/90 dark:bg-indigo-500/15 rounded font-bold shadow-sm border border-indigo-100 dark:border-indigo-500/25 text-indigo-600 dark:text-indigo-200">{key}</kbd>
-          {label}
+        <span key={key} className="flex items-center gap-1.5 font-medium">
+          <kbd className="px-1.5 py-0.5 bg-white dark:bg-white/10 rounded-md font-bold shadow-xs border border-black/[0.08] dark:border-white/[0.14] text-gray-800 dark:text-gray-200 font-mono text-[9px]">{key}</kbd>
+          <span>{label}</span>
         </span>
       ))}
     </div>
   )
 }
 
-// ── Cart Tab Button — Dark glass pill style ───────────────────────────────
+// ── Cart Tab Button — Apple segmented style ───────────────────────────────
 function CartTab({ cartId, isActive, itemCount, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`btn-cart-tab ${
-        isActive ? 'btn-cart-tab-active' : 'btn-cart-tab-inactive'
-      }`}
+      className={`glass-tab-btn ${isActive ? 'active' : ''}`}
     >
+      {isActive && (
+        <>
+          <div className="glass-tab-active-pill" />
+          <div className="glass-tab-active-shadow" />
+        </>
+      )}
       <ShoppingCart
         size={13}
-        className={isActive ? 'text-white dark:text-indigo-100' : 'text-gray-400 dark:text-indigo-400/60'}
+        className={`relative z-10 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-400'}`}
       />
-      <span>Cart {cartId}</span>
+      <span className="relative z-10 font-semibold text-xs">Cart {cartId}</span>
       {itemCount > 0 && (
-        <span className={`min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-extrabold px-1.5 transition-all duration-300 ${
+        <span className={`relative z-10 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-bold px-1.5 transition-all duration-200 ${
           isActive
-            ? 'bg-white text-indigo-600 dark:text-indigo-900 shadow-[0_2px_8px_rgba(255,255,255,0.2)]'
-            : 'bg-indigo-500 text-white'
+            ? 'bg-[#0071e3] text-white shadow-xs'
+            : 'bg-black/10 dark:bg-white/15 text-gray-700 dark:text-gray-200'
         }`}>
           {itemCount}
         </span>
@@ -145,20 +149,14 @@ function ProductCard({ product, onAddToCart }) {
         <div className="flex items-start gap-3">
           {/* Glass icon bubble container */}
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100/80 dark:border-indigo-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <Package size={15} className="text-indigo-600 dark:text-indigo-400" />
+            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.08]">
+              <Package size={15} className="text-gray-700 dark:text-gray-200" />
             </div>
 
-            {/* Badge overlaid on top of the package icon itself - 100% overlap proof */}
+            {/* Badge overlaid on top of the package icon */}
             {totalQtyInCart > 0 && (
               <div
-                className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full text-[9px] font-bold z-10 px-1 border animate-in fade-in zoom-in-75 duration-200"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(99, 102, 241, 0.95) 100%)',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  color: '#ffffff',
-                  boxShadow: '0 2px 6px rgba(99, 102, 241, 0.4)',
-                }}
+                className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full text-[9px] font-bold z-10 px-1 border animate-in fade-in zoom-in-75 duration-200 bg-[#0071e3] border-white/20 text-white shadow-xs"
               >
                 {totalQtyInCart}
               </div>
@@ -167,11 +165,11 @@ function ProductCard({ product, onAddToCart }) {
 
           {/* Title and Brand container */}
           <div className="min-w-0 flex-1 pt-0.5">
-            <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2 tracking-[0.01em]">
+            <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2 tracking-tight">
               {product.name}
             </p>
             {product.brand && (
-              <span className="inline-block text-[9px] font-medium mt-1.5 px-2.5 py-0.5 rounded-full truncate max-w-full bg-indigo-50/30 dark:bg-indigo-550/8 border border-indigo-100/40 dark:border-indigo-500/12 text-indigo-600/85 dark:text-indigo-300 tracking-[0.02em]">
+              <span className="inline-block text-[9px] font-medium mt-1.5 px-2 py-0.5 rounded-md truncate max-w-full bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.08] text-gray-600 dark:text-gray-400">
                 {product.brand}
               </span>
             )}
@@ -188,12 +186,12 @@ function ProductCard({ product, onAddToCart }) {
                 boxShadow: `0 0 6px ${stockDot}99`,
               }}
             />
-            <span className="text-[10px] font-medium text-gray-500 dark:text-indigo-200/60">
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
               {stockLabel}
             </span>
           </div>
           {(product.gst_rate ?? 0) > 0 && (
-            <span className="text-[9px] text-gray-400 dark:text-indigo-300/40">
+            <span className="text-[9px] text-gray-400 dark:text-gray-500">
               GST {product.gst_rate}%
             </span>
           )}
@@ -201,11 +199,11 @@ function ProductCard({ product, onAddToCart }) {
 
         {/* Price */}
         <div className="flex items-baseline gap-2 mt-auto">
-          <span className="text-[18px] font-bold text-indigo-600 dark:text-indigo-50 tracking-tight">
+          <span className="text-[18px] font-bold text-gray-900 dark:text-white tracking-tight">
             ₹{(product.selling_price || 0).toFixed(2)}
           </span>
           {product.mrp > product.selling_price && (
-            <span className="text-[10px] line-through text-gray-400 dark:text-indigo-350/30">
+            <span className="text-[10px] line-through text-gray-400 dark:text-gray-500">
               ₹{product.mrp?.toFixed(2)}
             </span>
           )}
@@ -215,7 +213,7 @@ function ProductCard({ product, onAddToCart }) {
       {/* ── Add to Cart — glass pill / qty controller ── */}
       <div className="px-3 pb-4 z-10">
         {totalQtyInCart > 0 ? (
-          <div className="w-full flex items-center justify-between p-1 rounded-[12px] text-[11px] font-semibold tracking-wide transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 duration-200 bg-white/70 dark:bg-indigo-500/5 border border-gray-200/50 dark:border-indigo-500/15 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]">
+          <div className="w-full flex items-center justify-between p-1 rounded-[12px] text-[11px] font-semibold tracking-wide transition-all duration-200 bg-black/[0.03] dark:bg-white/[0.08] border border-black/[0.05] dark:border-white/[0.10]">
             {/* Minus Button */}
             <button
               onClick={handleDecrease}
@@ -227,10 +225,10 @@ function ProductCard({ product, onAddToCart }) {
 
             {/* Quantity Text */}
             <div className="flex items-center gap-1 select-none">
-              <span className="text-[12px] font-extrabold text-indigo-600 dark:text-indigo-300">
+              <span className="text-[12px] font-bold text-gray-900 dark:text-white">
                 {totalQtyInCart}
               </span>
-              <span className="text-[9.5px] text-gray-500 dark:text-indigo-300/60 font-medium">in cart</span>
+              <span className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">in cart</span>
             </div>
 
             {/* Plus Button */}
@@ -428,7 +426,7 @@ function SmartCartInner() {
         </div>
 
         {/* Cart tabs */}
-        <div className="flex items-center gap-2">
+        <div className="glass-tab-track">
           {CART_IDS.map(id => (
             <CartTab
               key={id}
@@ -469,7 +467,7 @@ function SmartCartInner() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Grid search bar */}
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-indigo-300/70 pointer-events-none" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-400 pointer-events-none" />
               <input
                 ref={gridSearchRef}
                 type="text"
@@ -500,25 +498,35 @@ function SmartCartInner() {
             </button>
 
             {/* Grid / Cart view toggle */}
-            <div className="tax-toggle-track flex-shrink-0 w-48 h-[38px] items-center">
-              <div
-                className="tax-toggle-pill"
-                style={{ transform: viewMode === 'cart' ? 'translateX(100%)' : 'translateX(0%)' }}
-              />
+            <div className="glass-tab-track flex-shrink-0">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`tax-toggle-btn flex items-center justify-center gap-1.5 h-full text-xs font-semibold ${viewMode === 'grid' ? 'tax-toggle-active' : ''}`}
+                className={`glass-tab-btn ${viewMode === 'grid' ? 'active' : ''}`}
               >
-                <LayoutGrid size={13} /> Products
+                {viewMode === 'grid' && (
+                  <>
+                    <div className="glass-tab-active-pill" />
+                    <div className="glass-tab-active-shadow" />
+                  </>
+                )}
+                <LayoutGrid size={13} className="relative z-10" />
+                <span className="relative z-10 font-semibold text-xs">Products</span>
               </button>
               <button
                 onClick={() => setViewMode('cart')}
-                className={`tax-toggle-btn flex items-center justify-center gap-1.5 h-full text-xs font-semibold ${viewMode === 'cart' ? 'tax-toggle-active' : ''}`}
+                className={`glass-tab-btn ${viewMode === 'cart' ? 'active' : ''}`}
               >
-                <List size={13} /> Cart
+                {viewMode === 'cart' && (
+                  <>
+                    <div className="glass-tab-active-pill" />
+                    <div className="glass-tab-active-shadow" />
+                  </>
+                )}
+                <List size={13} className="relative z-10" />
+                <span className="relative z-10 font-semibold text-xs">Cart</span>
                 {totalItems > 0 && (
-                  <span className={`min-w-[16px] h-[16px] flex items-center justify-center rounded-full text-[9px] font-bold px-0.5 ${
-                    viewMode === 'cart' ? 'bg-white/30 text-white' : 'bg-indigo-500 text-white'
+                  <span className={`relative z-10 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-bold px-1.5 transition-all ${
+                    viewMode === 'cart' ? 'bg-[#0071e3] text-white shadow-xs' : 'bg-black/10 dark:bg-white/20 text-gray-900 dark:text-white'
                   }`}>
                     {totalItems}
                   </span>
@@ -567,8 +575,8 @@ function SmartCartInner() {
               <div className="overflow-y-auto flex-1">
                 {items.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center mb-4">
-                      <ShoppingBag size={28} className="text-indigo-400" />
+                    <div className="w-16 h-16 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center mb-4 text-gray-400 dark:text-gray-500">
+                      <ShoppingBag size={28} />
                     </div>
                     <h3 className="text-base font-bold text-gray-600 dark:text-gray-300 mb-1">Cart is empty</h3>
                     <p className="text-sm text-gray-400 mb-4">Switch to Products tab to add items</p>
@@ -601,7 +609,7 @@ function SmartCartInner() {
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t-2 border-indigo-200/60 dark:border-indigo-700/30 bg-indigo-50/30 dark:bg-indigo-900/10">
+                      <tr className="border-t border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02]">
                         <td colSpan={6} className="px-3 py-2.5 text-xs font-semibold text-gray-500">
                           {items.length} items · {items.reduce((s, i) => s + i.qty, 0)} units
                         </td>
@@ -611,7 +619,7 @@ function SmartCartInner() {
                         <td className="px-2 py-2.5 text-right text-xs text-gray-500">
                           {isIgst ? `₹${totals.totalIgst.toFixed(2)}` : `₹${(totals.totalCgst + totals.totalSgst).toFixed(2)}`}
                         </td>
-                        <td className="px-2 py-2.5 text-right font-bold text-base text-indigo-700 dark:text-indigo-300">
+                        <td className="px-2 py-2.5 text-right font-bold text-base text-gray-900 dark:text-white">
                           ₹{totals.grandTotal.toFixed(2)}
                         </td>
                         <td />
@@ -624,8 +632,8 @@ function SmartCartInner() {
           )}
         </div>
 
-        {/* ── RIGHT: Summary panel ── */}
-        <div className={`${viewMode === 'grid' ? 'hidden xl:flex' : 'flex'} w-full xl:w-72 flex-shrink-0 flex flex-col min-h-0 overflow-y-auto px-1.5 pt-1.5 pb-2`}>
+        {/* ── RIGHT: Terminal Summary panel ── */}
+        <div className={`${viewMode === 'grid' ? 'hidden xl:flex' : 'flex'} w-full xl:w-[350px] 2xl:w-[390px] flex-shrink-0 flex flex-col min-h-0 h-full`}>
           <CartSummaryPanel
             onCheckout={() => setShowCheckout(true)}
             onSaveDraft={handleSaveDraft}

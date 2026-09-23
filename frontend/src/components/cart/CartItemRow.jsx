@@ -65,8 +65,8 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
       {/* Product Info */}
       <td className="px-2 py-2.5 min-w-[180px]">
         <div className="flex items-start gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Package size={12} className="text-indigo-500" />
+          <div className="w-7 h-7 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] flex items-center justify-center flex-shrink-0 mt-0.5 text-gray-500 dark:text-gray-400">
+            <Package size={12} />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight truncate max-w-[200px]">
@@ -74,7 +74,7 @@ const CartItemRow = memo(function CartItemRow({ item, idx, isIgst }) {
             </p>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               {item.brand && (
-                <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">{item.brand}</span>
+                <span className="text-[9px] font-semibold text-gray-600 dark:text-gray-300 bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] px-1.5 py-0.5 rounded">{item.brand}</span>
               )}
               {item.batch_no && (
                 <span className="text-[9px] text-gray-400 font-mono bg-gray-50 dark:bg-gray-800/40 px-1 py-0.5 rounded">B:{item.batch_no}</span>

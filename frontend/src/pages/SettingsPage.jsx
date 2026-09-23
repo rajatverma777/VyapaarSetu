@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Settings, Building2, Users, Database, Key, Plus, Trash2, Sun, Moon, Palette, User, FileText } from 'lucide-react'
+import { Settings, Building2, Users, Database, Key, Plus, Trash2, Sun, Moon, Palette, User, FileText, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { settingsAPI, backupAPI, userAPI } from '../services/api'
 import { FormSkeleton, Modal, FormField } from '../components/ui'
@@ -84,6 +84,7 @@ export default function SettingsPage() {
     can_view_purchases: false,
     can_manage_settings: false
   })
+  const [copiedCode, setCopiedCode] = useState(false)
 
   // Backup
   const [backups, setBackups] = useState([])
@@ -420,10 +421,10 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Invoice Branding</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Logo Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
                     <label className="text-xs font-semibold text-gray-500 mb-2">Company Logo (Header)</label>
                     {company.logo_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center">
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
                         <img src={company.logo_base64} alt="Company Logo" className="max-w-full max-h-full object-contain" />
                         <button
                           onClick={() => setC('logo_base64', '')}
@@ -433,7 +434,7 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-400">
+                      <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-400">
                         <Building2 size={32} />
                       </div>
                     )}
@@ -456,10 +457,10 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Watermark Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
                     <label className="text-xs font-semibold text-gray-500 mb-2">Invoice Watermark (Background)</label>
                     {company.watermark_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center">
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
                         <img src={company.watermark_base64} alt="Invoice Watermark" className="max-w-full max-h-full object-contain opacity-50" />
                         <button
                           onClick={() => setC('watermark_base64', '')}
@@ -469,7 +470,7 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-400">
+                      <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-400">
                         <Palette size={32} />
                       </div>
                     )}
@@ -503,10 +504,10 @@ export default function SettingsPage() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Signature Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
                     <label className="text-xs font-semibold text-gray-500 mb-2">Digital Signature</label>
                     {company.signature_base64 ? (
-                      <div className="relative group mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center p-2" style={{ minHeight: '80px', maxHeight: '90px' }}>
+                      <div className="relative group mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center p-2" style={{ minHeight: '80px', maxHeight: '90px' }}>
                         <img
                           src={company.signature_base64}
                           alt="Digital Signature"
@@ -520,7 +521,7 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-full mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-300 dark:text-gray-600" style={{ height: '80px' }}>
+                      <div className="w-full mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-300 dark:text-gray-600" style={{ height: '80px' }}>
                         <span className="text-xs">No signature uploaded</span>
                       </div>
                     )}
@@ -542,10 +543,10 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Seal Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-indigo-500/25 rounded-2xl bg-gray-50/50 dark:bg-indigo-500/5">
+                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
                     <label className="text-xs font-semibold text-gray-500 mb-2">Company Seal (Optional)</label>
                     {company.seal_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161720]/80 flex items-center justify-center">
+                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
                         <img src={company.seal_base64} alt="Company Seal" className="max-w-full max-h-full object-contain" />
                         <button
                           onClick={() => setC('seal_base64', '')}
@@ -555,7 +556,7 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="w-24 h-24 mb-3 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#161720]/80 flex items-center justify-center text-gray-300 dark:text-gray-600">
+                      <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-300 dark:text-gray-600">
                         <span className="text-[10px] text-center px-2">No seal</span>
                       </div>
                     )}
@@ -616,11 +617,11 @@ export default function SettingsPage() {
                 aria-checked={!!company.watermark_enabled}
                 onClick={() => setC('watermark_enabled', !company.watermark_enabled)}
                 className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors duration-200 border ${
-                  company.watermark_enabled ? 'bg-indigo-600 border-transparent' : 'bg-gray-200 dark:bg-white/10 border-gray-200 dark:border-white/5'
+                  company.watermark_enabled ? 'bg-[#34c759] border-[#30b753]' : 'bg-gray-200 dark:bg-white/15 border-transparent'
                 }`}
               >
                 <span
-                  className="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 shadow"
+                  className="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 shadow-sm"
                   style={{ transform: company.watermark_enabled ? 'translateX(18px)' : 'translateX(2px)' }}
                 />
               </button>
@@ -639,23 +640,37 @@ export default function SettingsPage() {
         <div className="space-y-4">
           {/* Prominent Company Code Box */}
           {isAdmin && (
-            <div className="card p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-650 dark:text-indigo-400">Your Company Code</h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Share this code with your staff members so they can join your business during registration.</p>
+            <div className="apple-callout-card p-4.5 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl flex-shrink-0 flex items-center justify-center bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 dark:border-[#0a84ff]/25 shadow-sm">
+                  <Building2 size={20} className="text-[#0071e3] dark:text-[#0a84ff]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white">Your Company Code</h4>
+                    <span className="badge-blue text-[9px] px-2 py-0.5 font-bold">STAFF INVITE</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Share this code with your staff members so they can join your business during registration.</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-lg font-black bg-white dark:bg-indigo-500/10 px-4 py-2 border border-gray-200 dark:border-indigo-500/25 rounded-xl tracking-wider select-all text-indigo-600 dark:text-indigo-200">
-                  {user?.tenant_id || '—'}
-                </span>
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="flex items-center gap-2 bg-black/[0.04] dark:bg-white/[0.08] backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.16] rounded-xl px-4 py-2 shadow-inner">
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-400 tracking-wider">CODE</span>
+                  <span className="font-mono text-base font-bold text-gray-900 dark:text-white tracking-[0.2em] select-all">
+                    {user?.tenant_id || '—'}
+                  </span>
+                </div>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(user?.tenant_id || '')
+                    setCopiedCode(true)
+                    setTimeout(() => setCopiedCode(false), 2000)
                     toast.success('Company Code copied!')
                   }}
-                  className="btn-secondary text-xs py-2"
+                  className="btn-primary text-xs py-2 px-3.5 gap-1.5 flex-shrink-0"
                 >
-                  Copy
+                  {copiedCode ? <Check size={14} /> : <Copy size={14} />}
+                  <span>{copiedCode ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
             </div>
@@ -666,74 +681,74 @@ export default function SettingsPage() {
               <button onClick={() => setShowUserForm(true)} className="btn-primary"><Plus size={15}/> Add User</button>
             </div>
           )}
-          <div className="card">
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Mobile</th>
-                    <th>Status</th>
-                    {isAdmin && <th>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(u => (
-                    <tr key={u.id}>
-                      <td className="font-medium">{u.full_name}</td>
-                      <td className="font-mono text-sm">{u.username}</td>
-                      <td className="capitalize"><span className="badge-blue">{u.role}</span></td>
-                      <td className="text-sm text-gray-500">{u.mobile || '—'}</td>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Mobile</th>
+                  <th>Status</th>
+                  {isAdmin && <th>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id}>
+                    <td className="font-medium">{u.full_name}</td>
+                    <td className="font-mono text-sm">{u.username}</td>
+                    <td className="capitalize">
+                      <span className={u.role === 'admin' ? 'badge-blue' : 'badge-gray'}>{u.role}</span>
+                    </td>
+                    <td className="text-sm text-gray-500">{u.mobile || '—'}</td>
+                    <td>
+                      <div className="flex items-center gap-2.5">
+                        <span className={u.is_active ? 'badge-green' : 'badge-red'}>
+                          {u.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        {isAdmin && u.id !== user?.id && (
+                          <button
+                            onClick={() => toggleUserStatus(u)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none border dark:border-white/10 ${u.is_active ? 'bg-[#34c759] border-[#30b753]' : 'bg-gray-200 dark:bg-white/15 border-transparent'}`}
+                            title="Toggle Status"
+                          >
+                            <span
+                              className="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200 shadow-sm"
+                              style={{ transform: u.is_active ? 'translateX(18px)' : 'translateX(2px)' }}
+                            />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    {isAdmin && (
                       <td>
-                        <div className="flex items-center gap-2.5">
-                          <span className={u.is_active ? 'badge-green' : 'badge-red'}>
-                            {u.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                          {isAdmin && u.id !== user?.id && (
+                        <div className="flex items-center gap-1">
+                          {u.role === 'staff' && (
                             <button
-                              onClick={() => toggleUserStatus(u)}
-                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none border dark:border-white/5 ${u.is_active ? 'bg-indigo-600 border-transparent' : 'bg-gray-200 dark:bg-white/10'}`}
-                              title="Toggle Status"
+                              onClick={() => handleEditPermissions(u)}
+                              className="btn-icon text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
+                              title="Edit Permissions"
                             >
-                              <span
-                                className="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-200"
-                                style={{ transform: u.is_active ? 'translateX(18px)' : 'translateX(2px)' }}
-                              />
+                              <Key size={14} />
+                            </button>
+                          )}
+                          {u.id !== user?.id && (
+                            <button
+                              onClick={() => deleteUser(u.id)}
+                              className="btn-icon text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                              title="Delete User"
+                            >
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
                       </td>
-                      {isAdmin && (
-                        <td>
-                          <div className="flex items-center gap-1">
-                            {u.role === 'staff' && (
-                              <button
-                                onClick={() => handleEditPermissions(u)}
-                                className="btn-icon text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
-                                title="Edit Permissions"
-                              >
-                                <Key size={14} />
-                              </button>
-                            )}
-                            {u.id !== user?.id && (
-                              <button
-                                onClick={() => deleteUser(u.id)}
-                                className="btn-icon text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                title="Delete User"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -800,7 +815,7 @@ export default function SettingsPage() {
               onClick={() => { if (dark) toggle() }}
               className={`cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-4 transition-all duration-200 hover:scale-[1.02] ${
                 !dark 
-                  ? 'border-indigo-600 bg-white/80 dark:bg-white/10 shadow-lg' 
+                  ? 'border-[#0071e3] bg-white/90 dark:bg-white/10 shadow-md ring-1 ring-[#0071e3]/20' 
                   : 'border-transparent bg-white/20 dark:bg-white/5 opacity-70 hover:opacity-100'
               }`}
             >
@@ -821,7 +836,7 @@ export default function SettingsPage() {
                   type="radio" 
                   checked={!dark} 
                   onChange={() => { if (dark) toggle() }}
-                  className="text-indigo-650 focus:ring-indigo-500 cursor-pointer" 
+                  className="accent-[#0071e3] cursor-pointer" 
                 />
                 <span className="text-sm font-semibold text-gray-950 dark:text-white">Light Theme</span>
               </div>
@@ -832,7 +847,7 @@ export default function SettingsPage() {
               onClick={() => { if (!dark) toggle() }}
               className={`cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-4 transition-all duration-200 hover:scale-[1.02] ${
                 dark 
-                  ? 'border-indigo-550 bg-white/80 dark:bg-white/10 shadow-lg' 
+                  ? 'border-[#0a84ff] bg-white/90 dark:bg-white/10 shadow-md ring-1 ring-[#0a84ff]/25' 
                   : 'border-transparent bg-white/20 dark:bg-white/5 opacity-70 hover:opacity-100'
               }`}
             >
@@ -844,7 +859,7 @@ export default function SettingsPage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
                 </div>
                 <div className="flex flex-col items-center gap-1.5 mt-2">
-                  <Moon className="text-indigo-400" size={24} />
+                  <Moon className="text-[#0a84ff]" size={24} />
                   <span className="text-[10px] font-bold text-gray-300">Dark Mode</span>
                 </div>
               </div>
@@ -853,7 +868,7 @@ export default function SettingsPage() {
                   type="radio" 
                   checked={dark} 
                   onChange={() => { if (!dark) toggle() }}
-                  className="text-indigo-650 focus:ring-indigo-500 cursor-pointer" 
+                  className="accent-[#0a84ff] cursor-pointer" 
                 />
                 <span className="text-sm font-semibold text-gray-950 dark:text-white">Dark Theme</span>
               </div>
@@ -921,12 +936,12 @@ export default function SettingsPage() {
               }
 
               return (
-                <label key={p.key} className="flex items-start gap-3 p-3 rounded-xl border border-gray-150/40 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 cursor-pointer hover:border-indigo-500/30 transition-all select-none">
+                <label key={p.key} className="flex items-start gap-3 p-3 rounded-xl border border-gray-150/40 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 cursor-pointer hover:border-[#0071e3]/30 dark:hover:border-[#0a84ff]/30 transition-all select-none">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={handleChange}
-                    className="mt-1 h-4.5 w-4.5 rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                    className="mt-1 h-4.5 w-4.5 rounded accent-[#0071e3] dark:accent-[#0a84ff] border-gray-300 cursor-pointer"
                   />
                   <div>
                     <span className="text-sm font-semibold text-gray-950 dark:text-white block">{p.label}</span>

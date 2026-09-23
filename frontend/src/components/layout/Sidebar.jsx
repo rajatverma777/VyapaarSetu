@@ -324,32 +324,23 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
                   WebkitTransition: 'width 180ms ease-out, padding 180ms ease-out, margin 180ms ease-out',
                 }}
                 className={({ isActive }) =>
-                  `relative flex items-center rounded-xl transition-colors duration-200 active:scale-[0.98] group/link border h-9
+                  `relative flex items-center rounded-xl transition-colors duration-150 active:scale-[0.98] group/link border h-9
                   ${isActive
-                    // In mini mode: no spread shadow (16px blur bleeds into adjacent items
-                    // since overflow-y:auto does not clip box-shadow vertically)
-                    ? `text-indigo-650 dark:text-indigo-400 font-bold bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/15 dark:border-indigo-500/10${mini ? '' : ' shadow-[0_4px_16px_rgba(99,102,241,0.06)]'}`
-                    : 'text-gray-650 dark:text-gray-400 hover:text-gray-955 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5 border-transparent'
+                    ? 'text-gray-900 dark:text-white font-semibold bg-black/[0.06] dark:bg-white/[0.10] border-black/[0.04] dark:border-white/[0.08]'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-transparent'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    {/* Left accent line — only shown in full mode (would look clipped in mini 36px) */}
-                    {isActive && !mini && (
-                      <span 
-                        className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" 
-                        style={{ animation: 'fade-in 200ms ease-out both' }}
-                      />
-                    )}
                     {/* Icon container */}
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-200
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-150
                       ${isActive 
-                        ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 shadow-inner' 
-                        : 'bg-transparent text-gray-555 dark:text-gray-400 group-hover/link:bg-white/50 dark:group-hover/link:bg-white/5'
+                        ? 'text-gray-900 dark:text-white' 
+                        : 'text-gray-500 dark:text-gray-400 group-hover/link:text-gray-800 dark:group-hover/link:text-gray-200'
                       }`}
                     >
-                      <Icon size={16} className="transition-transform duration-200 group-hover/link:scale-105" />
+                      <Icon size={16} className="transition-transform duration-150 group-hover/link:scale-105" />
                     </div>
                     {/* Label — collapses via width+opacity (Safari-safe) */}
                     <span style={labelStyle} className="text-xs font-semibold truncate">
@@ -388,9 +379,9 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
           className="w-full flex items-center rounded-xl transition-colors duration-200 hover:bg-white/40 dark:hover:bg-white/5 active:scale-[0.98] focus:outline-none text-left"
           aria-label="User profile options"
         >
-          {/* Avatar — perfectly centered in mini mode by flexbox (no translate hack) */}
+          {/* Avatar — perfectly centered in mini mode by flexbox */}
           <div
-            className="w-7 h-7 rounded-full bg-indigo-500/10 dark:bg-indigo-300/15 text-indigo-650 dark:text-indigo-400 border border-indigo-500/20 dark:border-indigo-300/25 flex-shrink-0 flex items-center justify-center font-bold text-[10px] shadow-sm"
+            className="w-7 h-7 rounded-full bg-black/[0.05] dark:bg-white/[0.10] text-gray-800 dark:text-gray-200 border border-black/[0.06] dark:border-white/[0.12] flex-shrink-0 flex items-center justify-center font-bold text-[10px]"
           >
             {user?.full_name?.[0]?.toUpperCase() || 'U'}
           </div>
@@ -399,14 +390,14 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
             style={profileTextStyle}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold truncate leading-tight tracking-wide text-indigo-700 dark:text-indigo-200">
+              <p className="text-[11px] font-semibold truncate leading-tight tracking-tight text-gray-900 dark:text-white">
                 {user?.full_name}
               </p>
-              <p className="text-[8px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 leading-tight mt-0.5">
+              <p className="text-[8.5px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 leading-tight mt-0.5">
                 {user?.role}
               </p>
             </div>
-            <ChevronUp size={11} className="text-gray-400 flex-shrink-0 mr-1" />
+            <ChevronUp size={11} className="text-gray-400 dark:text-gray-500 flex-shrink-0 mr-1" />
           </div>
         </button>
       </div>
