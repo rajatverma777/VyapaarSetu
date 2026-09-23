@@ -308,39 +308,70 @@ export default function ProductsPage() {
     }
   }
 
-  const resizeImage = (file) => {
-    return new Promise((resolve) => {
-      if (!file.type.startsWith('image/')) {
-        resolve(file); // Don't try to resize PDFs
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const maxW = 1000;
-          if (img.width <= maxW) {
-            resolve(file);
-            return;
+  const resizeImage = async (file) => {
+    if (!file || !file.type.startsWith('image/')) {
+      return file; // Don't resize PDFs or non-images
+    }
+
+    const maxDimension = 2400; // Optimal 300-DPI equivalent for high-accuracy OCR
+
+    try {
+      // 1. Try createImageBitmap with imageOrientation: 'from-image' to honor EXIF tags
+      if (typeof createImageBitmap === 'function') {
+        try {
+          const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+          if (bmp.width <= maxDimension && bmp.height <= maxDimension) {
+            bmp.close();
+            return file;
           }
-          const scale = maxW / img.width;
+          const scale = Math.min(maxDimension / bmp.width, maxDimension / bmp.height, 1);
           const canvas = document.createElement('canvas');
-          canvas.width = maxW;
-          canvas.height = img.height * scale;
+          canvas.width = Math.round(bmp.width * scale);
+          canvas.height = Math.round(bmp.height * scale);
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob((blob) => {
-            const resizedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            resolve(resizedFile);
-          }, 'image/jpeg', 0.85); // 85% JPEG quality
+          ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+          bmp.close();
+          return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+              resolve(blob ? new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }) : file);
+            }, 'image/jpeg', 0.92);
+          });
+        } catch {
+          // Fallback to standard Image() if createImageBitmap fails on some formats
+        }
+      }
+
+      // 2. Standard Canvas fallback
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            if (img.width <= maxDimension && img.height <= maxDimension) {
+              resolve(file);
+              return;
+            }
+            const scale = Math.min(maxDimension / img.width, maxDimension / img.height, 1);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              const resizedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              resolve(resizedFile);
+            }, 'image/jpeg', 0.92);
+          };
+          img.src = event.target.result;
         };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+        reader.readAsDataURL(file);
+      });
+    } catch {
+      return file;
+    }
   };
 
   const handleBulkImport = async (e) => {
@@ -371,6 +402,7 @@ export default function ProductsPage() {
         
         toast.loading(getProgressMessage(), { id: toastId })
         
+        let consecutiveErrors = 0
         // Start polling status
         const pollInterval = setInterval(async () => {
           elapsedSeconds += 2
@@ -378,6 +410,7 @@ export default function ProductsPage() {
           
           try {
             const statusRes = await productAPI.getImportTaskStatus(taskId)
+            consecutiveErrors = 0
             const task = statusRes.data
             
             if (task.status === 'completed') {
@@ -394,8 +427,11 @@ export default function ProductsPage() {
               toast.error(task.error || (isPdf ? 'Failed to analyze PDF invoice' : 'Failed to analyze bill image'), { id: toastId })
             }
           } catch (err) {
-            clearInterval(pollInterval)
-            toast.error('Connection interrupted while monitoring task status', { id: toastId })
+            consecutiveErrors++
+            if (consecutiveErrors >= 10 || elapsedSeconds > 120) {
+              clearInterval(pollInterval)
+              toast.error('Connection interrupted while monitoring task status', { id: toastId })
+            }
           }
         }, 2000)
         

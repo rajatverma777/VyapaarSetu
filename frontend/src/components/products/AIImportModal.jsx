@@ -7,61 +7,69 @@ import toast from 'react-hot-toast'
 import { supplierAPI, aiImportAPI, productAPI } from '../../services/api'
 import { Modal, SearchAutocomplete, DatePicker, GlassSelect, Spinner } from '../ui'
 
-const AI_IMPORT_PROMPT = `Analyze this wholesale invoice and extract the invoice metadata and all products.
+const AI_IMPORT_PROMPT = `You are an expert Document & Invoice Parsing AI. Your task is to analyze the provided invoice, bill, receipt, challan, purchase order, or document image/PDF and extract all invoice metadata and line-item products into clean, structured JSON.
 
-Return ONLY valid JSON.
+CRITICAL INSTRUCTIONS:
+1. IMAGE ORIENTATION & READING DIRECTION:
+   - The document image may be rotated (90° clockwise, 90° counter-clockwise, 180° upside-down, skewed, or taken from an angle).
+   - FIRST detect the orientation of the text, mentally rotate it upright, and read all characters in standard reading order (left-to-right, top-to-bottom).
+   - Do NOT fail or skip text because an image is sideways or upside down.
+
+2. UNIVERSAL DOCUMENT & TABLE COMPREHENSION:
+   - Works for ANY wholesale, distributor, manufacturing, or retail document across all trades (Pharma, Medical/Surgical, FMCG, Groceries, Hardware, Electronics, Textiles, General Trade).
+   - Formats can vary:
+     * Standard multi-column tables.
+     * Sub-row indented tables: where Product Name is on line 1, and Batch No, Expiry, HSN, or MRP are on a sub-line indented directly beneath it. ALWAYS merge sub-lines into the parent product!
+     * Dual-column / dense split tables.
+     * Invoices without explicit headers or with non-standard column names (e.g. Particulars, Description, Dawa, Item).
+     * Multi-page invoices: extract ALL products across all pages.
+
+3. FIELD EXTRACTION & MAPPING RULES:
+   - invoice_number: The bill or invoice reference number (e.g., "INV-2024-001", "B004336", "RBH26-0713", "1245"). Look near the top right or top left.
+   - invoice_date: Date of the invoice formatted as "YYYY-MM-DD" or "DD-MM-YYYY".
+   - supplier_name: The company, distributor, hospital, or vendor issuing the invoice (found at top header/letterhead). Do NOT put the customer/buyer name here.
+   - For each item in "items":
+     * product_name: Full clean product name or description. Strip serial numbers (like "1.", "2.").
+     * pack: Packaging size if mentioned (e.g., "10x10", "1*24", "100ML", "1 UNIT", "10T"). If not found, use null or "1 PCS".
+     * cases: Number of cartons/cases/boxes if mentioned, otherwise null.
+     * quantity: Billed / invoiced quantity as a number. If there is a free/bonus quantity (e.g., "10 + 1 free"), add them together or record the total received quantity.
+     * purchase_rate: The unit purchase rate / price per item before or after discount. If only total amount is given, calculate purchase_rate = amount / quantity.
+     * selling_price: MRP (Maximum Retail Price) or wholesale selling price. If not printed, set to purchase_rate * 1.15.
+     * amount: Total line amount (quantity * purchase_rate).
+     * gst: GST or Tax percentage rate (e.g., 0, 5, 12, 18, 28). If CGST 2.5% + SGST 2.5%, total is 5.0.
+     * hsn_code: HSN or SAC code (e.g., "30049091", "9018").
+     * batch_number: Batch number, lot number, or B.No (e.g., "CDADS036", "G26D010419").
+     * expiry_date: Format as "MM/YYYY" or "DD-MM-YYYY" (e.g., "04/2028"). If printed as "4/28", format as "04/2028".
+     * manufacturer: Brand, manufacturer, or distributor name written on the bill (e.g., "Cipla", "Abbott", "Emcure", "Nirlife", "Aculife", or the supplier).
+
+4. MATHEMATICAL VERIFICATION:
+   - Verify that quantity * purchase_rate ≈ amount. If OCR has missing decimal points (e.g. rate read as 1600 instead of 16.00 for amount 11520.00 and qty 720), automatically correct the decimal point to 16.00.
+
+5. OUTPUT PURITY:
+   - Return ONLY raw, valid JSON.
+   - Do NOT wrap in markdown fences like \`\`\`json ... \`\`\`.
+   - Do NOT include any introductory or concluding comments.
+   - Escape any internal double-quotes inside strings (e.g., 5\\" CANNULA).
 
 JSON Structure:
 {
-  "invoice_number": "Invoice / Bill Number (e.g. B004336)",
-  "invoice_date": "Invoice Date (format as YYYY-MM-DD or DD-MM-YYYY)",
-  "supplier_name": "Supplier / Seller name (e.g. YASH SURGICAL HOUSE)",
+  "invoice_number": "INV-12345",
+  "invoice_date": "2026-06-12",
+  "supplier_name": "SUPPLIER NAME",
   "items": [
     {
       "product_name": "Product Name",
-      "pack": "Packing size (e.g. 10x10, 1UNIT)",
-      "cases": null,
-      "quantity": 10.0,
-      "purchase_rate": 247.62,
-      "selling_price": 1450.0,
-      "amount": 2476.19,
+      "pack": "1*24",
+      "cases": 30,
+      "quantity": 720,
+      "purchase_rate": 16.00,
+      "selling_price": 40.57,
+      "amount": 11520.00,
       "gst": 5.0,
-      "hsn_code": "30049091",
-      "batch_number": "Batch Number (e.g. G26D010419)",
-      "expiry_date": "MM/YYYY or DD-MM-YYYY format (e.g. 03/2031 or 15-08-2027)",
-      "manufacturer": "Brand, company, distributor, or seller name written on the bill (e.g. Yash Surgical House, R B Healthcare, RMS, Cipla)"
-    }
-  ]
-}
-
-Rules:
-* Do not explain anything.
-* Do not use markdown.
-* Do not include comments.
-* Return JSON object only.
-* Keep numbers as numbers.
-* Format expiry dates as MM/YYYY (e.g. "03/2031") or DD-MM-YYYY (e.g. "15-08-2027"). If the invoice has month/year format, keep it as MM/YYYY.
-* For the manufacturer field, extract the brand, company, distributor, or seller name written on the bill (e.g., Yash Surgical House, R B Healthcare, RMS, Cipla, Abbott).
-
-Example:
-{
-  "invoice_number": "B004336",
-  "invoice_date": "2026-06-07",
-  "supplier_name": "YASH SURGICAL HOUSE",
-  "items": [
-    {
-      "product_name": "Paracetamol 500mg",
-      "pack": "10x10",
-      "cases": 2,
-      "quantity": 30,
-      "purchase_rate": 100.0,
-      "selling_price": 120.0,
-      "amount": 3000.0,
-      "gst": 12.0,
-      "hsn_code": "30049091",
-      "batch_number": "G26D010419",
-      "expiry_date": "03/2031",
-      "manufacturer": "ABC Pharma"
+      "hsn_code": "30049099",
+      "batch_number": "CDADS036",
+      "expiry_date": "04/2028",
+      "manufacturer": "Brand Name"
     }
   ]
 }`;
@@ -214,12 +222,36 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
     setTimeout(() => setPromptCopied(false), 3000)
   }
 
-  // Heal JSON with unescaped double quotes inside values, or array-wrap a single object
+  // Heal JSON with unescaped double quotes, markdown blocks, single quotes, or trailing commas
   const healJson = (str) => {
     if (!str) return str
     let trimmed = str.trim()
+
+    // 1. Strip markdown code fences if present (e.g. ```json ... ``` or ``` ...)
+    trimmed = trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+
+    // 2. Extract outermost JSON structure if wrapped in conversational text
+    const firstBrace = trimmed.indexOf('{')
+    const firstBracket = trimmed.indexOf('[')
+    let startIdx = -1
+    if (firstBrace !== -1 && firstBracket !== -1) {
+      startIdx = Math.min(firstBrace, firstBracket)
+    } else {
+      startIdx = firstBrace !== -1 ? firstBrace : firstBracket
+    }
+    if (startIdx >= 0) {
+      const lastBrace = trimmed.lastIndexOf('}')
+      const lastBracket = trimmed.lastIndexOf(']')
+      const endIdx = Math.max(lastBrace, lastBracket)
+      if (endIdx > startIdx) {
+        trimmed = trimmed.substring(startIdx, endIdx + 1).trim()
+      }
+    }
+
+    // 3. Remove trailing commas before closing braces or brackets (e.g. [1, 2,] -> [1, 2])
+    trimmed = trimmed.replace(/,\s*([\]}])/g, '$1')
     
-    // List of known and synonym keys to expand minified single-line JSON
+    // 4. List of known and synonym keys to expand minified single-line JSON
     const keys = [
       "invoice_number", "invoice_date", "supplier_name", "items",
       "product_name", "pack", "cases", "quantity", "purchase_rate",
