@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { FloatingUserMenu } from '../ui'
 import { useCommandPalette } from '../../context/CommandPaletteContext'
-import { reportAPI } from '../../services/api'
 import QuickCustomerModal from '../customers/QuickCustomerModal'
 import {
   LayoutDashboard, Package, Users, Truck, ShoppingCart,
@@ -12,7 +11,7 @@ import {
   BarChart3, Settings, X, Building2, TrendingUp, LogOut,
   Sun, Moon, ChevronUp, RotateCcw, Activity,
   Search, ChevronRight, ChevronLeft, PanelLeftOpen, PanelLeftClose,
-  Plus, Zap, AlertTriangle, CheckCircle2
+  Plus, Zap
 } from 'lucide-react'
 
 // Apple-style transparent navigation groups (clean, monochrome, professional)
@@ -88,34 +87,7 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [menuAnchor, setMenuAnchor] = useState(null)
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
-  const [stats, setStats] = useState(null)
   const userButtonRef = useRef(null)
-
-  // Fetch quick pulse metrics for the empty bottom space
-  useEffect(() => {
-    let mounted = true
-    const loadStats = async () => {
-      try {
-        const { data: d } = await reportAPI.dashboard()
-        if (mounted) {
-          setStats({
-            todaySales: d?.today_sales?.amount || 0,
-            todayCount: d?.today_sales?.count || 0,
-            customerDues: d?.customer_outstanding || 0,
-            lowStock: d?.low_stock_count || 0,
-          })
-        }
-      } catch {
-        // silent fallback
-      }
-    }
-    loadStats()
-    const timer = setInterval(loadStats, 60000)
-    return () => {
-      mounted = false
-      clearInterval(timer)
-    }
-  }, [])
 
   // Global F2 keyboard shortcut for Quick Sale
   useEffect(() => {
@@ -368,206 +340,123 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
       </div>
 
       {/* ── NAV GROUPS & ITEMS ────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden sidebar-nav-container py-1 px-1.5 flex flex-col justify-between">
-        <div className="space-y-2">
-          {visibleGroups.map((group, gIdx) => (
-            <div key={gIdx} className="space-y-0.5">
-              {/* Section Title */}
-              {!mini && (
-                <div className="px-2 pt-2 pb-1 flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                    {group.title}
-                  </span>
-                </div>
-              )}
-
-              {group.items.map((item) => {
-                const Icon = item.icon
-                const isActive = location.pathname === item.to || (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
-
-                return (
-                  <div key={item.to} className="relative group flex items-center justify-start w-full">
-                    <NavLink
-                      to={item.to}
-                      end={item.to === '/sales' || item.to === '/purchases'}
-                      onClick={onClose}
-                      style={{
-                        width: mini ? '36px' : '100%',
-                        padding: mini ? '0' : '5px 8px 5px 8px',
-                        justifyContent: mini ? 'center' : 'flex-start',
-                        margin: mini ? '0 auto' : '0',
-                        transition: 'width 180ms ease-out, padding 180ms ease-out',
-                      }}
-                      className={({ isActive: linkActive }) =>
-                        `relative flex items-center rounded-xl transition-all duration-150 active:scale-[0.98] border h-9 group/link
-                        ${linkActive
-                          ? 'sidebar-nav-active'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-transparent'
-                        }`
-                      }
-                    >
-                      {({ isActive: linkActive }) => (
-                        <>
-                          {/* Active Left Indicator Bar (Full mode) */}
-                          {!mini && linkActive && (
-                            <span className="w-1 h-3.5 rounded-full shrink-0 mr-1.5 bg-gray-900 dark:bg-white" />
-                          )}
-
-                          {/* Minimalist Vector Icon without background box */}
-                          <div
-                            className={`w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-150 ${
-                              linkActive
-                                ? 'text-gray-950 dark:text-white'
-                                : 'text-gray-400 group-hover/link:text-gray-800 dark:text-gray-400 dark:group-hover/link:text-gray-200'
-                            }`}
-                          >
-                            <Icon size={16} strokeWidth={1.8} />
-                          </div>
-
-                          {/* Label */}
-                          <span
-                            style={labelStyle}
-                            className={`text-xs tracking-tight truncate ${
-                              linkActive ? 'font-bold' : 'font-medium'
-                            }`}
-                          >
-                            {item.label}
-                          </span>
-
-                          {/* Customer Row: Transparent Frosted Khata Button */}
-                          {!mini && item.isCustomerRow && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setCustomerModalOpen(true)
-                              }}
-                              className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] transition-all flex items-center gap-1 backdrop-blur-md"
-                              title="Quick Khata, Ledger & Dues Search"
-                            >
-                              <Zap size={10} /> Khata
-                            </button>
-                          )}
-
-                          {/* Sales / Purchases: Inline '+' Quick Button */}
-                          {!mini && item.quickTo && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                navigate(item.quickTo)
-                              }}
-                              className="ml-auto w-5 h-5 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.06] dark:hover:bg-white/[0.10] opacity-0 group-hover/link:opacity-100 transition-all"
-                              title={item.quickTitle}
-                            >
-                              <Plus size={13} strokeWidth={2.4} />
-                            </button>
-                          )}
-
-                          {/* Tooltip on hover in mini mode */}
-                          {mini && (
-                            <div className="absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-lg bg-slate-950/90 text-white border border-white/[0.08] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] text-[10px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover/link:opacity-100 group-hover/link:translate-x-1 translate-x-0 transition-all duration-200 pointer-events-none z-50">
-                              {item.label}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-
-          {searchQuery && visibleGroups.length === 0 && (
-            <div className="px-3 py-6 text-center">
-              <p className="text-xs text-gray-400">No results for "{searchQuery}"</p>
-            </div>
-          )}
-        </div>
-
-        {/* ── BOTTOM WIDGET: Apple Frosted Glass Business Pulse & Dues Collector ── */}
-        <div className="pt-3 pb-1">
-          {!mini ? (
-            <div className="rounded-2xl p-3 bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] backdrop-blur-xl shadow-sm space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Today's Pulse
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden sidebar-nav-container py-1 space-y-2 px-1.5">
+        {visibleGroups.map((group, gIdx) => (
+          <div key={gIdx} className="space-y-0.5">
+            {/* Section Title */}
+            {!mini && (
+              <div className="px-2 pt-2 pb-1 flex items-center justify-between">
+                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  {group.title}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => navigate('/dashboard')}
-                  className="text-[10px] text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                  Dashboard &rarr;
-                </button>
               </div>
+            )}
 
-              <div className="grid grid-cols-2 gap-2">
-                <div
-                  onClick={() => navigate('/sales')}
-                  className="p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06] cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                >
-                  <span className="text-[9px] text-gray-500 dark:text-gray-400 block font-medium">Today's Sales</span>
-                  <span className="text-xs font-bold text-gray-900 dark:text-white font-mono block mt-0.5">
-                    ₹{(stats?.todaySales || 0).toLocaleString('en-IN')}
-                  </span>
-                </div>
+            {group.items.map((item) => {
+              const Icon = item.icon
+              const isActive = location.pathname === item.to || (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
 
-                <div
-                  onClick={() => setCustomerModalOpen(true)}
-                  className="p-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06] cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                >
-                  <span className="text-[9px] text-gray-500 dark:text-gray-400 block font-medium">Pending Dues</span>
-                  <span className="text-xs font-bold text-gray-900 dark:text-white font-mono block mt-0.5">
-                    ₹{(stats?.customerDues || 0).toLocaleString('en-IN')}
-                  </span>
-                </div>
-              </div>
+              return (
+                <div key={item.to} className="relative group flex items-center justify-start w-full">
+                  <NavLink
+                    to={item.to}
+                    end={item.to === '/sales' || item.to === '/purchases'}
+                    onClick={onClose}
+                    style={{
+                      width: mini ? '36px' : '100%',
+                      padding: mini ? '0' : '5px 8px 5px 8px',
+                      justifyContent: mini ? 'center' : 'flex-start',
+                      margin: mini ? '0 auto' : '0',
+                      transition: 'width 180ms ease-out, padding 180ms ease-out',
+                    }}
+                    className={({ isActive: linkActive }) =>
+                      `relative flex items-center rounded-xl transition-all duration-150 active:scale-[0.98] border h-9 group/link
+                      ${linkActive
+                        ? 'sidebar-nav-active'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-transparent'
+                      }`
+                    }
+                  >
+                    {({ isActive: linkActive }) => (
+                      <>
+                        {/* Active Left Indicator Bar (Full mode) */}
+                        {!mini && linkActive && (
+                          <span className="w-1 h-3.5 rounded-full shrink-0 mr-1.5 bg-gray-900 dark:bg-white" />
+                        )}
 
-              {stats?.lowStock > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => navigate('/inventory')}
-                  className="w-full py-1.5 px-2 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-gray-700 dark:text-gray-300 text-[10px] font-medium flex items-center justify-between transition-colors"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <AlertTriangle size={12} className="text-amber-500" /> {stats.lowStock} Items Low Stock
-                  </span>
-                  <span>Check &rarr;</span>
-                </button>
-              ) : (
-                <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 px-0.5">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 size={11} className="text-emerald-500" /> Cloud Synced
-                  </span>
-                  <span className="font-mono text-[9px]">F2 / ⌘K</span>
+                        {/* Minimalist Vector Icon without background box */}
+                        <div
+                          className={`w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-150 ${
+                            linkActive
+                              ? 'text-gray-950 dark:text-white'
+                              : 'text-gray-400 group-hover/link:text-gray-800 dark:text-gray-400 dark:group-hover/link:text-gray-200'
+                          }`}
+                        >
+                          <Icon size={16} strokeWidth={1.8} />
+                        </div>
+
+                        {/* Label */}
+                        <span
+                          style={labelStyle}
+                          className={`text-xs tracking-tight truncate ${
+                            linkActive ? 'font-bold' : 'font-medium'
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+
+                        {/* Customer Row: Transparent Frosted Khata Button */}
+                        {!mini && item.isCustomerRow && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setCustomerModalOpen(true)
+                            }}
+                            className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] transition-all flex items-center gap-1 backdrop-blur-md"
+                            title="Quick Khata, Ledger & Dues Search"
+                          >
+                            <Zap size={10} /> Khata
+                          </button>
+                        )}
+
+                        {/* Sales / Purchases: Inline '+' Quick Button */}
+                        {!mini && item.quickTo && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              navigate(item.quickTo)
+                            }}
+                            className="ml-auto w-5 h-5 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.06] dark:hover:bg-white/[0.10] opacity-0 group-hover/link:opacity-100 transition-all"
+                            title={item.quickTitle}
+                          >
+                            <Plus size={13} strokeWidth={2.4} />
+                          </button>
+                        )}
+
+                        {/* Tooltip on hover in mini mode */}
+                        {mini && (
+                          <div className="absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-lg bg-slate-950/90 text-white border border-white/[0.08] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] text-[10px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover/link:opacity-100 group-hover/link:translate-x-1 translate-x-0 transition-all duration-200 pointer-events-none z-50">
+                            {item.label}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex justify-center py-1 relative group">
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="w-8 h-8 rounded-xl flex items-center justify-center bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.04] dark:border-white/[0.08] text-emerald-500 hover:bg-black/[0.06] dark:hover:bg-white/[0.10] transition-colors cursor-pointer"
-                title="Today's Pulse"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </button>
-              <div className="absolute left-[calc(100%+14px)] bottom-0 px-3 py-2 rounded-xl bg-slate-950/95 text-white border border-white/[0.10] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] text-[11px] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:translate-x-1 translate-x-0 transition-all duration-200 pointer-events-none z-50 space-y-1">
-                <p className="font-bold flex items-center gap-1.5 text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Today's Pulse
-                </p>
-                <p className="text-gray-300">Sales: ₹{(stats?.todaySales || 0).toLocaleString('en-IN')}</p>
-                <p className="text-gray-300">Dues: ₹{(stats?.customerDues || 0).toLocaleString('en-IN')}</p>
-              </div>
-            </div>
-          )}
-        </div>
+              )
+            })}
+          </div>
+        ))}
+
+        {searchQuery && visibleGroups.length === 0 && (
+          <div className="px-3 py-6 text-center">
+            <p className="text-xs text-gray-400">No results for "{searchQuery}"</p>
+          </div>
+        )}
       </nav>
 
       {/* ── USER FOOTER ───────────────────────────────────────────────────── */}
