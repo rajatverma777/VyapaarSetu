@@ -1337,8 +1337,21 @@ CRITICAL INSTRUCTIONS:
             candidates = resp_json.get("candidates", [])
             if not candidates:
                 raise ValueError("No candidates returned from Gemini API")
-            text_response = candidates[0]["content"]["parts"][0]["text"]
-            products = json.loads(text_response)
+            text_response = candidates[0]["content"]["parts"][0]["text"].strip()
+            # Strip markdown code fences if Gemini wrapped output
+            if text_response.startswith("```json"):
+                text_response = text_response[7:]
+            elif text_response.startswith("```"):
+                text_response = text_response[3:]
+            if text_response.endswith("```"):
+                text_response = text_response[:-3]
+            text_response = text_response.strip()
+
+            parsed_data = json.loads(text_response)
+            if isinstance(parsed_data, dict):
+                products = parsed_data.get("items") or parsed_data.get("products") or [parsed_data]
+            else:
+                products = parsed_data
             
             validated_products = []
             for item in products:

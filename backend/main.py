@@ -104,5 +104,9 @@ app.include_router(pricing.router,   prefix="/api/pricing",   tags=["Pricing Int
 
 @app.get("/api/health")
 async def health_check():
-    # Trigger uvicorn reload for fresh database setup
-    return {"status": "healthy", "version": "1.0.0"}
+    return {
+        "status": "healthy",
+        "version": "1.1.0",
+        "build": "universal_ocr_v2",
+        "features": ["universal_table_ocr", "gemini_vision", "auto_orientation"]
+    }
