@@ -565,12 +565,8 @@ export default function ProductsPage() {
               <Trash2 size={15} /> Delete Selected ({selectedIds.length})
             </button>
           )}
-          <input type="file" ref={fileRef} onChange={handleBulkImport} accept=".xlsx,.xls,.png,.jpg,.jpeg,.pdf" className="hidden" />
-          <button onClick={() => setShowAIImportModal(true)} className="btn-secondary flex items-center gap-1.5">
-            <Sparkles size={15} className="text-[#0071e3] dark:text-[#0a84ff]" /> Import via AI
-          </button>
-          <button onClick={() => fileRef.current.click()} className="btn-secondary">
-            <Upload size={15} /> Bulk Import
+          <button onClick={() => setShowAIImportModal(true)} className="btn-secondary flex items-center gap-1.5 font-medium">
+            <Sparkles size={15} className="text-[#0071e3] dark:text-[#0a84ff]" /> Smart Import
           </button>
           <button onClick={openAdd} className="btn-primary">
             <Plus size={16} /> Add Product
@@ -1336,6 +1332,7 @@ export default function ProductsPage() {
         onImportSuccess={() => {
           setShowAIImportModal(false)
           load()
+          loadInventoryStats()
         }}
       />
     </div>

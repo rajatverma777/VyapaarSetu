@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { 
   Copy, Check, FileText, Sparkles, AlertCircle, 
   AlertTriangle, X, ChevronRight, ChevronLeft, Search, Plus, Trash2, ArrowRight,
-  UploadCloud, FileUp, Zap, ShieldCheck, CheckCircle2, RefreshCw, ChevronDown, ChevronUp, Bot
+  UploadCloud, FileUp, Zap, ShieldCheck, CheckCircle2, RefreshCw, ChevronDown, ChevronUp, Bot,
+  FileSpreadsheet
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supplierAPI, aiImportAPI, productAPI } from '../../services/api'
@@ -331,6 +332,29 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
     setDragActive(true)
   }
 
+  const [isExcelUploading, setIsExcelUploading] = useState(false)
+  const excelInputRef = useRef(null)
+
+  const handleExcelUpload = async (file) => {
+    if (!file) return
+    setIsExcelUploading(true)
+    const toastId = toast.loading('Importing products from Excel spreadsheet...')
+    try {
+      const { data } = await productAPI.bulkImport(file)
+      toast.success(`Successfully imported ${data.imported} products from Excel!`, { id: toastId })
+      if (data.errors && data.errors.length > 0) {
+        toast.error(`${data.errors.length} rows had errors and were skipped.`, { duration: 5000 })
+      }
+      if (onImportSuccess) onImportSuccess()
+      onClose()
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to import Excel file', { id: toastId })
+    } finally {
+      setIsExcelUploading(false)
+      if (excelInputRef.current) excelInputRef.current.value = ''
+    }
+  }
+
   const handleDragLeave = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -342,7 +366,13 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
     e.stopPropagation()
     setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleDirectFileScan(e.dataTransfer.files[0])
+      const file = e.dataTransfer.files[0]
+      const nameLower = file.name.toLowerCase()
+      if (nameLower.endsWith('.xlsx') || nameLower.endsWith('.xls') || nameLower.endsWith('.csv')) {
+        handleExcelUpload(file)
+      } else {
+        handleDirectFileScan(file)
+      }
     }
   }
 
@@ -965,32 +995,45 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
           <div className="space-y-6 max-w-4xl mx-auto w-full py-2">
             {/* Segmented Mode Selector */}
             <div className="flex justify-center">
-              <div className="p-1 bg-gray-100 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-gray-250 dark:border-white/10 inline-flex shadow-inner">
+              <div className="p-1 bg-gray-100 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-gray-250 dark:border-white/10 inline-flex shadow-inner flex-wrap justify-center gap-1">
                 <button
                   type="button"
                   onClick={() => setInputMode('scan')}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
                     inputMode === 'scan'
                       ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  <Zap size={16} className={inputMode === 'scan' ? 'text-amber-300' : 'text-indigo-400'} />
-                  ⚡ Instant 1-Click AI Scan (PDF / Photo)
-                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-semibold">Recommended</span>
+                  <Zap size={15} className={inputMode === 'scan' ? 'text-amber-300' : 'text-indigo-400'} />
+                  ⚡ AI Invoice Scan (PDF / Photo)
+                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-semibold">Fast</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInputMode('excel')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                    inputMode === 'excel'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <FileSpreadsheet size={15} className={inputMode === 'excel' ? 'text-emerald-300' : 'text-emerald-400'} />
+                  📊 Excel / Spreadsheet Import
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setInputMode('prompt')}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
                     inputMode === 'prompt'
                       ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  <Bot size={16} />
-                  📋 Manual Prompt & JSON Mode (ChatGPT / Claude)
+                  <Bot size={15} />
+                  📋 Prompt & JSON Mode
                 </button>
               </div>
             </div>
@@ -1116,7 +1159,81 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
               </div>
             )}
 
-            {/* TAB 2: Manual Prompt Mode */}
+            {/* TAB 2: Excel / Spreadsheet Import */}
+            {inputMode === 'excel' && (
+              <div className="space-y-6">
+                <input
+                  type="file"
+                  ref={excelInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) handleExcelUpload(e.target.files[0])
+                  }}
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                />
+
+                <div
+                  onClick={() => !isExcelUploading && excelInputRef.current?.click()}
+                  className="relative group rounded-3xl border-2 border-dashed border-emerald-500/30 dark:border-emerald-400/25 hover:border-emerald-400 bg-gradient-to-b from-emerald-500/5 via-teal-500/5 to-transparent hover:bg-emerald-500/10 transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden shadow-xl"
+                >
+                  {isExcelUploading ? (
+                    <div className="py-8 space-y-4">
+                      <div className="relative w-16 h-16 mx-auto">
+                        <div className="absolute inset-0 rounded-2xl bg-emerald-500/30 animate-ping" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/40">
+                          <Spinner size={32} />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h4 className="text-base font-bold text-gray-900 dark:text-white animate-pulse">
+                          Importing products from Excel spreadsheet...
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Mapping columns, validating SKU barcodes, and inserting catalog records...
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-green-500/20 border border-emerald-500/30 mx-auto flex items-center justify-center text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/10">
+                        <FileSpreadsheet size={32} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                          Drop your Excel catalog here, or <span className="text-emerald-500 underline underline-offset-4">browse</span>
+                        </h4>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
+                          Upload wholesale catalog files in Microsoft Excel (.xlsx, .xls) or CSV format
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
+                          <CheckCircle2 size={12} /> Auto Column Mapping
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-300 border border-teal-500/20">
+                          <ShieldCheck size={12} /> Duplicate SKU Protection
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                          <Zap size={12} /> Instant Catalog Update
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="card p-4 border border-emerald-500/20 bg-emerald-500/5 text-xs text-gray-600 dark:text-gray-300 space-y-2">
+                  <div className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 size={14} /> Supported Column Headers
+                  </div>
+                  <p className="leading-relaxed text-[11px]">
+                    Your spreadsheet can contain headers like: <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Product Name</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">SKU / Code</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Purchase Price</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Selling Price</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">MRP</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">GST %</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Stock / Qty</code>.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Manual Prompt Mode */}
             {inputMode === 'prompt' && (
               <div className="space-y-5">
                 <div className="card p-5 border-indigo-500/20 bg-indigo-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
