@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { 
   Copy, Check, FileText, Sparkles, AlertCircle, 
-  AlertTriangle, X, ChevronRight, ChevronLeft, Search, Plus, Trash2, ArrowRight
+  AlertTriangle, X, ChevronRight, ChevronLeft, Search, Plus, Trash2, ArrowRight,
+  UploadCloud, FileUp, Zap, ShieldCheck, CheckCircle2, RefreshCw, ChevronDown, ChevronUp, Bot
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supplierAPI, aiImportAPI, productAPI } from '../../services/api'
+import { extractInvoiceWithGemini } from '../../services/geminiVision'
 import { Modal, SearchAutocomplete, DatePicker, GlassSelect, Spinner } from '../ui'
 
 const AI_IMPORT_PROMPT = `You are an expert Document & Invoice Parsing AI. Your task is to analyze the provided invoice, bill, receipt, challan, purchase order, or document image/PDF and extract all invoice metadata and line-item products into clean, structured JSON.
@@ -193,10 +195,23 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
   // Inline search override state for item index
   const [overridingIdx, setOverridingIdx] = useState(null)
 
+  // Direct Scan & UX States
+  const [inputMode, setInputMode] = useState('scan') // 'scan' or 'prompt'
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanProgress, setScanProgress] = useState('')
+  const [dragActive, setDragActive] = useState(false)
+  const [showPromptDetails, setShowPromptDetails] = useState(false)
+  const fileInputRef = useRef(null)
+
   // Reset modal state on open
   useEffect(() => {
     if (open) {
       setStep(1)
+      setInputMode('scan')
+      setIsScanning(false)
+      setScanProgress('')
+      setDragActive(false)
+      setShowPromptDetails(false)
       setPromptCopied(false)
       setRawJson('')
       setJsonError(null)
@@ -213,6 +228,164 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
       setOverridingIdx(null)
     }
   }, [open])
+
+  // Direct File Scanner Handler using Gemini Vision
+  const handleDirectFileScan = async (file) => {
+    if (!file) return
+    setIsScanning(true)
+    setScanProgress('Uploading and analyzing document with Gemini Vision AI...')
+    const toastId = toast.loading('Reading invoice with Gemini Vision AI...')
+
+    try {
+      const extracted = await extractInvoiceWithGemini(file)
+      if (!extracted || extracted.length === 0) {
+        throw new Error("No items could be extracted from document.")
+      }
+
+      setScanProgress('Auto-matching items with inventory catalog...')
+      toast.loading(`Extracted ${extracted.length} products! Matching with inventory...`, { id: toastId })
+
+      // Auto-fill supplier if extracted
+      const firstBrand = extracted[0]?.brand
+      if (firstBrand) {
+        supplierAPI.list({ search: firstBrand, limit: 5 }).then(({ data }) => {
+          if (data.items?.length > 0) {
+            setSupplier(data.items[0])
+          }
+        }).catch(() => {})
+      }
+
+      // Convert extracted items to ai-import analyze format
+      const itemsForAnalyze = extracted.map(item => ({
+        product_name: item.name,
+        pack: item.pack || null,
+        cases: item.cases || 0.0,
+        quantity: item.opening_stock || 1.0,
+        purchase_rate: item.purchase_price || 0.0,
+        selling_price: item.selling_price || 0.0,
+        amount: item.final_amount || (Number(item.opening_stock || 1) * Number(item.purchase_price || 0)),
+        gst: item.gst_rate || 5.0,
+        hsn_code: item.hsn_code || null,
+        batch_number: item.batch || 'DEFAULT',
+        expiry_date: item.expiry || 'N/A',
+        manufacturer: item.brand || null
+      }))
+
+      let mapped = []
+      try {
+        const { data } = await aiImportAPI.analyze(itemsForAnalyze)
+        mapped = data.map(item => {
+          const bestSuggestion = item.suggestions && item.suggestions.length > 0 ? item.suggestions[0] : null
+          const selectedProduct = item.matched_product || bestSuggestion
+
+          return {
+            ...item,
+            selected_product_id: selectedProduct ? (selectedProduct.id || selectedProduct._id || selectedProduct.product_id) : null,
+            selected_product_name: selectedProduct ? (selectedProduct.name || selectedProduct.product_name) : null,
+            is_override: false,
+            pack: item.pack || '',
+            cases: item.cases ?? null,
+            quantity: item.quantity ?? 1,
+            purchase_rate: item.purchase_rate ?? 0,
+            selling_price: item.selling_price ?? 0,
+            amount: item.amount ?? (Number(item.quantity || 1) * Number(item.purchase_rate || 0)),
+            gst: item.gst ?? 5.0,
+            hsn_code: item.hsn_code || '',
+            batch_number: item.batch_number || '',
+            expiry_date: item.expiry_date || '',
+            manufacturer: item.manufacturer || ''
+          }
+        })
+      } catch (analyzeErr) {
+        console.warn("Similarity matching endpoint error, using raw extracted items:", analyzeErr)
+        mapped = itemsForAnalyze.map(item => ({
+          ...item,
+          match_type: 'none',
+          confidence: 0,
+          matched_product: null,
+          suggestions: [],
+          selected_product_id: null,
+          selected_product_name: null,
+          is_override: false
+        }))
+      }
+
+      setEnrichedItems(mapped)
+      setParsedItems(itemsForAnalyze)
+      setRawJson(JSON.stringify(extracted, null, 2))
+      setStep(3)
+      toast.success(`Extracted & matched ${mapped.length} products!`, { id: toastId })
+    } catch (err) {
+      console.error("Direct scan failed:", err)
+      toast.error(err.message || 'Failed to scan invoice', { id: toastId })
+    } finally {
+      setIsScanning(false)
+      setScanProgress('')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleDirectFileScan(e.dataTransfer.files[0])
+    }
+  }
+
+  const handleLoadSample = () => {
+    const sample = {
+      "invoice_number": "INV-2026-9921",
+      "invoice_date": new Date().toISOString().split('T')[0],
+      "supplier_name": "YASH SURGICAL HOUSE",
+      "items": [
+        {
+          "product_name": "HEMO EDTA VOIL",
+          "pack": "100 PCS",
+          "cases": 5,
+          "quantity": 500,
+          "purchase_rate": 150.00,
+          "selling_price": 185.00,
+          "amount": 75000.00,
+          "gst": 5.0,
+          "hsn_code": "90189019",
+          "batch_number": "MB1224",
+          "expiry_date": "12/2026",
+          "manufacturer": "HEMO DIAGNOSTICS"
+        },
+        {
+          "product_name": "HEMO PLAIN VOIL",
+          "pack": "100 PCS",
+          "cases": 5,
+          "quantity": 500,
+          "purchase_rate": 150.00,
+          "selling_price": 185.00,
+          "amount": 75000.00,
+          "gst": 5.0,
+          "hsn_code": "90189019",
+          "batch_number": "MB0625BCA",
+          "expiry_date": "06/2027",
+          "manufacturer": "HEMO DIAGNOSTICS"
+        }
+      ]
+    }
+    const sampleStr = JSON.stringify(sample, null, 2)
+    handleJsonChange(sampleStr)
+    toast.success("Loaded sample invoice data!")
+  }
 
   // Copy Prompt to Clipboard
   const handleCopyPrompt = () => {
@@ -630,25 +803,28 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
     <Modal 
       open={open} 
       onClose={() => {
-        if (!analyzing && !submitting) onClose()
+        if (!analyzing && !submitting && !isScanning) onClose()
       }} 
-      title="AI Import Assistant" 
+      title="✨ AI Invoice Import Assistant" 
       size="full"
       footer={
         step !== 'success' && (
           <div className="flex justify-between items-center w-full">
             {/* Step Indicators */}
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${step === 1 ? 'bg-indigo-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
               <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'bg-indigo-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
               <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'bg-indigo-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-2">
+                Step {step} of 3: {step === 1 ? 'Select & Scan' : step === 2 ? 'Verify Data' : 'Review & Import'}
+              </span>
             </div>
 
             <div className="flex gap-3">
               {step > 1 && (
                 <button
                   type="button"
-                  disabled={analyzing || submitting}
+                  disabled={analyzing || submitting || isScanning}
                   onClick={() => setStep(prev => prev - 1)}
                   className="btn-secondary flex items-center gap-1.5"
                 >
@@ -656,13 +832,13 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                 </button>
               )}
 
-              {step === 1 && (
+              {step === 1 && inputMode === 'prompt' && (
                 <button
                   type="button"
                   onClick={() => setStep(2)}
                   className="btn-primary flex items-center gap-1.5"
                 >
-                  Next Step <ChevronRight size={16} />
+                  Paste JSON <ChevronRight size={16} />
                 </button>
               )}
 
@@ -671,15 +847,15 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   type="button"
                   disabled={parsedItems.length === 0 || !!jsonError || analyzing}
                   onClick={handleAnalyze}
-                  className="btn-primary flex items-center gap-1.5"
+                  className="btn-primary flex items-center gap-1.5 font-semibold"
                 >
                   {analyzing ? (
                     <>
-                      <Spinner size={16} /> Analyzing...
+                      <Spinner size={16} /> Analyzing Catalog...
                     </>
                   ) : (
                     <>
-                      Analyze JSON <Sparkles size={16} className="text-indigo-400 animate-pulse" />
+                      Analyze & Match Inventory <Sparkles size={16} className="text-indigo-400" />
                     </>
                   )}
                 </button>
@@ -690,15 +866,15 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   type="button"
                   disabled={submitting || enrichedItems.length === 0}
                   onClick={handleSubmitImport}
-                  className="btn-primary flex items-center gap-1.5 font-bold"
+                  className="btn-primary flex items-center gap-1.5 font-bold shadow-lg shadow-indigo-500/25"
                 >
                   {submitting ? (
                     <>
-                      <Spinner size={16} /> Importing...
+                      <Spinner size={16} /> Importing Products...
                     </>
                   ) : (
                     <>
-                      Import invoice <Check size={16} />
+                      Import & Stock In <Check size={16} />
                     </>
                   )}
                 </button>
@@ -709,60 +885,303 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
       }
     >
       <div className="h-full flex flex-col min-h-[500px]">
-        {/* STEP 1: Copy Prompt */}
-        {step === 1 && (
-          <div className="space-y-6 max-w-3xl mx-auto py-4">
-            <div className="card p-6 border-indigo-500/20 bg-indigo-500/5 flex items-start gap-4">
-              <Sparkles className="text-indigo-500 shrink-0 mt-1" size={24} />
-              <div>
-                <h4 className="text-base font-bold text-gray-900 dark:text-white mb-1">
-                  How does the AI Import Assistant work?
-                </h4>
-                <p className="text-sm text-gray-650 dark:text-gray-405 leading-relaxed">
-                  Extract invoice products without paying for API keys. You simply feed your invoice (PDF or image) 
-                  into a chat LLM (like ChatGPT, Gemini, or Claude) using our structured prompt instruction, copy the generated JSON 
-                  result, and paste it here. We handle the validation, auto-matching, stock additions, and ledger accounts.
-                </p>
-              </div>
+        {/* Sleek Top Stepper Navigation */}
+        <div className="flex items-center justify-between pb-5 mb-5 border-b border-gray-200/50 dark:border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 text-white">
+              <Sparkles size={20} />
             </div>
-
-            <div className="space-y-2">
-              <h5 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                1. Upload your invoice / bill photo to your favorite AI assistant.
-              </h5>
-              <h5 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                2. Copy and paste the instructions prompt below:
-              </h5>
-            </div>
-
-            <div className="relative border border-gray-250 dark:border-indigo-500/15 rounded-xl overflow-hidden bg-gray-50/50 dark:bg-indigo-500/5 backdrop-blur-md">
-              <div className="flex justify-between items-center px-4 py-2 bg-gray-100/50 dark:bg-[#161720] border-b border-gray-250 dark:border-indigo-500/15">
-                <span className="text-xs font-semibold text-gray-500 tracking-wider">AI EXTRACTION PROMPT</span>
-                <button
-                  type="button"
-                  onClick={handleCopyPrompt}
-                  className="btn-secondary btn-sm flex items-center gap-1.5 py-1"
-                >
-                  {promptCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                  {promptCopied ? 'Copied!' : 'Copy Prompt'}
-                </button>
-              </div>
-              <pre className="p-4 text-xs font-mono overflow-auto max-h-[300px] text-gray-700 dark:text-gray-300 select-all leading-relaxed whitespace-pre-wrap">
-                {AI_IMPORT_PROMPT}
-              </pre>
-            </div>
-            
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="btn-primary inline-flex items-center gap-2 px-6"
-              >
-                Let's Paste the Output <ArrowRight size={16} />
-              </button>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                AI Invoice Import Assistant
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Instantly scan PDF / image invoices with Gemini Vision or import JSON from ChatGPT / Claude
+              </p>
             </div>
           </div>
+
+          {/* Stepper Pills */}
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                step === 1
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20'
+                  : step > 1
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-400'
+              }`}
+            >
+              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${step === 1 ? 'bg-white/20' : step > 1 ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                {step > 1 ? '✓' : '1'}
+              </span>
+              <span>1. Scan / Upload</span>
+            </button>
+
+            <div className="w-4 h-0.5 bg-gray-200 dark:bg-white/10" />
+
+            <button
+              type="button"
+              onClick={() => step >= 2 && setStep(2)}
+              disabled={step < 2}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                step === 2
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20'
+                  : step > 2
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 opacity-60'
+              }`}
+            >
+              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${step === 2 ? 'bg-white/20' : step > 2 ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                {step > 2 ? '✓' : '2'}
+              </span>
+              <span>2. Verify JSON</span>
+            </button>
+
+            <div className="w-4 h-0.5 bg-gray-200 dark:bg-white/10" />
+
+            <button
+              type="button"
+              onClick={() => step >= 3 && setStep(3)}
+              disabled={step < 3}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                step === 3
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20'
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 opacity-60'
+              }`}
+            >
+              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${step === 3 ? 'bg-white/20' : 'bg-gray-300 dark:bg-gray-700'}`}>
+                3
+              </span>
+              <span>3. Match & Stock In</span>
+            </button>
+          </div>
+        </div>
+
+        {/* STEP 1: Upload / Choose Method */}
+        {step === 1 && (
+          <div className="space-y-6 max-w-4xl mx-auto w-full py-2">
+            {/* Segmented Mode Selector */}
+            <div className="flex justify-center">
+              <div className="p-1 bg-gray-100 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-gray-250 dark:border-white/10 inline-flex shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setInputMode('scan')}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                    inputMode === 'scan'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Zap size={16} className={inputMode === 'scan' ? 'text-amber-300' : 'text-indigo-400'} />
+                  ⚡ Instant 1-Click AI Scan (PDF / Photo)
+                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-semibold">Recommended</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInputMode('prompt')}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                    inputMode === 'prompt'
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Bot size={16} />
+                  📋 Manual Prompt & JSON Mode (ChatGPT / Claude)
+                </button>
+              </div>
+            </div>
+
+            {/* TAB 1: Instant AI Scan Dropzone */}
+            {inputMode === 'scan' && (
+              <div className="space-y-6">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleDirectFileScan(e.target.files[0])
+                    }
+                  }}
+                  accept=".pdf,.png,.jpg,.jpeg,.webp"
+                  className="hidden"
+                />
+
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => !isScanning && fileInputRef.current?.click()}
+                  className={`relative group rounded-3xl border-2 border-dashed transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden ${
+                    dragActive
+                      ? 'border-indigo-400 bg-indigo-500/15 scale-[1.01] shadow-2xl shadow-indigo-500/20'
+                      : 'border-indigo-500/30 dark:border-indigo-400/25 hover:border-indigo-400 bg-gradient-to-b from-indigo-500/5 via-purple-500/5 to-transparent hover:bg-indigo-500/10 shadow-xl'
+                  }`}
+                >
+                  {/* Subtle Background Radial Ambient Glow */}
+                  <div className="absolute inset-0 bg-radial-gradient from-indigo-500/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+
+                  {isScanning ? (
+                    <div className="py-8 space-y-4">
+                      <div className="relative w-16 h-16 mx-auto">
+                        <div className="absolute inset-0 rounded-2xl bg-indigo-500/30 animate-ping" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-indigo-500/40">
+                          <Spinner size={32} />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h4 className="text-base font-bold text-gray-900 dark:text-white animate-pulse">
+                          {scanProgress || 'Analyzing invoice with Gemini Vision AI...'}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                          Extracting items, batches, expiry dates, rates, and validating calculations...
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-blue-500/20 to-purple-500/20 border border-indigo-500/30 mx-auto flex items-center justify-center text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-indigo-500/10">
+                        <UploadCloud size={32} />
+                      </div>
+
+                      <div className="space-y-1">
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                          Drop your invoice file here, or <span className="text-indigo-500 underline underline-offset-4">browse</span>
+                        </h4>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
+                          Supports multi-page PDFs, camera photos, and bill scans (.pdf, .jpg, .png, .webp)
+                        </p>
+                      </div>
+
+                      {/* Feature Pills */}
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20">
+                          <Zap size={12} className="text-amber-400" /> Powered by Gemini Vision
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
+                          <CheckCircle2 size={12} /> Auto-Orientation
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                          <ShieldCheck size={12} /> Auto-Reconciled Math
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                          <Sparkles size={12} /> Universal Table Reader
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3 Step Feature Highlights */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+                  <div className="card p-4 border border-indigo-500/15 bg-white/40 dark:bg-white/[0.02] flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 font-bold text-xs">
+                      1
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-white">Universal Layout AI</h5>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                        Accurately handles standard tables, indented sub-rows, and split columns across all trades.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="card p-4 border border-indigo-500/15 bg-white/40 dark:bg-white/[0.02] flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0 font-bold text-xs">
+                      2
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-white">Smart Reconciliation</h5>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                        Separates glued batches, standardizes expiry (MM/YY), and verifies Qty × Rate = Amount.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="card p-4 border border-indigo-500/15 bg-white/40 dark:bg-white/[0.02] flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0 font-bold text-xs">
+                      3
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-white">Catalog & Stock In</h5>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                        Fuzzy matches products against existing SKUs, updates batch tracking, and prepares purchases.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: Manual Prompt Mode */}
+            {inputMode === 'prompt' && (
+              <div className="space-y-5">
+                <div className="card p-5 border-indigo-500/20 bg-indigo-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                      <Bot size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                        Use Your Favorite External AI Assistant
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Copy our specialized instruction prompt, feed your bill photo/PDF to ChatGPT-4o, Claude 3.5, or Gemini, then paste the output JSON.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyPrompt}
+                    className="btn-primary shrink-0 flex items-center gap-2 py-2 px-4 shadow-md shadow-indigo-500/20 font-semibold"
+                  >
+                    {promptCopied ? <Check size={16} className="text-emerald-300" /> : <Copy size={16} />}
+                    {promptCopied ? 'Prompt Copied!' : 'Copy Instruction Prompt'}
+                  </button>
+                </div>
+
+                {/* Collapsible Prompt Preview */}
+                <div className="rounded-2xl border border-gray-250 dark:border-white/10 overflow-hidden bg-gray-50/50 dark:bg-white/[0.02]">
+                  <button
+                    type="button"
+                    onClick={() => setShowPromptDetails(!showPromptDetails)}
+                    className="w-full flex justify-between items-center px-4 py-3 bg-gray-100/50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-left transition-colors"
+                  >
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <FileText size={14} className="text-indigo-400" />
+                      View Full AI Extraction Prompt Template
+                    </span>
+                    <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
+                      {showPromptDetails ? 'Collapse' : 'Expand'}
+                      {showPromptDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </span>
+                  </button>
+
+                  {showPromptDetails && (
+                    <pre className="p-4 text-xs font-mono overflow-auto max-h-[260px] text-gray-700 dark:text-gray-300 select-all leading-relaxed whitespace-pre-wrap border-t border-gray-200 dark:border-white/5 bg-gray-950/80 text-indigo-200">
+                      {AI_IMPORT_PROMPT}
+                    </pre>
+                  )}
+                </div>
+
+                <div className="text-center pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="btn-primary inline-flex items-center gap-2 px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/25"
+                  >
+                    Next: Paste AI JSON Output <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
+
 
         {/* STEP 2: Paste Output */}
         {step === 2 && (
@@ -772,15 +1191,25 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                 <h4 className="text-lg font-bold text-gray-900 dark:text-white">Paste AI JSON Output</h4>
                 <p className="text-sm text-gray-500">Paste the JSON code block generated by ChatGPT, Gemini, or Claude below.</p>
               </div>
-              {parsedItems.length > 0 && !jsonError && (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleFormatJson}
-                  className="btn-secondary btn-sm"
+                  onClick={handleLoadSample}
+                  className="btn-secondary btn-sm flex items-center gap-1.5 text-xs"
                 >
-                  Auto-Format JSON
+                  <Sparkles size={14} className="text-amber-400" />
+                  Load Sample Invoice
                 </button>
-              )}
+                {parsedItems.length > 0 && !jsonError && (
+                  <button
+                    type="button"
+                    onClick={handleFormatJson}
+                    className="btn-secondary btn-sm text-xs"
+                  >
+                    Auto-Format JSON
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="relative rounded-xl overflow-hidden border border-gray-250 dark:border-gray-700 shadow-lg">
