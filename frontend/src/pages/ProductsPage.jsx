@@ -4,6 +4,7 @@ import { Plus, Upload, Download, Edit2, Trash2, Package, RefreshCw, Settings, Fo
 import toast from 'react-hot-toast'
 import { productAPI, categoryAPI, inventoryAPI } from '../services/api'
 import AIImportModal from '../components/products/AIImportModal'
+import { extractInvoiceWithGemini } from '../services/geminiVision'
 import {
   Modal, ConfirmDialog, Pagination, EmptyState,
   SearchInput, StatusBadge, LoadingScreen, TableSkeleton, Amount, FormField, Spinner, GlassSelect
@@ -382,7 +383,36 @@ export default function ProductsPage() {
     
     if (isImageOrPdf) {
       const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
-      const toastId = toast.loading(isPdf ? 'Uploading and preparing PDF invoice...' : 'Compressing and resizing bill image locally...')
+      const toastId = toast.loading(isPdf ? 'Analyzing PDF with Gemini Vision AI...' : 'Analyzing bill with Gemini Vision AI...')
+      
+      // Step 1: Direct Client-Side Gemini Vision Extraction (Instantaneous & resilient on Vercel)
+      try {
+        const geminiProducts = await extractInvoiceWithGemini(file)
+        if (geminiProducts && geminiProducts.length > 0) {
+          const enrichedItems = geminiProducts.map(item => {
+            const itemLower = (item.name || '').toLowerCase()
+            const match = products.find(p => {
+              const pLower = (p.name || '').toLowerCase()
+              return pLower === itemLower || pLower.includes(itemLower) || itemLower.includes(pLower)
+            })
+            return {
+              ...item,
+              category_id: match?.category_id || categories[0]?.id || null,
+              matched_product_id: match?.id || null,
+              confidence: match ? 1.0 : 0.0
+            }
+          })
+          setImportPreviewItems(enrichedItems)
+          setShowPreviewModal(true)
+          toast.success(isPdf ? `Extracted ${enrichedItems.length} products with Gemini Vision AI!` : `Extracted ${enrichedItems.length} products with Gemini Vision AI!`, { id: toastId })
+          e.target.value = ''
+          return
+        }
+      } catch (geminiErr) {
+        console.warn('Direct Gemini Vision extraction failed, continuing to backend worker:', geminiErr)
+      }
+
+      // Step 2: Backend OCR Worker Fallback
       try {
         if (!isPdf) {
           // Downscale the image locally in the browser before upload to prevent server OOM and network timeouts
