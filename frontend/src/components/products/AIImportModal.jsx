@@ -1025,15 +1025,15 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   onClick={() => setInputMode('scan')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     inputMode === 'scan'
-                      ? 'bg-white dark:bg-white/[0.15] text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border border-black/[0.04] dark:border-white/[0.15]'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/[0.04]'
+                      ? 'bg-white text-gray-900 shadow-sm border border-black/5 dark:bg-[#0071e3] dark:text-white dark:border-[#0a84ff]/50 dark:shadow-md dark:shadow-[#0071e3]/30'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                   }`}
                 >
-                  <Zap size={14} className={inputMode === 'scan' ? 'text-[#0071e3] dark:text-[#0a84ff]' : 'text-gray-400'} />
+                  <Zap size={14} className={inputMode === 'scan' ? 'text-amber-300' : 'text-gray-400'} />
                   <span>AI Invoice Scan (PDF / Photo)</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-tight ${
                     inputMode === 'scan'
-                      ? 'bg-[#0071e3]/10 dark:bg-[#0a84ff]/20 text-[#0071e3] dark:text-[#0a84ff]'
+                      ? 'bg-[#0071e3]/10 dark:bg-white/20 text-[#0071e3] dark:text-white'
                       : 'bg-black/[0.05] dark:bg-white/[0.08] text-gray-500 dark:text-gray-400'
                   }`}>
                     FAST
@@ -1045,11 +1045,11 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   onClick={() => setInputMode('excel')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     inputMode === 'excel'
-                      ? 'bg-white dark:bg-white/[0.15] text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border border-black/[0.04] dark:border-white/[0.15]'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/[0.04]'
+                      ? 'bg-white text-gray-900 shadow-sm border border-black/5 dark:bg-[#0071e3] dark:text-white dark:border-[#0a84ff]/50 dark:shadow-md dark:shadow-[#0071e3]/30'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                   }`}
                 >
-                  <FileSpreadsheet size={14} className={inputMode === 'excel' ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400'} />
+                  <FileSpreadsheet size={14} className={inputMode === 'excel' ? 'text-emerald-300' : 'text-gray-400'} />
                   <span>Excel / Spreadsheet Import</span>
                 </button>
 
@@ -1058,11 +1058,11 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   onClick={() => setInputMode('prompt')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     inputMode === 'prompt'
-                      ? 'bg-white dark:bg-white/[0.15] text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border border-black/[0.04] dark:border-white/[0.15]'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/[0.04]'
+                      ? 'bg-white text-gray-900 shadow-sm border border-black/5 dark:bg-[#0071e3] dark:text-white dark:border-[#0a84ff]/50 dark:shadow-md dark:shadow-[#0071e3]/30'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                   }`}
                 >
-                  <Bot size={14} className={inputMode === 'prompt' ? 'text-purple-500 dark:text-purple-400' : 'text-gray-400'} />
+                  <Bot size={14} className={inputMode === 'prompt' ? 'text-purple-300' : 'text-gray-400'} />
                   <span>Prompt & JSON Mode</span>
                 </button>
               </div>
@@ -1090,8 +1090,8 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   onClick={() => !isScanning && fileInputRef.current?.click()}
                   className={`relative group rounded-3xl border transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden ${
                     dragActive
-                      ? 'border-[#0a84ff] bg-[#0a84ff]/10 scale-[1.01] shadow-[0_20px_60px_rgba(10,132,255,0.25),inset_0_1px_0_rgba(255,255,255,0.3)] ring-4 ring-[#0a84ff]/20'
-                      : 'border-black/[0.08] dark:border-white/[0.12] hover:border-[#0a84ff]/50 dark:hover:border-[#0a84ff]/60 bg-gradient-to-b from-white/[0.06] via-white/[0.02] to-transparent dark:from-white/[0.05] dark:via-white/[0.015] dark:to-transparent shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.16)]'
+                      ? 'border-[#0a84ff] bg-[#0a84ff]/10 scale-[1.01] shadow-[0_20px_60px_rgba(10,132,255,0.25)] ring-4 ring-[#0a84ff]/20'
+                      : 'border-black/[0.08] dark:border-white/[0.10] hover:border-[#0a84ff]/50 dark:hover:border-[#0a84ff]/60 bg-black/[0.015] dark:bg-white/[0.025] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] shadow-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_30px_rgba(0,0,0,0.3)]'
                   }`}
                 >
                   {isScanning ? (
@@ -1113,7 +1113,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#0a84ff]/20 to-[#0a84ff]/5 border border-[#0a84ff]/30 mx-auto flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff] group-hover:scale-110 group-hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_20px_rgba(10,132,255,0.2),inset_0_1px_0_rgba(255,255,255,0.3)]">
+                      <div className="w-16 h-16 rounded-2xl bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 dark:border-[#0a84ff]/30 mx-auto flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff] group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-[#0071e3]/10">
                         <UploadCloud size={32} strokeWidth={1.8} />
                       </div>
 
@@ -1128,17 +1128,17 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
 
                       {/* Feature Pills */}
                       <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] dark:bg-white/[0.06] text-gray-700 dark:text-gray-200 border border-black/[0.06] dark:border-white/[0.08]">
                           <Zap size={12} className="text-amber-400" /> Powered by Gemini Vision
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 size={12} /> Auto-Orientation
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] dark:bg-white/[0.06] text-gray-700 dark:text-gray-200 border border-black/[0.06] dark:border-white/[0.08]">
+                          <CheckCircle2 size={12} className="text-teal-400" /> Auto-Orientation
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                          <ShieldCheck size={12} /> Auto-Reconciled Math
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] dark:bg-white/[0.06] text-gray-700 dark:text-gray-200 border border-black/[0.06] dark:border-white/[0.08]">
+                          <ShieldCheck size={12} className="text-cyan-400" /> Auto-Reconciled Math
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                          <Sparkles size={12} /> Universal Table Reader
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] dark:bg-white/[0.06] text-gray-700 dark:text-gray-200 border border-black/[0.06] dark:border-white/[0.08]">
+                          <Sparkles size={12} className="text-purple-400" /> Universal Table Reader
                         </span>
                       </div>
                     </div>
@@ -1147,37 +1147,37 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
 
                 {/* 3 Step Feature Highlights as Apple Crystal Bento Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
-                  <div className="rounded-2xl p-4.5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-black/[0.12] dark:hover:border-white/[0.16] hover:-translate-y-0.5 transition-all duration-200 flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff] shrink-0">
-                      <Sparkles size={18} />
+                  <div className="rounded-2xl p-4 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] hover:border-black/[0.12] dark:hover:border-white/[0.16] transition-all flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 dark:border-[#0a84ff]/30 flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff] shrink-0 font-bold text-xs">
+                      <Sparkles size={16} />
                     </div>
                     <div>
                       <h5 className="text-xs font-bold text-gray-900 dark:text-white tracking-tight">Universal Layout AI</h5>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
                         Accurately handles standard tables, indented sub-rows, and split columns across all trades.
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl p-4.5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-black/[0.12] dark:hover:border-white/[0.16] hover:-translate-y-0.5 transition-all duration-200 flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-                      <ShieldCheck size={18} />
+                  <div className="rounded-2xl p-4 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] hover:border-black/[0.12] dark:hover:border-white/[0.16] transition-all flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 font-bold text-xs">
+                      <ShieldCheck size={16} />
                     </div>
                     <div>
                       <h5 className="text-xs font-bold text-gray-900 dark:text-white tracking-tight">Smart Reconciliation</h5>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
                         Separates glued batches, standardizes expiry (MM/YY), and verifies Qty × Rate = Amount.
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl p-4.5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-black/[0.12] dark:hover:border-white/[0.16] hover:-translate-y-0.5 transition-all duration-200 flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                      <CheckCircle2 size={18} />
+                  <div className="rounded-2xl p-4 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] hover:border-black/[0.12] dark:hover:border-white/[0.16] transition-all flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 font-bold text-xs">
+                      <CheckCircle2 size={16} />
                     </div>
                     <div>
                       <h5 className="text-xs font-bold text-gray-900 dark:text-white tracking-tight">Catalog & Stock In</h5>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
                         Fuzzy matches products against existing SKUs, updates batch tracking, and prepares purchases.
                       </p>
                     </div>
@@ -1204,7 +1204,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   className={`relative group rounded-3xl border transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden ${
                     isExcelUploading
                       ? 'border-emerald-500/50 bg-emerald-500/10'
-                      : 'border-black/[0.08] dark:border-white/[0.12] hover:border-emerald-500/60 dark:hover:border-emerald-400/60 bg-gradient-to-b from-white/[0.06] via-white/[0.02] to-transparent dark:from-white/[0.05] dark:via-white/[0.015] dark:to-transparent shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.16)]'
+                      : 'border-black/[0.08] dark:border-white/[0.10] hover:border-emerald-500/60 dark:hover:border-emerald-400/60 bg-black/[0.015] dark:bg-white/[0.025] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] shadow-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_30px_rgba(0,0,0,0.3)]'
                   }`}
                 >
                   {isExcelUploading ? (
@@ -1226,12 +1226,12 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30 mx-auto flex items-center justify-center text-emerald-500 dark:text-emerald-400 group-hover:scale-110 group-hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_20px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.3)]">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20 dark:border-emerald-500/30 mx-auto flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/10">
                         <FileSpreadsheet size={32} strokeWidth={1.8} />
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                          Drop your Excel catalog here, or <span className="text-emerald-500 underline underline-offset-4 font-semibold">browse</span>
+                          Drop your Excel catalog here, or <span className="text-emerald-600 dark:text-emerald-400 underline underline-offset-4 font-semibold">browse</span>
                         </h4>
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
                           Upload wholesale catalog files in Microsoft Excel (.xlsx, .xls) or CSV format
@@ -1253,7 +1253,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   )}
                 </div>
 
-                <div className="rounded-2xl p-4.5 bg-white/[0.035] dark:bg-white/[0.03] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] text-xs text-gray-600 dark:text-gray-300 space-y-2">
+                <div className="rounded-2xl p-4 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] text-xs text-gray-600 dark:text-gray-300 space-y-2">
                   <div className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <CheckCircle2 size={14} /> Supported Column Headers
                   </div>
@@ -1267,7 +1267,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
             {/* TAB 3: Manual Prompt Mode */}
             {inputMode === 'prompt' && (
               <div className="space-y-5">
-                <div className="rounded-2xl p-5 bg-white/[0.035] dark:bg-white/[0.03] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.06)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="rounded-2xl p-5 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3.5">
                     <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <Bot size={20} />
@@ -1329,6 +1329,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
             )}
           </div>
         )}
+
 
 
         {/* STEP 2: Paste Output */}

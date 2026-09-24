@@ -17,7 +17,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer, cus
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
       <div className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-2xl transition-opacity animate-backdrop-in" onClick={onClose} />
-      <div className={`relative bg-white/95 dark:bg-[#0c0d12]/92 backdrop-blur-3xl border border-black/[0.08] dark:border-white/[0.12] rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.35),0_4px_24px_rgba(0,0,0,0.2)] dark:shadow-[0_35px_100px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.18)] w-full ${sizeMap[size]} max-h-[92vh] flex flex-col animate-modal-in overflow-hidden`}>
+      <div className={`relative apple-modal-window rounded-3xl w-full ${sizeMap[size]} max-h-[92vh] flex flex-col animate-modal-in overflow-hidden`}>
         {!hideHeader && (
           customHeader || (
             <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06] dark:border-white/[0.08] bg-black/[0.015] dark:bg-white/[0.02] flex-shrink-0">
