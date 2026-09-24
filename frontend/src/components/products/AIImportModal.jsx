@@ -810,20 +810,20 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
   const getConfidenceBadge = (score) => {
     if (score >= 90) {
       return (
-        <span className="badge-green text-[10px] px-1.5 py-0.5 rounded border">
-          High Match ({score}%)
+        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <Check size={10} /> High Match ({score}%)
         </span>
       )
     }
     if (score >= 70) {
       return (
-        <span className="badge-yellow text-[10px] px-1.5 py-0.5 rounded border">
+        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
           Suggested ({score}%)
         </span>
       )
     }
     return (
-      <span className="badge-red text-[10px] px-1.5 py-0.5 rounded border">
+      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20">
         New Product
       </span>
     )
@@ -835,30 +835,129 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
       onClose={() => {
         if (!analyzing && !submitting && !isScanning) onClose()
       }} 
-      title="✨ AI Invoice Import Assistant" 
+      title="Smart Import" 
       size="full"
+      customHeader={
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06] dark:border-white/[0.08] bg-black/[0.015] dark:bg-white/[0.02] flex-shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#0071e3] to-[#0a84ff] flex items-center justify-center shadow-lg shadow-[#0071e3]/25 text-white">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white tracking-tight">
+                  Smart Import
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20">
+                  GEMINI AI + EXCEL
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Direct client-side invoice scan, wholesale spreadsheets & AI models
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Apple Stepper Capsules */}
+            <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-black/[0.03] dark:bg-white/[0.05] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] backdrop-blur-xl">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  step === 1
+                    ? 'bg-[#0071e3] dark:bg-[#0a84ff] text-white shadow-sm shadow-[#0071e3]/30'
+                    : step > 1
+                    ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  step === 1 ? 'bg-white/20' : step > 1 ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-white/10'
+                }`}>
+                  {step > 1 ? '✓' : '1'}
+                </span>
+                <span className="hidden md:inline">1. Upload</span>
+                <span className="md:hidden">Upload</span>
+              </button>
+
+              <div className="w-2.5 sm:w-3 h-px bg-gray-300 dark:bg-white/10" />
+
+              <button
+                type="button"
+                onClick={() => step >= 2 && setStep(2)}
+                disabled={step < 2}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  step === 2
+                    ? 'bg-[#0071e3] dark:bg-[#0a84ff] text-white shadow-sm shadow-[#0071e3]/30'
+                    : step > 2
+                    ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                    : 'text-gray-400 opacity-60 cursor-not-allowed'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  step === 2 ? 'bg-white/20' : step > 2 ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-white/10'
+                }`}>
+                  {step > 2 ? '✓' : '2'}
+                </span>
+                <span className="hidden md:inline">2. Verify JSON</span>
+                <span className="md:hidden">Verify</span>
+              </button>
+
+              <div className="w-2.5 sm:w-3 h-px bg-gray-300 dark:bg-white/10" />
+
+              <button
+                type="button"
+                onClick={() => step >= 3 && setStep(3)}
+                disabled={step < 3}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  step === 3
+                    ? 'bg-[#0071e3] dark:bg-[#0a84ff] text-white shadow-sm shadow-[#0071e3]/30'
+                    : 'text-gray-400 opacity-60 cursor-not-allowed'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  step === 3 ? 'bg-white/20' : 'bg-gray-200 dark:bg-white/10'
+                }`}>
+                  3
+                </span>
+                <span className="hidden md:inline">3. Match & Stock</span>
+                <span className="md:hidden">Stock In</span>
+              </button>
+            </div>
+
+            {/* Apple Close Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!analyzing && !submitting && !isScanning) onClose()
+              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] border border-black/[0.04] dark:border-white/[0.08] transition-all shrink-0"
+              aria-label="Close"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      }
       footer={
         step !== 'success' && (
           <div className="flex justify-between items-center w-full">
-            {/* Step Indicators */}
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${step === 1 ? 'bg-indigo-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
-              <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'bg-indigo-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
-              <span className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'bg-indigo-500 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium ml-2">
-                Step {step} of 3: {step === 1 ? 'Select & Scan' : step === 2 ? 'Verify Data' : 'Review & Import'}
-              </span>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <ShieldCheck size={15} className="text-emerald-500 shrink-0" />
+              <span className="hidden sm:inline">Encrypted client-side processing • Zero document retention</span>
+              <span className="sm:hidden">Encrypted processing</span>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               {step > 1 && (
                 <button
                   type="button"
                   disabled={analyzing || submitting || isScanning}
                   onClick={() => setStep(prev => prev - 1)}
-                  className="btn-secondary flex items-center gap-1.5"
+                  className="btn-secondary flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl"
                 >
-                  <ChevronLeft size={16} /> Back
+                  <ChevronLeft size={15} /> Back
                 </button>
               )}
 
@@ -866,9 +965,9 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="btn-primary flex items-center gap-1.5"
+                  className="btn-primary flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl"
                 >
-                  Paste JSON <ChevronRight size={16} />
+                  Paste JSON <ChevronRight size={15} />
                 </button>
               )}
 
@@ -877,15 +976,15 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   type="button"
                   disabled={parsedItems.length === 0 || !!jsonError || analyzing}
                   onClick={handleAnalyze}
-                  className="btn-primary flex items-center gap-1.5 font-semibold"
+                  className="btn-primary flex items-center gap-1.5 px-5 py-2 text-xs font-semibold rounded-xl"
                 >
                   {analyzing ? (
                     <>
-                      <Spinner size={16} /> Analyzing Catalog...
+                      <Spinner size={15} /> Matching Catalog...
                     </>
                   ) : (
                     <>
-                      Analyze & Match Inventory <Sparkles size={16} className="text-indigo-400" />
+                      Analyze & Match Inventory <Sparkles size={15} className="text-[#0a84ff]" />
                     </>
                   )}
                 </button>
@@ -896,15 +995,15 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   type="button"
                   disabled={submitting || enrichedItems.length === 0}
                   onClick={handleSubmitImport}
-                  className="btn-primary flex items-center gap-1.5 font-bold shadow-lg shadow-indigo-500/25"
+                  className="btn-primary flex items-center gap-1.5 px-5 py-2 text-xs font-semibold rounded-xl shadow-lg shadow-[#0071e3]/25"
                 >
                   {submitting ? (
                     <>
-                      <Spinner size={16} /> Importing Products...
+                      <Spinner size={15} /> Importing Products...
                     </>
                   ) : (
                     <>
-                      Import & Stock In <Check size={16} />
+                      Import & Stock In <Check size={15} />
                     </>
                   )}
                 </button>
@@ -915,125 +1014,56 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
       }
     >
       <div className="h-full flex flex-col min-h-[500px]">
-        {/* Sleek Top Stepper Navigation */}
-        <div className="flex items-center justify-between pb-5 mb-5 border-b border-gray-200/50 dark:border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 text-white">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
-                AI Invoice Import Assistant
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Instantly scan PDF / image invoices with Gemini Vision or import JSON from ChatGPT / Claude
-              </p>
-            </div>
-          </div>
-
-          {/* Stepper Pills */}
-          <div className="hidden sm:flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                step === 1
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20'
-                  : step > 1
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                  : 'bg-gray-100 dark:bg-white/5 text-gray-400'
-              }`}
-            >
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${step === 1 ? 'bg-white/20' : step > 1 ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>
-                {step > 1 ? '✓' : '1'}
-              </span>
-              <span>1. Scan / Upload</span>
-            </button>
-
-            <div className="w-4 h-0.5 bg-gray-200 dark:bg-white/10" />
-
-            <button
-              type="button"
-              onClick={() => step >= 2 && setStep(2)}
-              disabled={step < 2}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                step === 2
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20'
-                  : step > 2
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 opacity-60'
-              }`}
-            >
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${step === 2 ? 'bg-white/20' : step > 2 ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>
-                {step > 2 ? '✓' : '2'}
-              </span>
-              <span>2. Verify JSON</span>
-            </button>
-
-            <div className="w-4 h-0.5 bg-gray-200 dark:bg-white/10" />
-
-            <button
-              type="button"
-              onClick={() => step >= 3 && setStep(3)}
-              disabled={step < 3}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                step === 3
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20'
-                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 opacity-60'
-              }`}
-            >
-              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${step === 3 ? 'bg-white/20' : 'bg-gray-300 dark:bg-gray-700'}`}>
-                3
-              </span>
-              <span>3. Match & Stock In</span>
-            </button>
-          </div>
-        </div>
-
         {/* STEP 1: Upload / Choose Method */}
         {step === 1 && (
           <div className="space-y-6 max-w-4xl mx-auto w-full py-2">
-            {/* Segmented Mode Selector */}
+            {/* Apple Crystal Segmented Mode Selector */}
             <div className="flex justify-center">
-              <div className="p-1 bg-gray-100 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-gray-250 dark:border-white/10 inline-flex shadow-inner flex-wrap justify-center gap-1">
+              <div className="p-1 bg-black/[0.04] dark:bg-white/[0.06] backdrop-blur-2xl rounded-2xl border border-black/[0.06] dark:border-white/[0.10] inline-flex shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] flex-wrap justify-center gap-1">
                 <button
                   type="button"
                   onClick={() => setInputMode('scan')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     inputMode === 'scan'
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-white/[0.15] text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border border-black/[0.04] dark:border-white/[0.15]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
-                  <Zap size={15} className={inputMode === 'scan' ? 'text-amber-300' : 'text-indigo-400'} />
-                  ⚡ AI Invoice Scan (PDF / Photo)
-                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-semibold">Fast</span>
+                  <Zap size={14} className={inputMode === 'scan' ? 'text-[#0071e3] dark:text-[#0a84ff]' : 'text-gray-400'} />
+                  <span>AI Invoice Scan (PDF / Photo)</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-tight ${
+                    inputMode === 'scan'
+                      ? 'bg-[#0071e3]/10 dark:bg-[#0a84ff]/20 text-[#0071e3] dark:text-[#0a84ff]'
+                      : 'bg-black/[0.05] dark:bg-white/[0.08] text-gray-500 dark:text-gray-400'
+                  }`}>
+                    FAST
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setInputMode('excel')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     inputMode === 'excel'
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-white/[0.15] text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border border-black/[0.04] dark:border-white/[0.15]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
-                  <FileSpreadsheet size={15} className={inputMode === 'excel' ? 'text-emerald-300' : 'text-emerald-400'} />
-                  📊 Excel / Spreadsheet Import
+                  <FileSpreadsheet size={14} className={inputMode === 'excel' ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400'} />
+                  <span>Excel / Spreadsheet Import</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setInputMode('prompt')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     inputMode === 'prompt'
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      ? 'bg-white dark:bg-white/[0.15] text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.25)] border border-black/[0.04] dark:border-white/[0.15]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
-                  <Bot size={15} />
-                  📋 Prompt & JSON Mode
+                  <Bot size={14} className={inputMode === 'prompt' ? 'text-purple-500 dark:text-purple-400' : 'text-gray-400'} />
+                  <span>Prompt & JSON Mode</span>
                 </button>
               </div>
             </div>
@@ -1058,25 +1088,22 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={() => !isScanning && fileInputRef.current?.click()}
-                  className={`relative group rounded-3xl border-2 border-dashed transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden ${
+                  className={`relative group rounded-3xl border transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden ${
                     dragActive
-                      ? 'border-indigo-400 bg-indigo-500/15 scale-[1.01] shadow-2xl shadow-indigo-500/20'
-                      : 'border-indigo-500/30 dark:border-indigo-400/25 hover:border-indigo-400 bg-gradient-to-b from-indigo-500/5 via-purple-500/5 to-transparent hover:bg-indigo-500/10 shadow-xl'
+                      ? 'border-[#0a84ff] bg-[#0a84ff]/10 scale-[1.01] shadow-[0_20px_60px_rgba(10,132,255,0.25),inset_0_1px_0_rgba(255,255,255,0.3)] ring-4 ring-[#0a84ff]/20'
+                      : 'border-black/[0.08] dark:border-white/[0.12] hover:border-[#0a84ff]/50 dark:hover:border-[#0a84ff]/60 bg-gradient-to-b from-white/[0.06] via-white/[0.02] to-transparent dark:from-white/[0.05] dark:via-white/[0.015] dark:to-transparent shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.16)]'
                   }`}
                 >
-                  {/* Subtle Background Radial Ambient Glow */}
-                  <div className="absolute inset-0 bg-radial-gradient from-indigo-500/10 via-transparent to-transparent opacity-50 pointer-events-none" />
-
                   {isScanning ? (
                     <div className="py-8 space-y-4">
                       <div className="relative w-16 h-16 mx-auto">
-                        <div className="absolute inset-0 rounded-2xl bg-indigo-500/30 animate-ping" />
-                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-indigo-500/40">
+                        <div className="absolute inset-0 rounded-2xl bg-[#0071e3]/30 animate-ping" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#0071e3] to-[#0a84ff] flex items-center justify-center text-white shadow-xl shadow-[#0071e3]/40">
                           <Spinner size={32} />
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <h4 className="text-base font-bold text-gray-900 dark:text-white animate-pulse">
+                        <h4 className="text-base font-bold text-gray-900 dark:text-white animate-pulse tracking-tight">
                           {scanProgress || 'Analyzing invoice with Gemini Vision AI...'}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
@@ -1086,13 +1113,13 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-blue-500/20 to-purple-500/20 border border-indigo-500/30 mx-auto flex items-center justify-center text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-indigo-500/10">
-                        <UploadCloud size={32} />
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#0a84ff]/20 to-[#0a84ff]/5 border border-[#0a84ff]/30 mx-auto flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff] group-hover:scale-110 group-hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_20px_rgba(10,132,255,0.2),inset_0_1px_0_rgba(255,255,255,0.3)]">
+                        <UploadCloud size={32} strokeWidth={1.8} />
                       </div>
 
                       <div className="space-y-1">
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                          Drop your invoice file here, or <span className="text-indigo-500 underline underline-offset-4">browse</span>
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+                          Drop your invoice file here, or <span className="text-[#0071e3] dark:text-[#0a84ff] underline underline-offset-4 font-semibold">browse</span>
                         </h4>
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
                           Supports multi-page PDFs, camera photos, and bill scans (.pdf, .jpg, .png, .webp)
@@ -1101,16 +1128,16 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
 
                       {/* Feature Pills */}
                       <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20">
                           <Zap size={12} className="text-amber-400" /> Powered by Gemini Vision
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           <CheckCircle2 size={12} /> Auto-Orientation
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
                           <ShieldCheck size={12} /> Auto-Reconciled Math
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                           <Sparkles size={12} /> Universal Table Reader
                         </span>
                       </div>
@@ -1118,39 +1145,39 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   )}
                 </div>
 
-                {/* 3 Step Feature Highlights */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
-                  <div className="card p-4 border border-indigo-500/15 bg-white/40 dark:bg-white/[0.02] flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 font-bold text-xs">
-                      1
+                {/* 3 Step Feature Highlights as Apple Crystal Bento Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
+                  <div className="rounded-2xl p-4.5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-black/[0.12] dark:hover:border-white/[0.16] hover:-translate-y-0.5 transition-all duration-200 flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 border border-[#0071e3]/20 flex items-center justify-center text-[#0071e3] dark:text-[#0a84ff] shrink-0">
+                      <Sparkles size={18} />
                     </div>
                     <div>
-                      <h5 className="text-xs font-bold text-gray-900 dark:text-white">Universal Layout AI</h5>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-white tracking-tight">Universal Layout AI</h5>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                         Accurately handles standard tables, indented sub-rows, and split columns across all trades.
                       </p>
                     </div>
                   </div>
 
-                  <div className="card p-4 border border-indigo-500/15 bg-white/40 dark:bg-white/[0.02] flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0 font-bold text-xs">
-                      2
+                  <div className="rounded-2xl p-4.5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-black/[0.12] dark:hover:border-white/[0.16] hover:-translate-y-0.5 transition-all duration-200 flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                      <ShieldCheck size={18} />
                     </div>
                     <div>
-                      <h5 className="text-xs font-bold text-gray-900 dark:text-white">Smart Reconciliation</h5>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-white tracking-tight">Smart Reconciliation</h5>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                         Separates glued batches, standardizes expiry (MM/YY), and verifies Qty × Rate = Amount.
                       </p>
                     </div>
                   </div>
 
-                  <div className="card p-4 border border-indigo-500/15 bg-white/40 dark:bg-white/[0.02] flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0 font-bold text-xs">
-                      3
+                  <div className="rounded-2xl p-4.5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-black/[0.12] dark:hover:border-white/[0.16] hover:-translate-y-0.5 transition-all duration-200 flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <CheckCircle2 size={18} />
                     </div>
                     <div>
-                      <h5 className="text-xs font-bold text-gray-900 dark:text-white">Catalog & Stock In</h5>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                      <h5 className="text-xs font-bold text-gray-900 dark:text-white tracking-tight">Catalog & Stock In</h5>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                         Fuzzy matches products against existing SKUs, updates batch tracking, and prepares purchases.
                       </p>
                     </div>
@@ -1174,7 +1201,11 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
 
                 <div
                   onClick={() => !isExcelUploading && excelInputRef.current?.click()}
-                  className="relative group rounded-3xl border-2 border-dashed border-emerald-500/30 dark:border-emerald-400/25 hover:border-emerald-400 bg-gradient-to-b from-emerald-500/5 via-teal-500/5 to-transparent hover:bg-emerald-500/10 transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden shadow-xl"
+                  className={`relative group rounded-3xl border transition-all duration-300 p-8 sm:p-12 text-center cursor-pointer overflow-hidden ${
+                    isExcelUploading
+                      ? 'border-emerald-500/50 bg-emerald-500/10'
+                      : 'border-black/[0.08] dark:border-white/[0.12] hover:border-emerald-500/60 dark:hover:border-emerald-400/60 bg-gradient-to-b from-white/[0.06] via-white/[0.02] to-transparent dark:from-white/[0.05] dark:via-white/[0.015] dark:to-transparent shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.16)]'
+                  }`}
                 >
                   {isExcelUploading ? (
                     <div className="py-8 space-y-4">
@@ -1185,7 +1216,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <h4 className="text-base font-bold text-gray-900 dark:text-white animate-pulse">
+                        <h4 className="text-base font-bold text-gray-900 dark:text-white animate-pulse tracking-tight">
                           Importing products from Excel spreadsheet...
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -1195,12 +1226,12 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-green-500/20 border border-emerald-500/30 mx-auto flex items-center justify-center text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/10">
-                        <FileSpreadsheet size={32} />
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30 mx-auto flex items-center justify-center text-emerald-500 dark:text-emerald-400 group-hover:scale-110 group-hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_20px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.3)]">
+                        <FileSpreadsheet size={32} strokeWidth={1.8} />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                          Drop your Excel catalog here, or <span className="text-emerald-500 underline underline-offset-4">browse</span>
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+                          Drop your Excel catalog here, or <span className="text-emerald-500 underline underline-offset-4 font-semibold">browse</span>
                         </h4>
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
                           Upload wholesale catalog files in Microsoft Excel (.xlsx, .xls) or CSV format
@@ -1214,7 +1245,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-300 border border-teal-500/20">
                           <ShieldCheck size={12} /> Duplicate SKU Protection
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#0071e3]/10 dark:bg-[#0a84ff]/15 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/20">
                           <Zap size={12} /> Instant Catalog Update
                         </span>
                       </div>
@@ -1222,12 +1253,12 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   )}
                 </div>
 
-                <div className="card p-4 border border-emerald-500/20 bg-emerald-500/5 text-xs text-gray-600 dark:text-gray-300 space-y-2">
+                <div className="rounded-2xl p-4.5 bg-white/[0.035] dark:bg-white/[0.03] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] text-xs text-gray-600 dark:text-gray-300 space-y-2">
                   <div className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <CheckCircle2 size={14} /> Supported Column Headers
                   </div>
                   <p className="leading-relaxed text-[11px]">
-                    Your spreadsheet can contain headers like: <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Product Name</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">SKU / Code</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Purchase Price</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Selling Price</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">MRP</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">GST %</code>, <code className="bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Stock / Qty</code>.
+                    Your spreadsheet can contain headers like: <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Product Name</code>, <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">SKU / Code</code>, <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Purchase Price</code>, <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Selling Price</code>, <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">MRP</code>, <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">GST %</code>, <code className="bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300 font-mono">Stock / Qty</code>.
                   </p>
                 </div>
               </div>
@@ -1236,13 +1267,13 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
             {/* TAB 3: Manual Prompt Mode */}
             {inputMode === 'prompt' && (
               <div className="space-y-5">
-                <div className="card p-5 border-indigo-500/20 bg-indigo-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="rounded-2xl p-5 bg-white/[0.035] dark:bg-white/[0.03] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.06)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <Bot size={20} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
                         Use Your Favorite External AI Assistant
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -1254,44 +1285,44 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                   <button
                     type="button"
                     onClick={handleCopyPrompt}
-                    className="btn-primary shrink-0 flex items-center gap-2 py-2 px-4 shadow-md shadow-indigo-500/20 font-semibold"
+                    className="btn-primary shrink-0 flex items-center gap-2 py-2 px-4 shadow-md shadow-[#0071e3]/20 font-semibold rounded-xl text-xs"
                   >
-                    {promptCopied ? <Check size={16} className="text-emerald-300" /> : <Copy size={16} />}
+                    {promptCopied ? <Check size={15} className="text-emerald-300" /> : <Copy size={15} />}
                     {promptCopied ? 'Prompt Copied!' : 'Copy Instruction Prompt'}
                   </button>
                 </div>
 
                 {/* Collapsible Prompt Preview */}
-                <div className="rounded-2xl border border-gray-250 dark:border-white/10 overflow-hidden bg-gray-50/50 dark:bg-white/[0.02]">
+                <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] overflow-hidden bg-black/[0.02] dark:bg-white/[0.02]">
                   <button
                     type="button"
                     onClick={() => setShowPromptDetails(!showPromptDetails)}
-                    className="w-full flex justify-between items-center px-4 py-3 bg-gray-100/50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-left transition-colors"
+                    className="w-full flex justify-between items-center px-4 py-3 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-left transition-colors"
                   >
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <FileText size={14} className="text-indigo-400" />
+                      <FileText size={14} className="text-[#0071e3] dark:text-[#0a84ff]" />
                       View Full AI Extraction Prompt Template
                     </span>
-                    <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
+                    <span className="text-xs text-[#0071e3] dark:text-[#0a84ff] font-medium flex items-center gap-1">
                       {showPromptDetails ? 'Collapse' : 'Expand'}
                       {showPromptDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </span>
                   </button>
 
                   {showPromptDetails && (
-                    <pre className="p-4 text-xs font-mono overflow-auto max-h-[260px] text-gray-700 dark:text-gray-300 select-all leading-relaxed whitespace-pre-wrap border-t border-gray-200 dark:border-white/5 bg-gray-950/80 text-indigo-200">
+                    <pre className="p-4 text-xs font-mono overflow-auto max-h-[260px] text-gray-300 select-all leading-relaxed whitespace-pre-wrap border-t border-black/[0.06] dark:border-white/[0.06] bg-[#0c0d12]">
                       {AI_IMPORT_PROMPT}
                     </pre>
                   )}
                 </div>
 
-                <div className="text-center pt-3">
+                <div className="text-center pt-2">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="btn-primary inline-flex items-center gap-2 px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/25"
+                    className="btn-primary inline-flex items-center gap-2 px-7 py-2.5 rounded-xl font-bold shadow-lg shadow-[#0071e3]/25 text-xs sm:text-sm"
                   >
-                    Next: Paste AI JSON Output <ArrowRight size={16} />
+                    Next: Paste AI JSON Output <ArrowRight size={15} />
                   </button>
                 </div>
               </div>
@@ -1303,68 +1334,68 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
         {/* STEP 2: Paste Output */}
         {step === 2 && (
           <div className="space-y-4 max-w-4xl mx-auto w-full py-2">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">Paste AI JSON Output</h4>
-                <p className="text-sm text-gray-500">Paste the JSON code block generated by ChatGPT, Gemini, or Claude below.</p>
+                <h4 className="text-base font-bold text-gray-900 dark:text-white tracking-tight">Paste AI JSON Output</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Review or paste the structured JSON code block below.</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleLoadSample}
-                  className="btn-secondary btn-sm flex items-center gap-1.5 text-xs"
+                  className="btn-secondary flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-xl font-medium"
                 >
-                  <Sparkles size={14} className="text-amber-400" />
+                  <Sparkles size={13} className="text-amber-400" />
                   Load Sample Invoice
                 </button>
                 {parsedItems.length > 0 && !jsonError && (
                   <button
                     type="button"
                     onClick={handleFormatJson}
-                    className="btn-secondary btn-sm text-xs"
+                    className="btn-secondary text-xs py-1.5 px-3 rounded-xl font-medium"
                   >
-                    Auto-Format JSON
+                    Auto-Format
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="relative rounded-xl overflow-hidden border border-gray-250 dark:border-gray-700 shadow-lg">
+            <div className="relative rounded-2xl overflow-hidden border border-black/[0.08] dark:border-white/[0.12] shadow-inner bg-[#0c0d12]">
               <textarea
                 value={rawJson}
                 onChange={e => handleJsonChange(e.target.value)}
                 placeholder="Paste JSON array here... e.g. [{ 'product_name': 'Paracetamol 500mg', ... }]"
-                className="w-full h-[320px] p-4 font-mono text-xs bg-gray-950 text-green-400 border-0 outline-none resize-none focus:ring-1 focus:ring-green-500/50"
+                className="w-full h-[320px] p-4 font-mono text-xs text-[#7ee787] bg-transparent border-0 outline-none resize-none focus:ring-1 focus:ring-[#0a84ff]/40 selection:bg-[#0a84ff]/30 leading-relaxed"
               />
             </div>
 
             {/* Parsing status / errors */}
             {rawJson.trim() ? (
               jsonError ? (
-                <div className="card border-red-500/20 bg-red-500/5 p-4 flex items-start gap-3">
-                  <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-4 flex items-start gap-3 backdrop-blur-xl">
+                  <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={17} />
                   <div>
-                    <h5 className="text-sm font-bold text-red-700 dark:text-red-400">JSON Syntax Error</h5>
-                    <p className="text-xs font-mono text-red-655 dark:text-red-300 mt-1 leading-normal">
+                    <h5 className="text-xs font-bold text-rose-700 dark:text-rose-300">JSON Syntax Error</h5>
+                    <p className="text-xs font-mono text-rose-600 dark:text-rose-200 mt-1 leading-normal">
                       {jsonError}
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="card border-emerald-500/20 bg-emerald-500/5 p-4 flex items-start gap-3">
-                  <Check size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex items-start gap-3 backdrop-blur-xl">
+                  <Check size={17} className="text-emerald-500 shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Valid JSON Structure</h5>
-                    <p className="text-xs text-emerald-655 dark:text-emerald-300 mt-0.5">
-                      Successfully parsed **{parsedItems.length}** item records. Click "Analyze JSON" to run database checks.
+                    <h5 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Valid JSON Structure</h5>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-200 mt-0.5">
+                      Successfully parsed {parsedItems.length} item records. Click &ldquo;Analyze &amp; Match Inventory&rdquo; below to proceed.
                     </p>
                   </div>
                 </div>
               )
             ) : (
-              <div className="card p-4 border-dashed border-gray-300 dark:border-gray-750 text-center text-gray-500 text-sm py-10 bg-white/20 dark:bg-white/5">
-                <FileText className="mx-auto mb-2 text-gray-400" size={32} />
-                Awaiting copy-pasted invoice data...
+              <div className="rounded-2xl p-8 border border-dashed border-black/[0.08] dark:border-white/[0.10] text-center text-gray-500 text-xs bg-black/[0.01] dark:bg-white/[0.02]">
+                <FileText className="mx-auto mb-2 text-gray-400 opacity-60" size={28} />
+                Awaiting invoice JSON data...
               </div>
             )}
           </div>
@@ -1376,17 +1407,17 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
             {/* Split row: Form details & Totals */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-shrink-0">
               {/* Supplier & Invoice metadata */}
-              <div className="lg:col-span-2 card p-5 space-y-4">
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b pb-2 dark:border-gray-800">
-                  Invoice & Purchase details
+              <div className="lg:col-span-2 rounded-2xl p-5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] space-y-4">
+                <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b border-black/[0.06] dark:border-white/[0.08] pb-2">
+                  Invoice &amp; Purchase details
                 </h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="relative z-50">
                     <label className="label text-[10px] required">Supplier <span className="text-red-500">*</span></label>
                     {supplier ? (
-                      <div className="flex items-center justify-between input py-[7.5px] border-indigo-400/50 dark:border-indigo-400/20 bg-indigo-50/10 dark:bg-indigo-950/20">
-                        <span className="font-semibold text-indigo-750 dark:text-indigo-300 truncate max-w-[150px]">
+                      <div className="flex items-center justify-between input py-[7.5px] border-[#0a84ff]/30 bg-[#0a84ff]/5">
+                        <span className="font-semibold text-gray-900 dark:text-white truncate max-w-[150px]">
                           {supplier.name}
                         </span>
                         <button
@@ -1406,7 +1437,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                         }}
                         onSelect={s => setSupplier(s)}
                         itemTemplate={s => (
-                          <div className="px-3 py-1.5 text-left text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-700/60 flex justify-between cursor-pointer w-full">
+                          <div className="px-3 py-1.5 text-left text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.08] flex justify-between cursor-pointer w-full">
                             <span className="text-gray-900 dark:text-white">{s.name}</span>
                             {s.mobile && <span className="text-gray-400 text-[10px]">{s.mobile}</span>}
                           </div>
@@ -1468,7 +1499,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                         type="checkbox"
                         checked={isIgst}
                         onChange={e => setIsIgst(e.target.checked)}
-                        className="rounded border-gray-300 text-indigo-650 focus:ring-indigo-500 h-4 w-4"
+                        className="rounded border-gray-300 text-[#0071e3] focus:ring-[#0071e3] h-4 w-4"
                       />
                       <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                         Interstate Purchase (IGST)
@@ -1479,28 +1510,28 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
               </div>
 
               {/* Invoice Summary Totals */}
-              <div className="card p-5 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border-indigo-500/20 flex flex-col justify-between">
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b pb-2 dark:border-gray-800">
+              <div className="rounded-2xl p-5 bg-white/[0.04] dark:bg-white/[0.035] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex flex-col justify-between">
+                <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider border-b border-black/[0.06] dark:border-white/[0.08] pb-2">
                   Total Calculations
                 </h4>
                 
                 <div className="py-2 space-y-2">
                   <div className="flex justify-between text-xs text-gray-500 font-medium">
                     <span>Taxable Subtotal:</span>
-                    <span>₹{invoiceSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-gray-900 dark:text-white">₹{invoiceSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-500 font-medium">
                     <span>Tax ({isIgst ? 'IGST' : 'CGST + SGST'}):</span>
-                    <span>₹{invoiceTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-gray-900 dark:text-white">₹{invoiceTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
-                  <div className="flex justify-between text-base font-bold text-gray-800 dark:text-white border-t border-dashed pt-2 dark:border-gray-750">
+                  <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white border-t border-black/[0.06] dark:border-white/[0.08] pt-2">
                     <span>Grand Total:</span>
-                    <span className="text-indigo-600 dark:text-indigo-400">
+                    <span className="text-[#0071e3] dark:text-[#0a84ff]">
                       ₹{invoiceTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   {paymentMode !== 'credit' && (
-                    <div className="flex justify-between text-xs text-gray-550 border-t pt-1.5 dark:border-gray-850">
+                    <div className="flex justify-between text-xs text-gray-500 border-t border-black/[0.04] dark:border-white/[0.06] pt-1.5">
                       <span>Remaining Balance:</span>
                       <span className="font-bold text-amber-600 dark:text-amber-400">
                         ₹{Math.max(0, invoiceTotal - paidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1522,16 +1553,16 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
             </div>
 
             {/* Editable Preview Table */}
-            <div className="flex-1 flex flex-col min-h-0 bg-white/40 dark:bg-black/20 border border-gray-250 dark:border-gray-750 rounded-2xl overflow-hidden shadow-inner">
-              <div className="px-4 py-2.5 bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-250 dark:border-gray-750 flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-550">INVOICE ITEMS PREVIEW</span>
-                <span className="text-[10px] text-gray-400 italic">Double-click or click inputs to modify fields directly</span>
+            <div className="flex-1 flex flex-col min-h-0 bg-white/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.08] rounded-2xl overflow-hidden shadow-inner">
+              <div className="px-4 py-2.5 bg-black/[0.015] dark:bg-white/[0.02] border-b border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 tracking-wider">INVOICE ITEMS PREVIEW</span>
+                <span className="text-[10px] text-gray-400">Click or edit fields directly to adjust values</span>
               </div>
 
-              <div className="overflow-x-auto overflow-y-auto flex-1 border dark:border-gray-800 rounded-xl">
+              <div className="overflow-x-auto overflow-y-auto flex-1 border border-black/[0.04] dark:border-white/[0.06] rounded-xl">
                 <table className="table min-w-[1590px] border-collapse">
                   <thead>
-                    <tr className="bg-gray-100/50 dark:bg-gray-900/40 border-b border-gray-250 dark:border-gray-750 font-bold">
+                    <tr className="bg-black/[0.02] dark:bg-white/[0.03] border-b border-black/[0.06] dark:border-white/[0.08] text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                       <th style={{ width: '320px', minWidth: '320px' }} className="py-2.5 px-3">Product Name & Match Status</th>
                       <th style={{ width: '90px', minWidth: '90px' }} className="py-2.5 px-3 text-center">Pack</th>
                       <th style={{ width: '80px', minWidth: '80px' }} className="py-2.5 px-3 text-center">Cases</th>

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { X, Loader2, ChevronLeft, ChevronRight, AlertTriangle, Search, ChevronDown, Check, Settings, LogOut, Sun, Moon, Home, LayoutDashboard } from 'lucide-react'
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-export function Modal({ open, onClose, title, children, size = 'md', footer }) {
+export function Modal({ open, onClose, title, children, size = 'md', footer, customHeader, hideHeader = false }) {
   const sizeMap = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl', '2xl': 'max-w-6xl', full: 'max-w-[95vw]' }
 
   useEffect(() => {
@@ -15,18 +15,26 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
 
   if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-backdrop-in" onClick={onClose} />
-      <div className={`relative bg-white dark:bg-[#151922] border border-gray-250 dark:border-white/10 rounded-2xl shadow-2xl w-full ${sizeMap[size]} max-h-[90vh] flex flex-col animate-modal-in`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="btn-icon text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-            <X size={18} />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
+      <div className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-2xl transition-opacity animate-backdrop-in" onClick={onClose} />
+      <div className={`relative bg-white/95 dark:bg-[#0c0d12]/92 backdrop-blur-3xl border border-black/[0.08] dark:border-white/[0.12] rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.35),0_4px_24px_rgba(0,0,0,0.2)] dark:shadow-[0_35px_100px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.18)] w-full ${sizeMap[size]} max-h-[92vh] flex flex-col animate-modal-in overflow-hidden`}>
+        {!hideHeader && (
+          customHeader || (
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06] dark:border-white/[0.08] bg-black/[0.015] dark:bg-white/[0.02] flex-shrink-0">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white tracking-tight">{title}</h3>
+              <button 
+                onClick={onClose} 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] border border-black/[0.04] dark:border-white/[0.08] transition-all"
+                aria-label="Close modal"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )
+        )}
         <div className="overflow-y-auto flex-1 p-6">{children}</div>
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 flex justify-end gap-3">
+          <div className="px-6 py-4 border-t border-black/[0.06] dark:border-white/[0.08] bg-black/[0.015] dark:bg-white/[0.02] flex-shrink-0 flex justify-end gap-3">
             {footer}
           </div>
         )}
