@@ -11,24 +11,15 @@ import {
   BarChart3, Settings, X, Building2, TrendingUp, LogOut,
   Sun, Moon, ChevronUp, RotateCcw, Activity,
   Search, ChevronRight, ChevronLeft, PanelLeftOpen, PanelLeftClose,
-  Plus, Zap, ArrowRight, UserPlus
+  Plus, Zap
 } from 'lucide-react'
 
-// Apple-style semantic navigation groups
+// Apple-style transparent navigation groups (clean, monochrome, professional)
 const NAV_GROUPS = [
   {
     title: 'CORE',
     items: [
-      {
-        to: '/dashboard',
-        icon: LayoutDashboard,
-        label: 'Dashboard',
-        color: '#0071e3',
-        tint: 'rgba(0, 113, 227, 0.12)',
-        darkTint: 'rgba(10, 132, 255, 0.18)',
-        textColor: '#0071e3',
-        darkTextColor: '#0a84ff',
-      },
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     ]
   },
   {
@@ -38,144 +29,50 @@ const NAV_GROUPS = [
         to: '/sales',
         icon: TrendingUp,
         label: 'Sales & Bills',
-        color: '#34c759',
-        tint: 'rgba(52, 199, 89, 0.12)',
-        darkTint: 'rgba(48, 209, 88, 0.18)',
-        textColor: '#248a3d',
-        darkTextColor: '#30d158',
         quickTo: '/sales/new',
-        quickLabel: 'New Sale',
         quickTitle: 'Create new sale bill (F2)'
       },
       {
         to: '/customers',
         icon: Users,
         label: 'Customers',
-        color: '#5856d6',
-        tint: 'rgba(88, 86, 214, 0.12)',
-        darkTint: 'rgba(125, 122, 255, 0.18)',
-        textColor: '#5856d6',
-        darkTextColor: '#7d7aff',
         isCustomerRow: true,
       },
       {
         to: '/payments',
         icon: CreditCard,
         label: 'Payments',
-        color: '#30b0c7',
-        tint: 'rgba(48, 176, 199, 0.12)',
-        darkTint: 'rgba(102, 212, 207, 0.18)',
-        textColor: '#0284c7',
-        darkTextColor: '#66d4cf',
       },
     ]
   },
   {
     title: 'INVENTORY & SUPPLY',
     items: [
-      {
-        to: '/products',
-        icon: Package,
-        label: 'Products',
-        color: '#ff9500',
-        tint: 'rgba(255, 149, 0, 0.12)',
-        darkTint: 'rgba(255, 159, 10, 0.18)',
-        textColor: '#d97706',
-        darkTextColor: '#ff9f0a',
-      },
-      {
-        to: '/inventory',
-        icon: Warehouse,
-        label: 'Stock / Batches',
-        color: '#ff9f0a',
-        tint: 'rgba(255, 159, 10, 0.12)',
-        darkTint: 'rgba(255, 179, 64, 0.18)',
-        textColor: '#ea580c',
-        darkTextColor: '#fb923c',
-      },
+      { to: '/products', icon: Package, label: 'Products' },
+      { to: '/inventory', icon: Warehouse, label: 'Stock / Batches' },
       {
         to: '/purchases',
         icon: ShoppingBag,
         label: 'Purchases',
-        color: '#af52de',
-        tint: 'rgba(175, 82, 222, 0.12)',
-        darkTint: 'rgba(191, 90, 242, 0.18)',
-        textColor: '#9333ea',
-        darkTextColor: '#c084fc',
         quickTo: '/purchases/new',
-        quickLabel: 'New Purchase',
         quickTitle: 'Record new purchase bill'
       },
-      {
-        to: '/suppliers',
-        icon: Truck,
-        label: 'Suppliers',
-        color: '#0071e3',
-        tint: 'rgba(0, 113, 227, 0.10)',
-        darkTint: 'rgba(10, 132, 255, 0.16)',
-        textColor: '#0071e3',
-        darkTextColor: '#0a84ff',
-      },
+      { to: '/suppliers', icon: Truck, label: 'Suppliers' },
     ]
   },
   {
     title: 'OPERATIONS',
     items: [
-      {
-        to: '/reports',
-        icon: BarChart3,
-        label: 'Reports',
-        color: '#ff2d55',
-        tint: 'rgba(255, 45, 85, 0.12)',
-        darkTint: 'rgba(255, 55, 95, 0.18)',
-        textColor: '#e11d48',
-        darkTextColor: '#fb7185',
-      },
-      {
-        to: '/returns',
-        icon: RotateCcw,
-        label: 'Returns',
-        color: '#f97316',
-        tint: 'rgba(249, 115, 22, 0.12)',
-        darkTint: 'rgba(251, 146, 60, 0.18)',
-        textColor: '#ea580c',
-        darkTextColor: '#fb923c',
-      },
-      {
-        to: '/traceability',
-        icon: Activity,
-        label: 'Traceability',
-        color: '#06b6d4',
-        tint: 'rgba(6, 182, 212, 0.12)',
-        darkTint: 'rgba(34, 211, 238, 0.18)',
-        textColor: '#0891b2',
-        darkTextColor: '#22d3ee',
-      },
-      {
-        to: '/documents',
-        icon: FileText,
-        label: 'Letterhead',
-        color: '#8b5cf6',
-        tint: 'rgba(139, 92, 246, 0.12)',
-        darkTint: 'rgba(167, 139, 250, 0.18)',
-        textColor: '#7c3aed',
-        darkTextColor: '#a78bfa',
-      },
+      { to: '/reports', icon: BarChart3, label: 'Reports' },
+      { to: '/returns', icon: RotateCcw, label: 'Returns' },
+      { to: '/traceability', icon: Activity, label: 'Traceability' },
+      { to: '/documents', icon: FileText, label: 'Letterhead' },
     ]
   },
   {
     title: 'PREFERENCES',
     items: [
-      {
-        to: '/settings',
-        icon: Settings,
-        label: 'Settings',
-        color: '#64748b',
-        tint: 'rgba(100, 116, 139, 0.12)',
-        darkTint: 'rgba(148, 163, 184, 0.18)',
-        textColor: '#475569',
-        darkTextColor: '#94a3b8',
-      },
+      { to: '/settings', icon: Settings, label: 'Settings' },
     ]
   },
 ]
@@ -304,7 +201,7 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
               }}
               className="glass-icon-container rounded-xl"
             >
-              <Building2 size={16} className="text-indigo-500" />
+              <Building2 size={16} className="text-gray-700 dark:text-gray-300" />
             </div>
             {/* PanelLeftOpen */}
             <div
@@ -317,9 +214,9 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 borderRadius: '12px',
               }}
-              className="hover:bg-indigo-500/10 dark:hover:bg-indigo-400/10 transition-colors duration-200"
+              className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-200"
             >
-              <PanelLeftOpen size={16} className="text-indigo-500 dark:text-indigo-400" />
+              <PanelLeftOpen size={16} className="text-gray-700 dark:text-gray-300" />
             </div>
           </div>
 
@@ -354,22 +251,22 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
         </button>
       </div>
 
-      {/* ── TOP PRIMARY ACTION: QUICK SALE BUTTON ─────────────────────────── */}
+      {/* ── TOP PRIMARY ACTION: APPLE FROSTED GLASS QUICK SALE BUTTON ─────── */}
       <div className="px-2 pt-2.5 pb-1 flex-shrink-0">
         {!mini ? (
           <button
             type="button"
             onClick={() => navigate('/sales/new')}
-            className="sidebar-action-btn w-full flex items-center justify-between py-2 px-3 rounded-xl font-bold text-xs shadow-md cursor-pointer group select-none"
+            className="sidebar-action-btn w-full flex items-center justify-between py-2 px-3 rounded-xl font-medium text-xs cursor-pointer group select-none"
             title="Create New Sale Bill (Shortcut: F2)"
           >
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Plus size={13} strokeWidth={2.6} />
+              <div className="w-5 h-5 rounded-lg bg-black/[0.05] dark:bg-white/[0.08] flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:scale-105 transition-transform">
+                <Plus size={13} strokeWidth={2.4} />
               </div>
-              <span className="tracking-tight text-white font-bold text-[12px]">Quick Sale</span>
+              <span className="tracking-tight text-gray-900 dark:text-white font-semibold text-[12px]">Quick Sale</span>
             </div>
-            <kbd className="text-[9px] bg-black/25 text-white/90 px-1.5 py-0.5 rounded-md font-mono font-bold tracking-wider">
+            <kbd className="text-[10px] bg-black/[0.04] dark:bg-white/[0.08] text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-mono font-medium border border-black/[0.05] dark:border-white/[0.06]">
               F2
             </kbd>
           </button>
@@ -378,10 +275,10 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
             <button
               type="button"
               onClick={() => navigate('/sales/new')}
-              className="sidebar-action-btn w-9 h-9 rounded-xl flex items-center justify-center font-bold shadow-md cursor-pointer group relative"
+              className="sidebar-action-btn w-9 h-9 rounded-xl flex items-center justify-center font-bold cursor-pointer group relative"
               title="Quick Sale / Bill (F2)"
             >
-              <Plus size={16} strokeWidth={2.6} />
+              <Plus size={16} strokeWidth={2.2} />
               <div className="absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-lg bg-slate-950/90 text-white border border-white/[0.08] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] text-[10px] font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:translate-x-1 translate-x-0 transition-all duration-200 pointer-events-none z-50">
                 Quick Sale (F2)
               </div>
@@ -443,12 +340,12 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
       </div>
 
       {/* ── NAV GROUPS & ITEMS ────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden sidebar-nav-container py-1 space-y-3 px-1.5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden sidebar-nav-container py-1 space-y-2 px-1.5">
         {visibleGroups.map((group, gIdx) => (
           <div key={gIdx} className="space-y-0.5">
             {/* Section Title */}
             {!mini && (
-              <div className="px-2 pt-1.5 pb-1 flex items-center justify-between">
+              <div className="px-2 pt-2 pb-1 flex items-center justify-between">
                 <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   {group.title}
                 </span>
@@ -457,9 +354,6 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
 
             {group.items.map((item) => {
               const Icon = item.icon
-              const isSalePage = item.to === '/sales'
-              const isPurchasePage = item.to === '/purchases'
-              const isCustomerPage = item.to === '/customers'
               const isActive = location.pathname === item.to || (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
 
               return (
@@ -470,7 +364,7 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
                     onClick={onClose}
                     style={{
                       width: mini ? '36px' : '100%',
-                      padding: mini ? '0' : '4px 6px 4px 6px',
+                      padding: mini ? '0' : '5px 8px 5px 8px',
                       justifyContent: mini ? 'center' : 'flex-start',
                       margin: mini ? '0 auto' : '0',
                       transition: 'width 180ms ease-out, padding 180ms ease-out',
@@ -487,22 +381,18 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
                       <>
                         {/* Active Left Indicator Bar (Full mode) */}
                         {!mini && linkActive && (
-                          <span
-                            className="w-1 h-3.5 rounded-full shrink-0 mr-1.5"
-                            style={{ backgroundColor: item.color }}
-                          />
+                          <span className="w-1 h-3.5 rounded-full shrink-0 mr-1.5 bg-gray-900 dark:bg-white" />
                         )}
 
-                        {/* SF-Style Translucent Icon Badge */}
+                        {/* Minimalist Vector Icon without background box */}
                         <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-150 group-hover/link:scale-105"
-                          style={{
-                            backgroundColor: dark ? item.darkTint : item.tint,
-                            color: dark ? item.darkTextColor : item.textColor,
-                            border: `1px solid ${dark ? item.darkTint : item.tint}`,
-                          }}
+                          className={`w-6 h-6 flex items-center justify-center shrink-0 transition-colors duration-150 ${
+                            linkActive
+                              ? 'text-gray-950 dark:text-white'
+                              : 'text-gray-400 group-hover/link:text-gray-800 dark:text-gray-400 dark:group-hover/link:text-gray-200'
+                          }`}
                         >
-                          <Icon size={15} strokeWidth={2} />
+                          <Icon size={16} strokeWidth={1.8} />
                         </div>
 
                         {/* Label */}
@@ -515,7 +405,7 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
                           {item.label}
                         </span>
 
-                        {/* Customer Row: Quick Khata Button */}
+                        {/* Customer Row: Transparent Frosted Khata Button */}
                         {!mini && item.isCustomerRow && (
                           <button
                             type="button"
@@ -524,7 +414,7 @@ export default function Sidebar({ onClose, mini, onToggleMini }) {
                               e.stopPropagation()
                               setCustomerModalOpen(true)
                             }}
-                            className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] dark:text-[#7d7aff] hover:bg-[#5856d6] hover:text-white dark:hover:bg-[#5856d6] dark:hover:text-white border border-[#5856d6]/20 transition-all opacity-90 group-hover/link:opacity-100 flex items-center gap-0.5"
+                            className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] transition-all flex items-center gap-1 backdrop-blur-md"
                             title="Quick Khata, Ledger & Dues Search"
                           >
                             <Zap size={10} /> Khata

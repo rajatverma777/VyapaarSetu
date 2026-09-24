@@ -589,31 +589,46 @@
       0 4px 20px rgba(0, 0, 0, 0.5) !important;
   }
 
-  /* Apple Liquid Glass Sidebar Navigation */
+  /* Apple Transparent Liquid Glass Sidebar Navigation */
   .sidebar-action-btn {
-    background: linear-gradient(135deg, #0071e3 0%, #0a84ff 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #111827;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .sidebar-action-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(0, 113, 227, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.40);
+    background: rgba(0, 0, 0, 0.07);
+    border-color: rgba(0, 0, 0, 0.14);
+    transform: translateY(-0.5px);
   }
   .sidebar-action-btn:active {
     transform: translateY(0) scale(0.98);
   }
 
+  .dark .sidebar-action-btn {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+  .dark .sidebar-action-btn:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+  }
+
   .sidebar-nav-active {
-    background-color: rgba(0, 113, 227, 0.08);
-    border-color: rgba(0, 113, 227, 0.20) !important;
-    color: #0071e3 !important;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #111827 !important;
   }
   .dark .sidebar-nav-active {
-    background-color: rgba(0, 113, 227, 0.18) !important;
-    border-color: rgba(10, 132, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     color: #ffffff !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 10px rgba(0, 113, 227, 0.25) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   }
 
 
