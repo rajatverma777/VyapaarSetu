@@ -1326,49 +1326,71 @@ CRITICAL INSTRUCTIONS:
         }
     }
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
-    
-    async with httpx.AsyncClient(timeout=35.0) as client:
-        response = await client.post(url, json=payload)
-        response.raise_for_status()
-        resp_json = response.json()
-        
-        try:
-            candidates = resp_json.get("candidates", [])
-            if not candidates:
-                raise ValueError("No candidates returned from Gemini API")
-            text_response = candidates[0]["content"]["parts"][0]["text"].strip()
-            # Strip markdown code fences if Gemini wrapped output
-            if text_response.startswith("```json"):
-                text_response = text_response[7:]
-            elif text_response.startswith("```"):
-                text_response = text_response[3:]
-            if text_response.endswith("```"):
-                text_response = text_response[:-3]
-            text_response = text_response.strip()
+    models = [
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.5-flash",
+        "gemini-3.8-flash"
+    ]
 
-            parsed_data = json.loads(text_response)
-            if isinstance(parsed_data, dict):
-                products = parsed_data.get("items") or parsed_data.get("products") or [parsed_data]
-            else:
-                products = parsed_data
+    last_error = None
+    resp_json = None
+
+    async with httpx.AsyncClient(timeout=40.0) as client:
+        for model in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.GEMINI_API_KEY}"
+            try:
+                response = await client.post(url, json=payload)
+                if response.status_code == 200:
+                    resp_json = response.json()
+                    break
+                else:
+                    err_text = response.text[:200]
+                    logger.warning(f"Gemini model {model} returned status {response.status_code}: {err_text}")
+                    last_error = f"{model} returned {response.status_code}"
+            except Exception as me:
+                logger.warning(f"Error querying Gemini model {model}: {me}")
+                last_error = str(me)
+
+    if not resp_json:
+        raise ValueError(f"All Gemini models failed. Last error: {last_error}")
+        
+    try:
+        candidates = resp_json.get("candidates", [])
+        if not candidates:
+            raise ValueError("No candidates returned from Gemini API")
+        text_response = candidates[0]["content"]["parts"][0]["text"].strip()
+        # Strip markdown code fences if Gemini wrapped output
+        if text_response.startswith("```json"):
+            text_response = text_response[7:]
+        elif text_response.startswith("```"):
+            text_response = text_response[3:]
+        if text_response.endswith("```"):
+            text_response = text_response[:-3]
+        text_response = text_response.strip()
+
+        parsed_data = json.loads(text_response)
+        if isinstance(parsed_data, dict):
+            products = parsed_data.get("items") or parsed_data.get("products") or [parsed_data]
+        else:
+            products = parsed_data
+        
+        validated_products = []
+        for item in products:
+            batch = item.get("batch") or "DEFAULT"
+            expiry = item.get("expiry") or "N/A"
+            if not item.get("description"):
+                item["description"] = f"Batch: {batch}, Exp: {expiry}"
             
-            validated_products = []
-            for item in products:
-                batch = item.get("batch") or "DEFAULT"
-                expiry = item.get("expiry") or "N/A"
-                if not item.get("description"):
-                    item["description"] = f"Batch: {batch}, Exp: {expiry}"
-                
-                item["sku"] = item.get("sku") or None
-                item["barcode"] = item.get("barcode") or None
-                item["cases"] = item.get("cases") or None
-                
-                validated_products.append(item)
-                
-            return validated_products
-        except (KeyError, IndexError, json.JSONDecodeError) as e:
-            raise ValueError(f"Failed to parse Gemini API response: {str(e)}")
+            item["sku"] = item.get("sku") or None
+            item["barcode"] = item.get("barcode") or None
+            item["cases"] = item.get("cases") or None
+            
+            validated_products.append(item)
+            
+        return validated_products
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        raise ValueError(f"Failed to parse Gemini API response: {str(e)}")
 
 def _validate_extracted_products(products: list) -> list:
     for item in products:
