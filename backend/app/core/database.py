@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 class Database:
     client: AsyncIOMotorClient = None
     db = None
+    is_replica_set: bool = False
 
 db_instance = Database()
 
@@ -14,8 +15,14 @@ async def connect_to_mongo():
     logger.info("Connecting to MongoDB...")
     db_instance.client = AsyncIOMotorClient(settings.MONGODB_URL)
     db_instance.db = db_instance.client[settings.MONGODB_DB_NAME]
+    try:
+        hello_info = await db_instance.client.admin.command("hello")
+        db_instance.is_replica_set = bool(hello_info.get("setName"))
+    except Exception as e:
+        logger.debug(f"Topology detection fallback: {e}")
+        db_instance.is_replica_set = False
     await create_indexes()
-    logger.info(f"Connected to MongoDB: {settings.MONGODB_DB_NAME}")
+    logger.info(f"Connected to MongoDB: {settings.MONGODB_DB_NAME} (replica_set={db_instance.is_replica_set})")
 
 async def close_mongo_connection():
     logger.info("Closing MongoDB connection...")

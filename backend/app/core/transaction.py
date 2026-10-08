@@ -17,14 +17,18 @@ class UnitOfWork:
         self.in_transaction: bool = False
 
     async def __aenter__(self):
-        if not self.client:
+        if not self.client or not getattr(db_instance, "is_replica_set", False):
+            # Standalone MongoDB instances do not support replica set multi-document transactions
+            self.session = None
+            self.in_transaction = False
             return self
+
         try:
             self.session = await self.client.start_session()
             self.session.start_transaction()
             self.in_transaction = True
         except Exception as e:
-            # Standalone MongoDB instances do not support replica set transactions
+            # Fallback if start_session fails
             logger.debug(f"Transactions disabled or standalone MongoDB mode: {e}")
             self.session = None
             self.in_transaction = False
