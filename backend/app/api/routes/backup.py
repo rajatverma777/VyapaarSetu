@@ -252,7 +252,7 @@ async def run_daily_backup_cron():
             timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
             backup_data = {"timestamp": timestamp, "collections": {}}
             
-            all_cols = COLLECTIONS + ["batches"]
+            all_cols = TENANT_BACKUP_COLLECTIONS
             for col_name in all_cols:
                 try:
                     docs = await db[col_name].find({}).to_list(None)

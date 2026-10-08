@@ -20,9 +20,14 @@ def run_server():
     if not is_server_online():
         python_env = dict(os.environ)
         existing_pythonpath = python_env.get("PYTHONPATH", "")
+        paths = [backend_dir]
         site_packages = os.path.join(backend_dir, "venv", "lib", "python3.12", "site-packages")
-        python_env["PYTHONPATH"] = f"{backend_dir}:{site_packages}:{existing_pythonpath}".strip(":")
-        python_env["SECRET_KEY"] = "test_secret_key_for_ci_pipeline_only"
+        if os.path.exists(site_packages):
+            paths.append(site_packages)
+        if existing_pythonpath:
+            paths.append(existing_pythonpath)
+        python_env["PYTHONPATH"] = ":".join(paths)
+        python_env["SECRET_KEY"] = "test_secret_key_for_ci_pipeline_only_32_chars"
 
         try:
             proc = subprocess.Popen(
