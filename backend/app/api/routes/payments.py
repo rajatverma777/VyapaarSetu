@@ -36,60 +36,24 @@ async def list_payments(
     payments = await db.payments.find(query).sort("payment_date", -1).skip(skip).limit(limit).to_list(limit)
     return {"items": [serialize_doc(p) for p in payments], "total": total}
 
+from app.services.payment_service import PaymentService
+
 @router.post("/")
 async def create_payment(
     data: PaymentCreate,
     db = Depends(get_database),
     current_user = Depends(get_current_active_user)
 ):
-    now = data.payment_date or datetime.utcnow()
-
-    # Verify party exists
-    collection = db.customers if data.party_type == "customer" else db.suppliers
-    party = await collection.find_one({"_id": ObjectId(data.party_id)})
-    if not party:
-        raise HTTPException(status_code=404, detail="Party not found")
-
-    # Save payment
-    payment_doc = {
-        "party_type": data.party_type,
-        "party_id": data.party_id,
-        "party_name": party["name"],
-        "amount": data.amount,
-        "payment_mode": data.payment_mode,
-        "reference_no": data.reference_no,
-        "payment_date": now,
-        "notes": data.notes,
-        "against_invoice": data.against_invoice,
-        "created_by": str(current_user["_id"]),
-        "created_at": datetime.utcnow()
-    }
-    result = await db.payments.insert_one(payment_doc)
-
-    # Update balance
-    if data.party_type == "customer":
-        await db.customers.update_one(
-            {"_id": ObjectId(data.party_id)},
-            {"$inc": {"current_balance": -data.amount}}
-        )
-    else:
-        await db.suppliers.update_one(
-            {"_id": ObjectId(data.party_id)},
-            {"$inc": {"current_balance": -data.amount}}
-        )
-
-    # Ledger entry
-    await db.ledger.insert_one({
-        "party_type": data.party_type,
-        "party_id": data.party_id,
-        "date": now,
-        "type": "payment" if data.party_type == "customer" else "receipt",
-        "debit": 0 if data.party_type == "customer" else data.amount,
-        "credit": data.amount if data.party_type == "customer" else 0,
-        "balance": 0,
-        "reference": f"Payment - {data.payment_mode.upper()} - {data.reference_no or ''}",
-        "reference_id": str(result.inserted_id),
-        "created_at": datetime.utcnow()
-    })
-
-    return {"message": "Payment recorded", "id": str(result.inserted_id)}
+    service = PaymentService(db, current_user.get("tenant_id", ""))
+    res = await service.record_payment(
+        party_id=data.party_id,
+        party_type=data.party_type,
+        amount=data.amount,
+        payment_mode=data.payment_mode,
+        reference_type="voucher",
+        reference_id=data.reference_no,
+        notes=data.notes,
+        payment_date=data.payment_date,
+        current_user=current_user
+    )
+    return {"message": "Payment recorded", "id": res.get("id", str(res.get("_id", "")))}

@@ -3,8 +3,6 @@
  * Enables instantaneous client-side extraction on Vercel without relying on backend OCR worker.
  */
 
-const FALLBACK_TOKEN = "QVEuQWI4Uk42TEc4M1JRWnBBVTh5WFJIVU8tOGNCbk9EX1o2UE1RckRwbjJRNXVTNWtWTXc="
-
 const getResolvedKey = () => {
   if (typeof window !== 'undefined') {
     const local = localStorage.getItem('gemini_api_key')
@@ -13,11 +11,7 @@ const getResolvedKey = () => {
   if (import.meta.env?.VITE_GEMINI_API_KEY) {
     return import.meta.env.VITE_GEMINI_API_KEY
   }
-  try {
-    return atob(FALLBACK_TOKEN)
-  } catch {
-    return ""
-  }
+  return ""
 }
 
 const GEMINI_MODELS = [

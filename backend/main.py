@@ -4,7 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import os
+import time
+import uuid
 import logging
+from datetime import datetime, timezone
 
 from app.core.database import connect_to_mongo, close_mongo_connection
 from app.api.routes import (
@@ -55,12 +58,27 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 @app.middleware("http")
-async def add_security_headers(request: Request, call_next):
+async def request_context_and_logging_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    request.state.request_id = request_id
+    start_time = time.time()
+    
     response = await call_next(request)
+    
+    duration_ms = round((time.time() - start_time) * 1000, 2)
+    response.headers["X-Request-ID"] = request_id
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Do not log query parameters for auth/token or sensitive credentials
+    path = request.url.path
+    if not path.startswith("/static"):
+        logger.info(
+            f"request_id={request_id} method={request.method} path={path} "
+            f"status={response.status_code} duration={duration_ms}ms"
+        )
     return response
 
 @app.on_event("startup")
@@ -74,11 +92,11 @@ async def startup_db_client():
 async def shutdown_db_client():
     await close_mongo_connection()
 
-# Mount static files for invoices/exports
+# Mount static files for invoices/exports (strictly public files only)
 os.makedirs("static/invoices", exist_ok=True)
 os.makedirs("static/exports", exist_ok=True)
-os.makedirs("static/backups", exist_ok=True)
-os.makedirs("static/documents", exist_ok=True)
+os.makedirs("data/backups", exist_ok=True)
+os.makedirs("data/documents", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Register all routers
@@ -107,6 +125,39 @@ async def health_check():
     return {
         "status": "healthy",
         "version": "1.1.0",
-        "build": "universal_ocr_v2",
-        "features": ["universal_table_ocr", "gemini_vision", "auto_orientation"]
+        "build": "production_ready_v1",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "features": ["universal_table_ocr", "gemini_vision", "fefo_inventory", "decimal_accounting"]
     }
+
+@app.get("/api/ready")
+async def readiness_check():
+    from app.core.database import db_instance
+    if not db_instance.client:
+        return JSONResponse(status_code=503, content={"status": "not_ready", "database": "disconnected"})
+    try:
+        await db_instance.client.admin.command("ping")
+        return {
+            "status": "ready",
+            "database": "connected",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as exc:
+        logger.warning(f"Readiness probe failed: {exc}")
+        return JSONResponse(status_code=503, content={"status": "not_ready", "database": "error", "error": str(exc)})
+
+@app.get("/api/live")
+async def liveness_check():
+    return {
+        "status": "live",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+@app.get("/api/features")
+async def features_spec():
+    from app.core.features import PLAN_LIMITS, FeatureFlag
+    return {
+        "available_flags": [f.value for f in FeatureFlag],
+        "plans": PLAN_LIMITS
+    }
+

@@ -1,7 +1,11 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import model_validator
 from typing import Optional
 from typing_extensions import Self
+
+_BASE_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_FILE = _BASE_DIR / ".env"
 
 class Settings(BaseSettings):
     # App
@@ -23,8 +27,8 @@ class Settings(BaseSettings):
     STATIC_DIR: str = "static"
     INVOICE_DIR: str = "static/invoices"
     EXPORT_DIR: str = "static/exports"
-    BACKUP_DIR: str = "static/backups"
-    DOCS_DIR: str = "static/documents"
+    BACKUP_DIR: str = "data/backups"
+    DOCS_DIR: str = "data/documents"
 
     # Gemini
     GEMINI_API_KEY: Optional[str] = None
@@ -38,8 +42,9 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must be changed from the default value in production mode (DEBUG=False).")
         return self
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=(str(_ENV_FILE), ".env"),
+        extra="ignore"
+    )
 
 settings = Settings()

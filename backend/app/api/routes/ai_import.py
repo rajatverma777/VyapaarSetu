@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Optional, List, Literal
 import difflib
 import logging
+from app.services.ai_import_service import AIImportService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -47,94 +48,8 @@ async def analyze_ai_output(
     db = Depends(get_database),
     current_user = Depends(require_permission("can_manage_products"))
 ):
-    try:
-        # Fetch active products for matching
-        products_cursor = db.products.find({"is_active": True})
-        db_products = await products_cursor.to_list(length=10000)
-    except Exception as e:
-        logger.error(f"Failed to fetch products for similarity matching: {e}")
-        raise HTTPException(status_code=500, detail="Database error while fetching products.")
-
-    enriched_items = []
-    for item in items:
-        prod_name = str(item.get("product_name") or item.get("name") or item.get("description") or "").strip()
-        if not prod_name:
-            continue
-
-        best_match = None
-        best_ratio = 0.0
-
-        # Run SequenceMatcher similarity check
-        for db_prod in db_products:
-            db_name = db_prod.get("name") or ""
-            ratio = difflib.SequenceMatcher(None, prod_name.lower(), db_name.lower()).ratio()
-            if ratio > best_ratio:
-                best_ratio = ratio
-                best_match = db_prod
-
-        match_type = "none"
-        confidence = 0
-        matched_product = None
-
-        if best_ratio == 1.0:
-            match_type = "exact"
-            confidence = 100
-            matched_product = serialize_doc(best_match)
-        elif best_ratio >= 0.70:
-            match_type = "suggested"
-            confidence = int(best_ratio * 100)
-            matched_product = serialize_doc(best_match)
-        else:
-            confidence = int(best_ratio * 100)
-
-        # Get alternative suggestions (similarity >= 50%)
-        suggestions = []
-        for db_prod in db_products:
-            db_name = db_prod.get("name") or ""
-            ratio = difflib.SequenceMatcher(None, prod_name.lower(), db_name.lower()).ratio()
-            if 0.50 <= ratio < 1.0:
-                suggestions.append({
-                    "product_id": str(db_prod["_id"]),
-                    "product_name": db_name,
-                    "confidence": int(ratio * 100)
-                })
-
-        # Sort alternative suggestions by confidence descending
-        suggestions = sorted(suggestions, key=lambda x: x["confidence"], reverse=True)[:5]
-
-        # Extract other fields robustly
-        pack = str(item.get("pack") or item.get("packing") or "").strip() or None
-        cases = float(item.get("cases") or item.get("box") or 0.0)
-        quantity = float(item.get("quantity") or item.get("qty") or item.get("pcs") or 0.0)
-        purchase_rate = float(item.get("purchase_rate") or item.get("rate") or item.get("purchase_price") or item.get("price") or 0.0)
-        selling_price = float(item.get("selling_price") or item.get("mrp") or item.get("sale_price") or item.get("wholesale_price") or 0.0)
-        amount = float(item.get("amount") or item.get("total") or item.get("final_amount") or 0.0)
-        gst = float(item.get("gst") or item.get("gst_rate") or item.get("tax") or 0.0)
-        hsn_code = str(item.get("hsn_code") or item.get("hsn") or "").strip() or None
-        batch_number = str(item.get("batch_number") or item.get("batch") or item.get("batch_no") or "").strip() or None
-        expiry_date = str(item.get("expiry_date") or item.get("expiry") or item.get("exp") or "").strip() or None
-        manufacturer = str(item.get("manufacturer") or item.get("manufacture") or item.get("brand") or "").strip() or None
-
-        enriched_items.append({
-            "product_name": prod_name,
-            "pack": pack,
-            "cases": cases,
-            "quantity": quantity,
-            "purchase_rate": purchase_rate,
-            "selling_price": selling_price,
-            "amount": amount,
-            "gst": gst,
-            "hsn_code": hsn_code,
-            "batch_number": batch_number,
-            "expiry_date": expiry_date,
-            "manufacturer": manufacturer,
-            "match_type": match_type,
-            "confidence": confidence,
-            "matched_product": matched_product,
-            "suggestions": suggestions
-        })
-
-    return enriched_items
+    service = AIImportService(db, current_user.get("tenant_id", ""))
+    return await service.analyze_invoice_items(items)
 
 
 @router.post("/submit")

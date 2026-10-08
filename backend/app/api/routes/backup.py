@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from fastapi.responses import FileResponse
+from typing import Optional
 from app.core.database import get_database
 from app.core.security import require_admin, serialize_doc
 from app.core.config import settings
@@ -65,7 +66,7 @@ async def create_backup(
     return {
         "message": "Backup created",
         "filename": os.path.basename(zip_path),
-        "path": f"/static/backups/{os.path.basename(zip_path)}"
+        "path": f"/api/backup/download/{os.path.basename(zip_path)}"
     }
 
 @router.get("/list")
@@ -79,38 +80,87 @@ async def list_backups(
     tenant_id = current_user.get("tenant_id", "")
     os.makedirs(settings.BACKUP_DIR, exist_ok=True)
     files = []
-    for f in os.listdir(settings.BACKUP_DIR):
-        if not f.endswith(".zip"):
+    # Search both current BACKUP_DIR and legacy directory for backwards compatibility
+    candidate_dirs = [settings.BACKUP_DIR]
+    legacy_dir = "static/backups"
+    if os.path.exists(legacy_dir) and legacy_dir != settings.BACKUP_DIR:
+        candidate_dirs.append(legacy_dir)
+
+    seen = set()
+    for d in candidate_dirs:
+        if not os.path.exists(d):
             continue
-        # Only show backups that contain this tenant's ID in the filename
-        if tenant_id and f"_{tenant_id}_" not in f and not f.startswith("backup_auto_"):
-            continue
-        fp = os.path.join(settings.BACKUP_DIR, f)
-        files.append({
-            "filename": f,
-            "size": os.path.getsize(fp),
-            "created": datetime.fromtimestamp(os.path.getctime(fp)).isoformat(),
-            "url": f"/static/backups/{f}"
-        })
+        for f in os.listdir(d):
+            if not f.endswith(".zip") or f in seen:
+                continue
+            # Only show backups that contain this tenant's ID in the filename
+            if tenant_id and f"_{tenant_id}_" not in f and not f.startswith("backup_auto_"):
+                continue
+            fp = os.path.join(d, f)
+            files.append({
+                "filename": f,
+                "size": os.path.getsize(fp),
+                "created": datetime.fromtimestamp(os.path.getctime(fp)).isoformat(),
+                "url": f"/api/backup/download/{f}"
+            })
+            seen.add(f)
     files.sort(key=lambda x: x["created"], reverse=True)
     return files
+
+from fastapi import Request, Query
+from jose import jwt
 
 @router.get("/download/{filename}")
 async def download_backup(
     filename: str,
-    db = Depends(get_database),
-    current_user = Depends(require_admin)
+    request: Request,
+    token: Optional[str] = Query(None),
+    db = Depends(get_database)
 ):
     """
     SECURITY: Only allow downloading backups that belong to the current tenant.
+    Supports either Authorization: Bearer <token> header or ?token=<jwt> query parameter.
     """
-    tenant_id = current_user.get("tenant_id", "")
+    from app.core.database import db_instance
+    resolved_user = None
+
+    # 1. Try Authorization header
+    auth_header = request.headers.get("Authorization")
+    jwt_token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        jwt_token = auth_header.split(" ")[1]
+    elif token:
+        jwt_token = token
+
+    if not jwt_token:
+        raise HTTPException(status_code=401, detail="Authentication credentials required")
+
+    try:
+        payload = jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        username = payload.get("sub")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        resolved_user = await db_instance.db.users.find_one({"username": username, "is_active": True})
+    except Exception:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+
+    if not resolved_user or resolved_user.get("role") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    tenant_id = resolved_user.get("tenant_id", "")
     # Filename must contain the tenant_id to prevent IDOR access to other tenants' backups
     if tenant_id and f"_{tenant_id}_" not in filename and not filename.startswith("backup_auto_"):
         raise HTTPException(status_code=403, detail="Access denied to this backup file")
+
     filepath = os.path.join(settings.BACKUP_DIR, filename)
     if not os.path.exists(filepath):
-        raise HTTPException(status_code=404, detail="Backup not found")
+        # Fallback to legacy path if exists
+        legacy_fp = os.path.join("static/backups", filename)
+        if os.path.exists(legacy_fp):
+            filepath = legacy_fp
+        else:
+            raise HTTPException(status_code=404, detail="Backup not found")
+
     return FileResponse(filepath, media_type="application/zip", filename=filename)
 
 @router.post("/restore/{filename}")

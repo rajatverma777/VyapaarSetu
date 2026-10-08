@@ -80,6 +80,20 @@ class TenantCollection:
         filter = self._inject_tenant(filter)
         return await self._collection.distinct(key, filter, *args, **kwargs)
 
+    async def find_one_and_update(self, filter, update, *args, **kwargs):
+        filter = self._inject_tenant(filter)
+        return await self._collection.find_one_and_update(filter, update, *args, **kwargs)
+
+    async def find_one_and_delete(self, filter, *args, **kwargs):
+        filter = self._inject_tenant(filter)
+        return await self._collection.find_one_and_delete(filter, *args, **kwargs)
+
+    async def find_one_and_replace(self, filter, replacement, *args, **kwargs):
+        filter = self._inject_tenant(filter)
+        if isinstance(replacement, dict):
+            replacement["tenant_id"] = self.tenant_id
+        return await self._collection.find_one_and_replace(filter, replacement, *args, **kwargs)
+
     def aggregate(self, pipeline, *args, **kwargs):
         match_step = {"$match": {"tenant_id": self.tenant_id}}
         new_pipeline = [match_step] + list(pipeline)
@@ -177,26 +191,36 @@ async def create_indexes():
     for col in tenant_collections:
         await safe_create_index(col, "tenant_id")
 
-    # Products indexes
-    await safe_create_index("products", "sku", unique=True, sparse=True)
-    await safe_create_index("products", "barcode", sparse=True)
-    await safe_create_index("products", "name")
-    await safe_create_index("products", "category_id")
+    # Products indexes — tenant isolated
+    try:
+        # Drop legacy global unique sku index if it exists
+        index_info = await db["products"].index_information()
+        if "sku_1" in index_info and index_info["sku_1"].get("unique"):
+            await db["products"].drop_index("sku_1")
+            logger.info("Dropped legacy global unique sku_1 index in favor of tenant-scoped index")
+    except Exception as e:
+        logger.debug(f"Index migration check: {e}")
+
+    await safe_create_index("products", [("tenant_id", 1), ("sku", 1)], unique=True, sparse=True)
+    await safe_create_index("products", [("tenant_id", 1), ("barcode", 1)], sparse=True)
+    await safe_create_index("products", [("tenant_id", 1), ("name", 1)])
+    await safe_create_index("products", [("tenant_id", 1), ("category_id", 1)])
     await safe_create_index("products", [("tenant_id", 1), ("name", "text"), ("sku", "text"), ("barcode", "text")])
 
     # Batches indexes — compound with tenant_id so FEFO lookups are isolated
     await safe_create_index("batches", [("tenant_id", 1), ("product_id", 1), ("batch_no", 1)], unique=True)
+    await safe_create_index("batches", [("tenant_id", 1), ("product_id", 1), ("expiry", 1)])
     await safe_create_index("batches", "expiry")
     await safe_create_index("batches", "product_id")
 
-    # Customers indexes
-    await safe_create_index("customers", "mobile", sparse=True)
-    await safe_create_index("customers", "name")
+    # Customers indexes — tenant isolated
+    await safe_create_index("customers", [("tenant_id", 1), ("mobile", 1)], sparse=True)
+    await safe_create_index("customers", [("tenant_id", 1), ("name", 1)])
     await safe_create_index("customers", [("name", "text"), ("mobile", "text"), ("email", "text")])
 
-    # Suppliers indexes
-    await safe_create_index("suppliers", "mobile", sparse=True)
-    await safe_create_index("suppliers", "name")
+    # Suppliers indexes — tenant isolated
+    await safe_create_index("suppliers", [("tenant_id", 1), ("mobile", 1)], sparse=True)
+    await safe_create_index("suppliers", [("tenant_id", 1), ("name", 1)])
     await safe_create_index("suppliers", [("name", "text"), ("mobile", "text")])
 
     # Sales indexes — invoice_number unique per tenant

@@ -112,6 +112,8 @@ async def get_batches(
 
     return {"items": resolved_batches, "total": total}
 
+from app.services.inventory_service import InventoryService
+
 @router.post("/adjust")
 async def adjust_stock(
     data: StockAdjustment,
@@ -122,49 +124,23 @@ async def adjust_stock(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    before_stock = product.get("current_stock", 0)
+    before_stock = product.get("current_stock", 0.0)
 
     if data.adjustment_type == "add":
         new_stock = before_stock + data.quantity
-        change = data.quantity
     elif data.adjustment_type == "remove":
-        new_stock = max(0, before_stock - data.quantity)
-        change = -(before_stock - new_stock)
+        new_stock = max(0.0, before_stock - data.quantity)
     elif data.adjustment_type == "set":
         new_stock = data.quantity
-        change = new_stock - before_stock
     else:
         raise HTTPException(status_code=400, detail="Invalid adjustment type")
 
-    await db.products.update_one(
-        {"_id": ObjectId(data.product_id)},
-        {"$set": {"current_stock": new_stock, "updated_at": datetime.utcnow()}}
+    service = InventoryService(db, current_user.get("tenant_id", ""))
+    after_stock = await service.adjust_stock(
+        product_id=data.product_id,
+        new_stock=new_stock,
+        reason=data.reason or "adjustment",
+        user_id=str(current_user["_id"])
     )
 
-    # Sync manual adjustment with batches collection
-    await db.batches.update_one(
-        {"product_id": data.product_id, "batch_no": "DEFAULT"},
-        {
-            "$inc": {"current_stock": change},
-            "$setOnInsert": {
-                "created_at": datetime.utcnow(),
-                "expiry": None,
-                "purchase_price": product.get("purchase_price", 0.0)
-            }
-        },
-        upsert=True
-    )
-
-    await db.stock_logs.insert_one({
-        "product_id": data.product_id,
-        "product_name": product["name"],
-        "type": "adjustment",
-        "quantity": change,
-        "before_stock": before_stock,
-        "after_stock": new_stock,
-        "reference": data.reason,
-        "created_by": str(current_user["_id"]),
-        "created_at": datetime.utcnow()
-    })
-
-    return {"message": "Stock adjusted", "before": before_stock, "after": new_stock}
+    return {"message": "Stock adjusted", "before": before_stock, "after": after_stock}

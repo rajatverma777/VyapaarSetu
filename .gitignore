@@ -63,3 +63,6 @@ backend/static/invoices/
 !backend/app/static/care_pharma_crest.png
 
 
+# Private runtime data directories
+data/
+backend/data/

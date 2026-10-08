@@ -25,36 +25,30 @@ async def get_next_note_number(db, prefix="CN", tenant_id: str = "") -> str:
     seq = result["seq"]
     return f"{prefix}-{year}{month}-{seq:04d}"
 
+from app.core.finance.tax_calculator import GSTCalculator
+
 def calculate_return_gst(items: list, is_igst: bool) -> list:
     calculated = []
     for item in items:
         rate = item.rate if hasattr(item, 'rate') else item['rate']
         qty = item.quantity if hasattr(item, 'quantity') else item['quantity']
         gst_rate = item.gst_rate if hasattr(item, 'gst_rate') else item.get('gst_rate', 0)
-
-        taxable = round(rate * qty, 2)
-
-        if is_igst:
-            igst_amt = round(taxable * gst_rate / 100, 2)
-            cgst_amt = sgst_amt = 0
-        else:
-            igst_amt = 0
-            half_rate = gst_rate / 2
-            cgst_amt = round(taxable * half_rate / 100, 2)
-            sgst_amt = round(taxable * half_rate / 100, 2)
-
-        total = round(taxable + cgst_amt + sgst_amt + igst_amt, 2)
-
+        res = GSTCalculator.calculate_line_item(
+            rate=rate,
+            quantity=qty,
+            gst_rate=gst_rate,
+            is_igst=is_igst
+        )
         d = item.dict() if hasattr(item, 'dict') else dict(item)
         d.update({
-            "taxable_amount": taxable,
-            "cgst_rate": 0 if is_igst else gst_rate / 2,
-            "sgst_rate": 0 if is_igst else gst_rate / 2,
-            "igst_rate": gst_rate if is_igst else 0,
-            "cgst_amount": cgst_amt,
-            "sgst_amount": sgst_amt,
-            "igst_amount": igst_amt,
-            "total_amount": total,
+            "taxable_amount": res["taxable_amount"],
+            "cgst_rate": res["cgst_rate"],
+            "sgst_rate": res["sgst_rate"],
+            "igst_rate": res["igst_rate"],
+            "cgst_amount": res["cgst_amount"],
+            "sgst_amount": res["sgst_amount"],
+            "igst_amount": res["igst_amount"],
+            "total_amount": res["total_amount"]
         })
         calculated.append(d)
     return calculated
