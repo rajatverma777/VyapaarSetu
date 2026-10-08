@@ -185,6 +185,22 @@ async def create_indexes():
         try:
             await db[col].create_index(*args, **kwargs)
         except Exception as e:
+            err_str = str(e)
+            if "IndexKeySpecsConflict" in err_str or "different options" in err_str:
+                name = kwargs.get("name")
+                if not name and len(args) > 0:
+                    keys = args[0]
+                    if isinstance(keys, list):
+                        name = "_".join(f"{k}_{v}" for k, v in keys)
+                    elif isinstance(keys, str):
+                        name = f"{keys}_1"
+                if name:
+                    try:
+                        await db[col].drop_index(name)
+                        await db[col].create_index(*args, **kwargs)
+                        return
+                    except Exception:
+                        pass
             logger.warning(f"Index creation skipped/failed on {col} index specs: {e}")
 
     # ── Tenant isolation indexes (MUST be first — critical for security) ────────
