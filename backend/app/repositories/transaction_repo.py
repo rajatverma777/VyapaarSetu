@@ -12,13 +12,12 @@ class CounterRepository(BaseRepository):
         year_month = today.strftime("%y%m")
         counter_id = f"{self.tenant_id}-{prefix}-{year_month}"
         query = {"_id": counter_id}
-        kwargs = {"session": session} if session else {}
+        # Standalone atomic increment to avoid WiredTiger transaction write conflicts under concurrency
         res = await self.collection.find_one_and_update(
             query,
             {"$inc": {"seq": 1}, "$setOnInsert": {"tenant_id": self.tenant_id}},
             upsert=True,
-            return_document=True,
-            **kwargs
+            return_document=True
         )
         seq = res["seq"]
         return f"{prefix}-{year_month}-{seq:04d}"

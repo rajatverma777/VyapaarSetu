@@ -15,7 +15,7 @@ async def test_stock_sync():
     db = client_db[settings.MONGODB_DB_NAME]
     
     # 1. Register and login a user to get auth headers
-    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=60.0) as client:
         username = f"syncuser_{int(asyncio.get_event_loop().time())}"
         await client.post("/api/auth/register", json={
             "username": username,

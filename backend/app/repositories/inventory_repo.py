@@ -143,19 +143,21 @@ class BatchRepository(BaseRepository):
             "batch_no": batch_no
         })
         kwargs = {"session": session} if session else {}
+        set_on_insert = {
+            "tenant_id": self.tenant_id,
+            "product_id": str(product_id),
+            "batch_no": batch_no,
+            "purchase_price": purchase_price,
+            "created_at": datetime.utcnow()
+        }
         update_op = {
             "$inc": {"current_stock": qty},
-            "$setOnInsert": {
-                "tenant_id": self.tenant_id,
-                "product_id": str(product_id),
-                "batch_no": batch_no,
-                "expiry": expiry,
-                "purchase_price": purchase_price,
-                "created_at": datetime.utcnow()
-            }
+            "$setOnInsert": set_on_insert
         }
         if expiry:
             update_op["$set"] = {"expiry": expiry}
+        else:
+            set_on_insert["expiry"] = None
         res = await self.collection.update_one(query, update_op, upsert=True, **kwargs)
         return res.acknowledged
 

@@ -193,37 +193,73 @@ async def create_indexes():
 
     # Products indexes — tenant isolated
     try:
-        # Drop legacy global unique sku index if it exists
         index_info = await db["products"].index_information()
         if "sku_1" in index_info and index_info["sku_1"].get("unique"):
             await db["products"].drop_index("sku_1")
             logger.info("Dropped legacy global unique sku_1 index in favor of tenant-scoped index")
+        if "tenant_id_1_sku_1" in index_info:
+            if not index_info["tenant_id_1_sku_1"].get("partialFilterExpression"):
+                await db["products"].drop_index("tenant_id_1_sku_1")
     except Exception as e:
         logger.debug(f"Index migration check: {e}")
 
-    await safe_create_index("products", [("tenant_id", 1), ("sku", 1)], unique=True, sparse=True)
-    await safe_create_index("products", [("tenant_id", 1), ("barcode", 1)], sparse=True)
+    await safe_create_index("products", [("tenant_id", 1), ("sku", 1)], unique=True, partialFilterExpression={"sku": {"$type": "string"}})
+    await safe_create_index("products", [("tenant_id", 1), ("barcode", 1)], partialFilterExpression={"barcode": {"$type": "string"}})
     await safe_create_index("products", [("tenant_id", 1), ("name", 1)])
     await safe_create_index("products", [("tenant_id", 1), ("category_id", 1)])
-    await safe_create_index("products", [("tenant_id", 1), ("name", "text"), ("sku", "text"), ("barcode", "text")])
+    try:
+        prod_idx = await db["products"].index_information()
+        has_text = any("_fts" in str(v.get("key", [])) for v in prod_idx.values())
+        if not has_text:
+            await safe_create_index("products", [("name", "text"), ("sku", "text"), ("barcode", "text")])
+    except Exception:
+        pass
 
     # Batches indexes — compound with tenant_id so FEFO lookups are isolated
+    try:
+        batch_info = await db["batches"].index_information()
+        if "product_id_1_batch_no_1" in batch_info and batch_info["product_id_1_batch_no_1"].get("unique"):
+            await db["batches"].drop_index("product_id_1_batch_no_1")
+            logger.info("Dropped legacy global unique product_id_1_batch_no_1 on batches")
+    except Exception as e:
+        logger.debug(f"Batch index migration check: {e}")
+
     await safe_create_index("batches", [("tenant_id", 1), ("product_id", 1), ("batch_no", 1)], unique=True)
     await safe_create_index("batches", [("tenant_id", 1), ("product_id", 1), ("expiry", 1)])
     await safe_create_index("batches", "expiry")
     await safe_create_index("batches", "product_id")
 
     # Customers indexes — tenant isolated
-    await safe_create_index("customers", [("tenant_id", 1), ("mobile", 1)], sparse=True)
+    await safe_create_index("customers", [("tenant_id", 1), ("mobile", 1)], partialFilterExpression={"mobile": {"$type": "string"}})
     await safe_create_index("customers", [("tenant_id", 1), ("name", 1)])
-    await safe_create_index("customers", [("name", "text"), ("mobile", "text"), ("email", "text")])
+    try:
+        cust_idx = await db["customers"].index_information()
+        has_cust_text = any("_fts" in str(v.get("key", [])) for v in cust_idx.values())
+        if not has_cust_text:
+            await safe_create_index("customers", [("name", "text"), ("mobile", "text"), ("email", "text")])
+    except Exception:
+        pass
 
     # Suppliers indexes — tenant isolated
-    await safe_create_index("suppliers", [("tenant_id", 1), ("mobile", 1)], sparse=True)
+    await safe_create_index("suppliers", [("tenant_id", 1), ("mobile", 1)], partialFilterExpression={"mobile": {"$type": "string"}})
     await safe_create_index("suppliers", [("tenant_id", 1), ("name", 1)])
-    await safe_create_index("suppliers", [("name", "text"), ("mobile", "text")])
+    try:
+        supp_idx = await db["suppliers"].index_information()
+        has_supp_text = any("_fts" in str(v.get("key", [])) for v in supp_idx.values())
+        if not has_supp_text:
+            await safe_create_index("suppliers", [("name", "text"), ("mobile", "text")])
+    except Exception:
+        pass
 
     # Sales indexes — invoice_number unique per tenant
+    try:
+        sales_info = await db["sales"].index_information()
+        if "invoice_number_1" in sales_info and sales_info["invoice_number_1"].get("unique"):
+            await db["sales"].drop_index("invoice_number_1")
+            logger.info("Dropped legacy global unique invoice_number_1 on sales")
+    except Exception as e:
+        logger.debug(f"Sales index migration check: {e}")
+
     await safe_create_index("sales", [("tenant_id", 1), ("invoice_number", 1)], unique=True)
     await safe_create_index("sales", "customer_id")
     await safe_create_index("sales", "sale_date")
@@ -232,7 +268,15 @@ async def create_indexes():
     await safe_create_index("sales", [("status", 1), ("sale_date", -1)])
 
     # Purchases indexes — invoice_number unique per tenant
-    await safe_create_index("purchases", [("tenant_id", 1), ("invoice_number", 1)], unique=True, sparse=True)
+    try:
+        pur_info = await db["purchases"].index_information()
+        if "invoice_number_1" in pur_info and pur_info["invoice_number_1"].get("unique"):
+            await db["purchases"].drop_index("invoice_number_1")
+            logger.info("Dropped legacy global unique invoice_number_1 on purchases")
+    except Exception as e:
+        logger.debug(f"Purchases index migration check: {e}")
+
+    await safe_create_index("purchases", [("tenant_id", 1), ("invoice_number", 1)], unique=True, partialFilterExpression={"invoice_number": {"$type": "string"}})
     await safe_create_index("purchases", "supplier_id")
     await safe_create_index("purchases", "purchase_date")
     await safe_create_index("purchases", [("supplier_id", 1), ("purchase_date", -1)])

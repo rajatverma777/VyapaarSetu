@@ -1,6 +1,9 @@
+import asyncio
+import random
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 from fastapi import HTTPException
+from pymongo.errors import OperationFailure
 from bson import ObjectId
 import logging
 
@@ -29,6 +32,7 @@ class SaleService:
         """
         Create a sale invoice atomically using UnitOfWork.
         Performs stock deduction (FEFO), ledger update, customer balance sync, and payment logging.
+        Handles concurrency conflicts gracefully with retry and 409 status code.
         """
         user_id = str(current_user.get("_id", ""))
         user_name = current_user.get("full_name", "")
@@ -50,129 +54,150 @@ class SaleService:
             if cust:
                 customer_name = cust.get("name", customer_name)
 
-        # 2. Transactional Execution
-        async with UnitOfWork() as uow:
-            session = uow.session
+        # 2. Transactional Execution with Concurrency Retry Handling
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            try:
+                async with UnitOfWork() as uow:
+                    session = uow.session
 
-            prefix = "INV" if data.sale_type == "sale" else "SRN"
-            invoice_number = await self.counter_repo.get_next_sequence(prefix=prefix, session=session)
-            now = data.sale_date or datetime.utcnow()
+                    prefix = "INV" if data.sale_type == "sale" else "SRN"
+                    invoice_number = await self.counter_repo.get_next_sequence(prefix=prefix, session=None)
+                    now = data.sale_date or datetime.utcnow()
 
-            # 3. Stock Deductions / Returns
-            for item in calc["items"]:
-                qty = item["quantity"]
-                prod_id = str(item["product_id"])
-                batch_no = item.get("batch_no")
+                    # 3. Stock Deductions / Returns
+                    for item in calc["items"]:
+                        qty = item["quantity"]
+                        prod_id = str(item["product_id"])
+                        batch_no = item.get("batch_no")
 
-                if data.sale_type == "sale":
-                    await self.inventory_service.deduct_stock(
-                        product_id=prod_id,
-                        quantity=qty,
-                        batch_no=batch_no,
-                        reference_id=invoice_number,
-                        reason="sale",
-                        user_id=user_id,
-                        session=session
-                    )
-                else: # Sales Return
-                    await self.inventory_service.add_stock(
-                        product_id=prod_id,
-                        quantity=qty,
-                        batch_no=batch_no or "DEFAULT",
-                        reference_id=invoice_number,
-                        reason="sales_return",
-                        user_id=user_id,
-                        session=session
-                    )
+                        if data.sale_type == "sale":
+                            await self.inventory_service.deduct_stock(
+                                product_id=prod_id,
+                                quantity=qty,
+                                batch_no=batch_no,
+                                reference_id=invoice_number,
+                                reason="sale",
+                                user_id=user_id,
+                                session=session
+                            )
+                        else: # Sales Return
+                            await self.inventory_service.add_stock(
+                                product_id=prod_id,
+                                quantity=qty,
+                                batch_no=batch_no or "DEFAULT",
+                                reference_id=invoice_number,
+                                reason="sales_return",
+                                user_id=user_id,
+                                session=session
+                            )
 
-            # 4. Construct Sale Record
-            sale_doc = {
-                "tenant_id": self.tenant_id,
-                "invoice_number": invoice_number,
-                "customer_id": data.customer_id,
-                "customer_name": customer_name,
-                "sale_date": now,
-                "items": calc["items"],
-                "subtotal": calc["subtotal"],
-                "discount_percent": calc["discount_percent"],
-                "discount_amount": calc["discount_amount"],
-                "taxable_amount": calc["total_taxable"],
-                "total_cgst": calc["total_cgst"],
-                "total_sgst": calc["total_sgst"],
-                "total_igst": calc["total_igst"],
-                "total_tax": calc["total_tax"],
-                "round_off": calc["round_off"],
-                "total_amount": calc["total_amount"],
-                "paid_amount": calc["paid_amount"],
-                "balance_amount": calc["balance_amount"],
-                "payment_mode": data.payment_mode,
-                "is_igst": data.is_igst,
-                "status": "paid" if calc["balance_amount"] <= 0 else "partial" if calc["paid_amount"] > 0 else "unpaid",
-                "sale_type": data.sale_type,
-                "notes": data.notes,
-                "created_by": user_id,
-                "created_by_name": user_name,
-                "created_at": datetime.utcnow()
-            }
+                    # 4. Construct Sale Record
+                    sale_doc = {
+                        "tenant_id": self.tenant_id,
+                        "invoice_number": invoice_number,
+                        "customer_id": data.customer_id,
+                        "customer_name": customer_name,
+                        "sale_date": now,
+                        "items": calc["items"],
+                        "subtotal": calc["subtotal"],
+                        "discount_percent": calc["discount_percent"],
+                        "discount_amount": calc["discount_amount"],
+                        "taxable_amount": calc["total_taxable"],
+                        "total_cgst": calc["total_cgst"],
+                        "total_sgst": calc["total_sgst"],
+                        "total_igst": calc["total_igst"],
+                        "total_tax": calc["total_tax"],
+                        "round_off": calc["round_off"],
+                        "total_amount": calc["total_amount"],
+                        "paid_amount": calc["paid_amount"],
+                        "balance_amount": calc["balance_amount"],
+                        "payment_mode": data.payment_mode,
+                        "is_igst": data.is_igst,
+                        "status": "paid" if calc["balance_amount"] <= 0 else "partial" if calc["paid_amount"] > 0 else "unpaid",
+                        "sale_type": data.sale_type,
+                        "notes": data.notes,
+                        "created_by": user_id,
+                        "created_by_name": user_name,
+                        "created_at": datetime.utcnow()
+                    }
 
-            sale_id = await self.sale_repo.create(sale_doc, session=session)
-            sale_doc["_id"] = sale_id
+                    sale_id = await self.sale_repo.create(sale_doc, session=session)
+                    sale_doc["_id"] = sale_id
 
-            # 5. Customer Ledger & Outstanding Balance
-            if data.customer_id:
-                balance_delta = calc["balance_amount"] if data.sale_type == "sale" else -calc["total_amount"]
-                new_bal = await self.customer_repo.update_balance(
-                    customer_id=data.customer_id,
-                    delta=balance_delta,
-                    session=session
-                )
-                await self.ledger_repo.record_entry(
-                    party_id=data.customer_id,
-                    party_type="customer",
-                    entry_type=data.sale_type,
-                    debit=calc["total_amount"] if data.sale_type == "sale" else 0.0,
-                    credit=0.0 if data.sale_type == "sale" else calc["total_amount"],
-                    balance_after=new_bal,
-                    reference_id=invoice_number,
-                    notes=f"Invoice #{invoice_number}",
-                    date=now,
-                    session=session
-                )
+                    # 5. Customer Ledger & Outstanding Balance
+                    if data.customer_id:
+                        balance_delta = calc["balance_amount"] if data.sale_type == "sale" else -calc["total_amount"]
+                        new_bal = await self.customer_repo.update_balance(
+                            customer_id=data.customer_id,
+                            delta=balance_delta,
+                            session=session
+                        )
+                        await self.ledger_repo.record_entry(
+                            party_id=data.customer_id,
+                            party_type="customer",
+                            entry_type=data.sale_type,
+                            debit=calc["total_amount"] if data.sale_type == "sale" else 0.0,
+                            credit=0.0 if data.sale_type == "sale" else calc["total_amount"],
+                            balance_after=new_bal,
+                            reference_id=invoice_number,
+                            notes=f"Invoice #{invoice_number}",
+                            date=now,
+                            session=session
+                        )
 
-                # If upfront payment was made
-                if calc["paid_amount"] > 0:
-                    await self.ledger_repo.record_entry(
-                        party_id=data.customer_id,
-                        party_type="customer",
-                        entry_type="payment_received",
-                        debit=0.0,
-                        credit=calc["paid_amount"],
-                        balance_after=new_bal,
-                        reference_id=invoice_number,
-                        notes=f"Payment for {invoice_number} via {data.payment_mode}",
-                        date=now,
-                        session=session
-                    )
+                        # If upfront payment was made
+                        if calc["paid_amount"] > 0:
+                            await self.ledger_repo.record_entry(
+                                party_id=data.customer_id,
+                                party_type="customer",
+                                entry_type="payment_received",
+                                debit=0.0,
+                                credit=calc["paid_amount"],
+                                balance_after=new_bal,
+                                reference_id=invoice_number,
+                                notes=f"Payment for {invoice_number} via {data.payment_mode}",
+                                date=now,
+                                session=session
+                            )
 
-            # 6. Payment Record
-            if calc["paid_amount"] > 0:
-                payment_doc = {
-                    "tenant_id": self.tenant_id,
-                    "party_id": data.customer_id,
-                    "party_name": customer_name,
-                    "party_type": "customer",
-                    "amount": calc["paid_amount"],
-                    "payment_mode": data.payment_mode,
-                    "payment_type": "received",
-                    "reference_type": "sale",
-                    "reference_id": invoice_number,
-                    "payment_date": now,
-                    "created_by": user_id,
-                    "created_at": datetime.utcnow()
-                }
-                await self.payment_repo.create(payment_doc, session=session)
+                    # 6. Payment Record
+                    if calc["paid_amount"] > 0:
+                        payment_doc = {
+                            "tenant_id": self.tenant_id,
+                            "party_id": data.customer_id,
+                            "party_name": customer_name,
+                            "party_type": "customer",
+                            "amount": calc["paid_amount"],
+                            "payment_mode": data.payment_mode,
+                            "payment_type": "received",
+                            "reference_type": "sale",
+                            "reference_id": invoice_number,
+                            "payment_date": now,
+                            "created_by": user_id,
+                            "created_at": datetime.utcnow()
+                        }
+                        await self.payment_repo.create(payment_doc, session=session)
 
-        res = serialize_doc(sale_doc)
-        res["message"] = "Sale created successfully"
-        res["id"] = str(sale_doc["_id"])
-        return res
+                res = serialize_doc(sale_doc)
+                res["message"] = "Sale created successfully"
+                res["id"] = str(sale_doc["_id"])
+                return res
+
+            except HTTPException:
+                raise
+            except OperationFailure as of:
+                is_transient = "TransientTransactionError" in of.details.get("errorLabels", []) if hasattr(of, "details") and of.details else False
+                if of.code == 112 or is_transient:
+                    if attempt < max_attempts - 1:
+                        await asyncio.sleep(random.uniform(0.02, 0.08) * (attempt + 1))
+                        continue
+                    raise HTTPException(status_code=409, detail="Stock updated concurrently, please retry transaction.")
+                raise
+            except Exception as e:
+                if "WriteConflict" in str(e) or "TransientTransactionError" in str(e):
+                    if attempt < max_attempts - 1:
+                        await asyncio.sleep(random.uniform(0.02, 0.08) * (attempt + 1))
+                        continue
+                    raise HTTPException(status_code=409, detail="Stock updated concurrently, please retry transaction.")
+                raise

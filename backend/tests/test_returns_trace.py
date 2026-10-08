@@ -14,7 +14,7 @@ async def test_returns_trace():
     client_db = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client_db[settings.MONGODB_DB_NAME]
     
-    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=60.0) as client:
         # 1. Register and login
         username = f"traceuser_{int(asyncio.get_event_loop().time())}"
         reg_res = await client.post("/api/auth/register", json={

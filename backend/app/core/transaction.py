@@ -34,8 +34,11 @@ class UnitOfWork:
         if self.session and self.in_transaction:
             try:
                 if exc_type is not None:
-                    await self.session.abort_transaction()
-                    logger.warning("MongoDB transaction aborted due to exception")
+                    try:
+                        await self.session.abort_transaction()
+                        logger.warning("MongoDB transaction aborted due to exception")
+                    except Exception as abort_err:
+                        logger.debug(f"Transaction abort handled: {abort_err}")
                 else:
                     await self.session.commit_transaction()
             except Exception as e:

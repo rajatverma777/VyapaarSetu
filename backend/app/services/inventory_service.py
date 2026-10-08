@@ -38,6 +38,13 @@ class InventoryService:
         prod_name = product.get("name", "Product")
         stock_before = product.get("current_stock", 0.0)
 
+        # Self-healing reconciliation: sync product current_stock if batch stock is higher
+        batches = await self.batch_repo.find({"product_id": str(product_id)}, session=session)
+        total_batch_stock = sum(b.get("current_stock", 0.0) for b in batches)
+        if total_batch_stock > stock_before:
+            await self.product_repo.update_by_id(product_id, {"current_stock": total_batch_stock}, session=session)
+            stock_before = total_batch_stock
+
         # 1. Atomic decrement on Product document
         success = await self.product_repo.atomic_decrement_stock(product_id, quantity, session=session)
         if not success:

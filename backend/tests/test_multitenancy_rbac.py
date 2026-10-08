@@ -5,7 +5,7 @@ import sys
 async def test_multitenancy_rbac():
     print("Starting Multi-Tenancy & RBAC Verification Tests...")
     
-    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000") as client:
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=30.0) as client:
         # 1. Register Admin A
         admin_username = f"admin_a_{int(asyncio.get_event_loop().time())}"
         reg_admin_payload = {

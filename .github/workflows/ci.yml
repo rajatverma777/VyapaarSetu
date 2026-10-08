@@ -67,7 +67,7 @@ jobs:
         run: |
           cd backend
           # Stop build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --exclude=venv --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Run Backend Tests (Unit, Service, & Integration)
         env:
@@ -76,7 +76,7 @@ jobs:
           SECRET_KEY: test_secret_key_for_ci_pipeline_only_32_chars
         run: |
           cd backend
-          pytest tests/ -o asyncio_mode=auto -v
+          PYTHONPATH=. pytest tests/ -o asyncio_mode=auto -v
 
   security-scan:
     name: Dependency & Security Verification
