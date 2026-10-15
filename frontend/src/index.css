@@ -3244,7 +3244,7 @@ input[type=number] {
   height: var(--navbar-height, 58px);
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
   padding: 0 18px;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.35);
@@ -3279,11 +3279,18 @@ input[type=number] {
 }
 
 /* ── Instagram / Facebook–Inspired Brand Wordmark & Dropdown (TopNavbar) ── */
+.app-brand-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .app-brand-btn {
   display: inline-flex;
   align-items: center;
   gap: 6.5px;
-  padding: 4px 6px;
+  padding: 6px 12px;
   background: transparent;
   border: none;
   outline: none;
@@ -3304,7 +3311,7 @@ input[type=number] {
 
 .app-brand-logo-text {
   font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 750;
   letter-spacing: -0.038em;
   line-height: 1;
@@ -3350,11 +3357,12 @@ input[type=number] {
 .brand-nav-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
-  width: 250px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 270px;
   padding: 6px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(40px) saturate(190%) brightness(1.05);
   -webkit-backdrop-filter: blur(40px) saturate(190%) brightness(1.05);
   border: 0.75px solid rgba(255, 255, 255, 0.90);
@@ -3363,8 +3371,19 @@ input[type=number] {
     0 4px 16px rgba(0, 0, 0, 0.08),
     0 16px 40px rgba(0, 0, 0, 0.12);
   z-index: 100;
-  animation: page-enter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  transform-origin: top left;
+  animation: brand-menu-enter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
+@keyframes brand-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
 }
 
 .dark .brand-nav-dropdown {
