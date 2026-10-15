@@ -32,8 +32,10 @@ def run_server():
         else:
             cmd = [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"]
 
+        log_path = os.path.join(backend_dir, "uvicorn_ci.log")
+        log_f = open(log_path, "w")
         try:
-            proc = subprocess.Popen(cmd, cwd=backend_dir, env=python_env)
+            proc = subprocess.Popen(cmd, cwd=backend_dir, env=python_env, stdout=log_f, stderr=subprocess.STDOUT)
         except Exception as e:
             print(f"[conftest] Failed to start uvicorn: {e}", file=sys.stderr)
             proc = None
@@ -42,7 +44,12 @@ def run_server():
         # Allow up to 45 seconds for CI runner to connect to MongoDB and build indexes
         while time.time() - start_time < 45:
             if proc and proc.poll() is not None:
-                print(f"[conftest] Uvicorn exited prematurely with exit code {proc.returncode}", file=sys.stderr)
+                log_f.flush()
+                try:
+                    with open(log_path, "r") as r:
+                        print(f"[conftest] Uvicorn exited prematurely ({proc.returncode}):\n{r.read()}", file=sys.stderr)
+                except Exception:
+                    pass
                 break
             if is_server_online():
                 print(f"[conftest] Backend server is healthy after {round(time.time() - start_time, 2)}s.")
@@ -58,6 +65,10 @@ def run_server():
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait()
+    try:
+        log_f.close()
+    except Exception:
+        pass
 
 @pytest.fixture(autouse=True)
 def skip_live_tests_if_offline(request):

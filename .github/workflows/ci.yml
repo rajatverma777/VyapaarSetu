@@ -71,7 +71,7 @@ jobs:
 
       - name: Verify MongoDB Readiness
         run: |
-          python -c "import time; from pymongo import MongoClient; client = MongoClient('mongodb://localhost:27017', serverSelectionTimeoutMS=2000); t0 = time.time()
+          python -c "import time; from pymongo import MongoClient; client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=2000); t0 = time.time()
           while time.time() - t0 < 30:
               try:
                   client.admin.command('ping')
@@ -85,7 +85,7 @@ jobs:
 
       - name: Run Backend Tests (Unit, Service, & Integration)
         env:
-          MONGODB_URL: mongodb://localhost:27017/test_db
+          MONGODB_URL: mongodb://127.0.0.1:27017/test_db
           MONGODB_DB_NAME: test_db
           SECRET_KEY: test_secret_key_for_ci_pipeline_only_32_chars
         run: |
