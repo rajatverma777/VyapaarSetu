@@ -4,7 +4,11 @@ import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useCommandPalette } from '../../context/CommandPaletteContext'
 import { FloatingUserMenu } from '../ui'
-import { Search, Sun, Moon, Menu, Command } from 'lucide-react'
+import {
+  Search, Sun, Moon, Menu, Command, ChevronDown,
+  LayoutDashboard, ShoppingCart, Package, Boxes, Users,
+  Truck, CreditCard, BarChart2, RotateCcw, ScanLine, FileText, Settings, Check
+} from 'lucide-react'
 import { healthAPI } from '../../services/api'
 
 const ROUTE_LABELS = {
@@ -25,6 +29,21 @@ const ROUTE_LABELS = {
   '/documents': 'Letterheads',
   '/documents/new': 'New Letterhead',
 }
+
+const NAV_MODULES = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/sales', label: 'Billing & Sales', icon: ShoppingCart },
+  { path: '/products', label: 'Products Catalog', icon: Package },
+  { path: '/inventory', label: 'Inventory & Stock', icon: Boxes },
+  { path: '/customers', label: 'Customers & Khata', icon: Users },
+  { path: '/suppliers', label: 'Suppliers & Vendors', icon: Truck },
+  { path: '/payments', label: 'Payments & Dues', icon: CreditCard },
+  { path: '/reports', label: 'GST & Reports', icon: BarChart2 },
+  { path: '/returns', label: 'Returns Center', icon: RotateCcw },
+  { path: '/traceability', label: 'Batch Traceability', icon: ScanLine },
+  { path: '/documents', label: 'Letterheads', icon: FileText },
+  { path: '/settings', label: 'Settings', icon: Settings },
+]
 
 function ThemeCycleBtn() {
   const { dark, toggle } = useTheme()
@@ -48,7 +67,32 @@ export default function TopNavbar({ visible = true }) {
   const [status, setStatus] = useState('connecting') // 'connecting' | 'online' | 'offline'
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState(null)
+  const [brandMenuOpen, setBrandMenuOpen] = useState(false)
   const avatarRef = useRef(null)
+  const brandRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (brandRef.current && !brandRef.current.contains(e.target)) {
+        setBrandMenuOpen(false)
+      }
+    }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setBrandMenuOpen(false)
+    }
+    if (brandMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [brandMenuOpen])
+
+  useEffect(() => {
+    setBrandMenuOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     let active = true
@@ -104,29 +148,65 @@ export default function TopNavbar({ visible = true }) {
   const currentLabel = ROUTE_LABELS[location.pathname]
     || (location.pathname.startsWith('/documents/') ? 'Letterhead Editor' : 'VyapaarSetu')
 
-  const isHidden = !visible && !menuOpen
+  const isHidden = !visible && !menuOpen && !brandMenuOpen
 
   return (
     <div className={`top-navbar no-print ${isHidden ? 'top-navbar--hidden' : ''}`}>
-      {/* Brand logo & Current section label — Apple Liquid Glass Capsule */}
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="glass-brand-pill focus:outline-none"
-        title="VyapaarSetu — Click to return to Dashboard"
-      >
-        <div className="glass-brand-icon" aria-hidden="true">
-          VS
-        </div>
-        <div className="flex items-center gap-1.5 pr-0.5">
-          <span className="glass-brand-title">
+      {/* Brand Wordmark & Dropdown — Inspired by Instagram & Facebook */}
+      <div className="app-brand-container" ref={brandRef}>
+        <button
+          type="button"
+          onClick={() => setBrandMenuOpen(prev => !prev)}
+          className="app-brand-btn group focus:outline-none"
+          title="VyapaarSetu — Switch section"
+          aria-expanded={brandMenuOpen}
+        >
+          <span className="app-brand-logo-text">
             VyapaarSetu
           </span>
-          <span className="glass-brand-divider" aria-hidden="true">/</span>
-          <span className="glass-brand-section">
-            {currentLabel}
-          </span>
-        </div>
-      </button>
+          <ChevronDown
+            size={14}
+            strokeWidth={2.4}
+            className={`app-brand-chevron ${brandMenuOpen ? 'app-brand-chevron--open' : ''}`}
+          />
+        </button>
+
+        {/* Apple Liquid Glass Quick Navigation Dropdown */}
+        {brandMenuOpen && (
+          <div className="brand-nav-dropdown">
+            <div className="brand-nav-dropdown-header">
+              <span className="brand-nav-dropdown-title">Switch Module</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{currentLabel}</span>
+            </div>
+            <div className="max-h-[380px] overflow-y-auto space-y-0.5 pr-0.5">
+              {NAV_MODULES.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path ||
+                  (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    onClick={() => {
+                      navigate(item.path)
+                      setBrandMenuOpen(false)
+                    }}
+                    className={`brand-nav-item ${isActive ? 'brand-nav-item--active' : ''}`}
+                  >
+                    <span className="brand-nav-item-icon">
+                      <Icon size={15} />
+                    </span>
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {isActive && (
+                      <Check size={14} className="text-[#0071e3] dark:text-[#5ac8fa] flex-shrink-0" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />
