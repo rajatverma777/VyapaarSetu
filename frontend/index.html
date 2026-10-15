@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
@@ -7,8 +7,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0c0e" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0b0c0e" id="app-theme-color" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          var isDark = saved ? saved === 'dark' : true;
+          var color = isDark ? '#0b0c0e' : '#f5f5f7';
+          var scheme = isDark ? 'dark' : 'light';
+          var root = document.documentElement;
+          if (isDark) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+          root.style.backgroundColor = color;
+          root.style.colorScheme = scheme;
+          var meta = document.getElementById('app-theme-color');
+          if (meta) meta.setAttribute('content', color);
+        } catch(e) {}
+      })();
+    </script>
     <title>Vyapaar Setu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

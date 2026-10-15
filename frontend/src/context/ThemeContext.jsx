@@ -9,6 +9,9 @@ export function ThemeProvider({ children }) {
   })
 
   useEffect(() => {
+    const themeColor = dark ? '#0b0c0e' : '#f5f5f7'
+    const scheme = dark ? 'dark' : 'light'
+
     if (dark) {
       document.documentElement.classList.add('dark')
       localStorage.setItem('theme', 'dark')
@@ -17,10 +20,14 @@ export function ThemeProvider({ children }) {
       localStorage.setItem('theme', 'light')
     }
 
-    // Sync status bar / browser chrome color with the active theme.
-    // This makes the area behind the notch/status bar on mobile match the app background,
-    // which is the key to the "Google-style" true edge-to-edge look.
-    const themeColor = dark ? '#0b0c0e' : '#f5f5f7'
+    document.documentElement.style.backgroundColor = themeColor
+    document.documentElement.style.colorScheme = scheme
+    if (document.body) {
+      document.body.style.backgroundColor = themeColor
+      document.body.style.colorScheme = scheme
+    }
+
+    // Sync status bar / browser chrome color with the active theme
     document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
       m.setAttribute('content', themeColor)
     })
