@@ -55,7 +55,7 @@ class SaleService:
                 customer_name = cust.get("name", customer_name)
 
         # 2. Transactional Execution with Concurrency Retry Handling
-        max_attempts = 10
+        max_attempts = 15
         for attempt in range(max_attempts):
             try:
                 async with UnitOfWork() as uow:
@@ -190,14 +190,14 @@ class SaleService:
                 is_transient = "TransientTransactionError" in of.details.get("errorLabels", []) if hasattr(of, "details") and of.details else False
                 if of.code == 112 or is_transient:
                     if attempt < max_attempts - 1:
-                        await asyncio.sleep(random.uniform(0.02, 0.08) * (attempt + 1))
+                        await asyncio.sleep(random.uniform(0.04, 0.12) * (attempt + 1))
                         continue
                     raise HTTPException(status_code=409, detail="Stock updated concurrently, please retry transaction.")
                 raise
             except Exception as e:
                 if "WriteConflict" in str(e) or "TransientTransactionError" in str(e):
                     if attempt < max_attempts - 1:
-                        await asyncio.sleep(random.uniform(0.02, 0.08) * (attempt + 1))
+                        await asyncio.sleep(random.uniform(0.04, 0.12) * (attempt + 1))
                         continue
                     raise HTTPException(status_code=409, detail="Stock updated concurrently, please retry transaction.")
                 raise
