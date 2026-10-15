@@ -5106,3 +5106,309 @@ input[type=number] {
 }
 .dark .cpc-recent-chip-name { color: #e5e7eb; }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOTTOM NAV — Apple Photos Liquid Glass Floating Navigation
+   Floating capsule + circular search button, fixed to viewport bottom
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper: positions capsule + search button as a centred group ── */
+.bottom-nav-wrapper {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 49;                 /* below command-palette (z-50) but above page */
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;        /* only children intercept events */
+}
+
+/* ── Main glass capsule ─────────────────────────────────────────────── */
+.bottom-nav-capsule {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 9999px;
+  width: clamp(280px, 56vw, 660px);
+  height: 70px;
+
+  /* Liquid Glass material — light mode */
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(40px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.08);
+
+  /* Borders & depth */
+  border: 0.75px solid rgba(255, 255, 255, 0.78);
+  box-shadow:
+    /* top specular rim */
+    inset 0 1px 0   rgba(255,255,255,0.92),
+    /* bottom rim — subtle dark */
+    inset 0 -0.5px 0 rgba(0,0,0,0.08),
+    /* outer glow / shadow */
+    0 2px 8px  rgba(0,0,0,0.06),
+    0 12px 40px rgba(0,0,0,0.14),
+    0 32px 64px rgba(0,0,0,0.08);
+
+  /* Smooth entry */
+  animation: bottomNavIn 320ms cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* dark mode capsule */
+.dark .bottom-nav-capsule {
+  background: rgba(28, 28, 32, 0.58);
+  backdrop-filter: blur(44px) saturate(200%) brightness(1.35);
+  -webkit-backdrop-filter: blur(44px) saturate(200%) brightness(1.35);
+  border-color: rgba(255,255,255,0.18);
+  box-shadow:
+    inset 0 0.75px 0  rgba(255,255,255,0.75),
+    inset 0 -0.5px 0  rgba(0,0,0,0.30),
+    0 2px 8px   rgba(0,0,0,0.25),
+    0 16px 48px rgba(0,0,0,0.55),
+    0 36px 72px rgba(0,0,0,0.35);
+}
+
+/* ── Individual nav tab ─────────────────────────────────────────────── */
+.bottom-nav-item {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 56px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 6px;
+  transition: transform 160ms ease-out, opacity 160ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.bottom-nav-item:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.94);
+}
+
+.bottom-nav-item:focus-visible {
+  outline: 2px solid rgba(99,102,241,0.7);
+  outline-offset: 2px;
+}
+
+/* ── Active blue-tinted pill (the highlight capsule) ─────────────────── */
+.bottom-nav-active-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  /* Blue-glass translucent tint — light mode */
+  background: rgba(0, 100, 240, 0.18);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 0.75px solid rgba(0,110,255,0.28);
+  box-shadow:
+    inset 0 1px 0  rgba(255,255,255,0.80),
+    inset 0 -0.5px 0 rgba(0,80,200,0.20),
+    0 2px 12px rgba(0,100,240,0.18),
+    0 4px 20px rgba(0,100,240,0.12);
+  animation: activePillIn 220ms cubic-bezier(0.34,1.56,0.64,1) both;
+  z-index: 0;
+}
+
+.dark .bottom-nav-active-pill {
+  background: rgba(10, 110, 255, 0.25);
+  border-color: rgba(80,160,255,0.35);
+  box-shadow:
+    inset 0 0.75px 0  rgba(255,255,255,0.70),
+    inset 0 -0.5px 0  rgba(0,60,180,0.35),
+    0 2px 14px rgba(30,120,255,0.30),
+    0 4px 24px rgba(0,90,240,0.22);
+}
+
+@keyframes activePillIn {
+  from { transform: scale(0.82); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ── Icon & label inside each tab ───────────────────────────────────── */
+.bottom-nav-icon {
+  position: relative;
+  z-index: 1;
+  color: #3c3c3e;
+  transition: color 160ms ease, transform 180ms cubic-bezier(0.34,1.56,0.64,1);
+  flex-shrink: 0;
+}
+
+.dark .bottom-nav-icon { color: rgba(245,245,247,0.72); }
+
+.bottom-nav-item--active .bottom-nav-icon {
+  color: #0057d9;
+  transform: translateY(-1px) scale(1.06);
+}
+
+.dark .bottom-nav-item--active .bottom-nav-icon {
+  color: #5ac8fa;
+}
+
+.bottom-nav-label {
+  position: relative;
+  z-index: 1;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #3c3c3e;
+  white-space: nowrap;
+  line-height: 1;
+  transition: color 160ms ease;
+  font-family: var(--font-sans);
+}
+
+.dark .bottom-nav-label { color: rgba(245,245,247,0.65); }
+
+.bottom-nav-item--active .bottom-nav-label {
+  color: #0057d9;
+  font-weight: 700;
+}
+
+.dark .bottom-nav-item--active .bottom-nav-label {
+  color: #5ac8fa;
+}
+
+/* ── Separate circular Search button ────────────────────────────────── */
+.bottom-nav-search-btn {
+  pointer-events: all;
+  position: relative;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 0.75px solid rgba(255,255,255,0.75);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  /* Liquid Glass material — light mode */
+  background: rgba(210, 210, 215, 0.42);
+  backdrop-filter: blur(40px) saturate(180%) brightness(1.06);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0   rgba(255,255,255,0.90),
+    inset 0 -0.5px 0 rgba(0,0,0,0.10),
+    0 4px 16px rgba(0,0,0,0.12),
+    0 16px 40px rgba(0,0,0,0.12);
+
+  color: #1c1c1e;
+  transition: transform 160ms cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 160ms ease,
+              background 160ms ease;
+
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  animation: bottomNavIn 320ms 40ms cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.dark .bottom-nav-search-btn {
+  background: rgba(50, 50, 56, 0.55);
+  border-color: rgba(255,255,255,0.20);
+  box-shadow:
+    inset 0 0.75px 0  rgba(255,255,255,0.72),
+    inset 0 -0.5px 0  rgba(0,0,0,0.35),
+    0 4px 16px rgba(0,0,0,0.35),
+    0 16px 48px rgba(0,0,0,0.45);
+  color: rgba(245,245,247,0.82);
+}
+
+.bottom-nav-search-btn:hover {
+  transform: scale(1.06) translateY(-1px);
+  background: rgba(230, 230, 235, 0.58);
+  box-shadow:
+    inset 0 1px 0   rgba(255,255,255,0.95),
+    inset 0 -0.5px 0 rgba(0,0,0,0.08),
+    0 6px 22px rgba(0,0,0,0.16),
+    0 20px 48px rgba(0,0,0,0.14);
+}
+
+.dark .bottom-nav-search-btn:hover {
+  background: rgba(68, 68, 76, 0.65);
+}
+
+.bottom-nav-search-btn:active {
+  transform: scale(0.92);
+}
+
+.bottom-nav-search-btn:focus-visible {
+  outline: 2px solid rgba(99,102,241,0.75);
+  outline-offset: 3px;
+}
+
+/* Sparkle accent — top-right of the search icon (matches screenshot) */
+.bottom-nav-sparkle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #5e5ce6;
+  opacity: 0.90;
+  pointer-events: none;
+}
+
+.dark .bottom-nav-sparkle {
+  color: #5ac8fa;
+  opacity: 0.85;
+}
+
+/* ── Entry animation ─────────────────────────────────────────────────── */
+@keyframes bottomNavIn {
+  from {
+    transform: translateY(24px) scale(0.94);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav-capsule,
+  .bottom-nav-search-btn,
+  .bottom-nav-item,
+  .bottom-nav-active-pill {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Responsive scaling ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .bottom-nav-capsule {
+    width: calc(100vw - 100px);
+    height: 62px;
+    gap: 0;
+    padding: 5px 6px;
+  }
+  .bottom-nav-item {
+    height: 50px;
+    padding: 0 4px;
+  }
+  .bottom-nav-label { font-size: 9.5px; }
+  .bottom-nav-icon  { width: 20px; height: 20px; }
+  .bottom-nav-search-btn { width: 62px; height: 62px; }
+  .bottom-nav-wrapper   { gap: 10px; }
+  .bottom-nav-sparkle   { top: 13px; right: 13px; }
+}
+
+/* ── Extra padding on page content so nav never covers it ────────────── */
+.bottom-nav-page-pad { padding-bottom: 100px !important; }

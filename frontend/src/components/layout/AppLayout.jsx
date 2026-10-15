@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopNavbar from './TopNavbar'
+import BottomNav from './BottomNav'
 import CommandPalette from '../ui/CommandPalette'
 import { Plus, ShoppingCart, ShoppingBag, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { healthAPI } from '../../services/api'
@@ -165,8 +166,8 @@ export default function AppLayout() {
           {/* TopNavbar inside glass panel */}
           <TopNavbar onMenuToggle={() => setMobileOpen(o => !o)} />
 
-          {/* Scrollable page content */}
-          <div className={`flex-1 min-h-0 ${isPosPage ? 'overflow-hidden p-2.5 lg:p-3 flex flex-col' : 'overflow-y-auto p-4 lg:p-6'}`}>
+          {/* Scrollable page content — extra bottom padding so BottomNav never covers content */}
+          <div className={`flex-1 min-h-0 ${isPosPage ? 'overflow-hidden p-2.5 lg:p-3 flex flex-col' : 'overflow-y-auto p-4 lg:p-6 pb-28 lg:pb-28'}`}>
             <div key={pageKey} className="page-transition-enter flex-1 flex flex-col min-h-0">
               <Outlet />
             </div>
@@ -177,6 +178,9 @@ export default function AppLayout() {
       {/* Global overlays */}
       <CommandPalette />
       <QuickActionFAB />
+
+      {/* Apple Photos-inspired floating bottom navigation */}
+      <BottomNav />
     </div>
   )
 }
