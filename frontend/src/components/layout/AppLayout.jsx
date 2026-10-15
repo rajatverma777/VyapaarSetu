@@ -40,36 +40,40 @@ export default function AppLayout() {
     const container = scrollContainerRef.current
     if (!container) return
 
-    let ticking = false
+    let lastY = container.scrollTop
+    let rafId = null
 
     const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentY = container.scrollTop
-          const delta = currentY - lastScrollY.current
+      if (rafId !== null) return
 
-          // Near top: always visible
-          if (currentY <= 30) {
-            setNavVisible(true)
-          } else if (Math.abs(delta) > 8) {
-            // Scrolling down (reading content) -> hide
-            // Scrolling up (returning to top) -> show
-            if (delta > 0) {
-              setNavVisible(false)
-            } else {
-              setNavVisible(true)
-            }
-          }
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null
+        const currentY = container.scrollTop
+        const delta = currentY - lastY
 
-          lastScrollY.current = currentY
-          ticking = false
-        })
-        ticking = true
-      }
+        // When near top: always show
+        if (currentY <= 20) {
+          setNavVisible(true)
+        } else if (delta > 4) {
+          // Scrolling down (reading content) -> hide
+          setNavVisible(false)
+        } else if (delta < -4) {
+          // Scrolling up (returning to top) -> show
+          setNavVisible(true)
+        }
+
+        lastY = currentY
+      })
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      if (rafId !== null) window.cancelAnimationFrame(rafId)
+      container.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [location.pathname])
 
   return (
@@ -82,10 +86,14 @@ export default function AppLayout() {
           {/* TopNavbar floating inside glass panel */}
           <TopNavbar visible={navVisible} />
 
-          {/* Scrollable page content — content scrolls underneath floating TopNavbar & BottomNav */}
+          {/* Scrollable page content — extra top padding prevents overlap with TopNavbar */}
           <div
             ref={scrollContainerRef}
-            className={`flex-1 min-h-0 h-full ${isPosPage ? 'overflow-hidden pt-[62px] p-2.5 lg:p-3 flex flex-col' : 'overflow-y-auto pt-[70px] p-4 lg:p-6 pb-28 lg:pb-28'}`}
+            className={`flex-1 min-h-0 h-full ${
+              isPosPage
+                ? 'overflow-hidden pt-[68px] px-3 lg:px-4 pb-3 flex flex-col'
+                : 'overflow-y-auto pt-[82px] lg:pt-[90px] px-4 lg:px-6 pb-28 lg:pb-32'
+            }`}
           >
             <div key={pageKey} className="page-transition-enter flex-1 flex flex-col min-h-0">
               <Outlet />
