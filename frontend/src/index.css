@@ -6239,3 +6239,300 @@ input[type=number] {
   .bnav-wrapper { gap: 10px; }
   .bnav-sheet   { width: calc(100vw - 24px); bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 78px); }
 }
+
+/* ── Apple macOS System Settings Layout ───────────────────────────── */
+.apple-settings-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 210px);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(36px) saturate(180%);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  border: 0.75px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 12px 36px -8px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  transition: all 200ms ease;
+}
+.dark .apple-settings-frame {
+  background: rgba(20, 21, 28, 0.65);
+  backdrop-filter: blur(40px) saturate(180%) brightness(1.15);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.15);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.35),
+    0 18px 48px -8px rgba(0, 0, 0, 0.65);
+}
+
+@media (min-width: 860px) {
+  .apple-settings-frame {
+    flex-direction: row;
+  }
+}
+
+.apple-settings-sidebar {
+  width: 100%;
+  border-bottom: 0.75px solid rgba(0, 0, 0, 0.06);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.015);
+  flex-shrink: 0;
+}
+.dark .apple-settings-sidebar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+@media (min-width: 860px) {
+  .apple-settings-sidebar {
+    width: 275px;
+    border-bottom: none;
+    border-right: 0.75px solid rgba(0, 0, 0, 0.06);
+  }
+  .dark .apple-settings-sidebar {
+    border-right-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (min-width: 1100px) {
+  .apple-settings-sidebar {
+    width: 295px;
+  }
+}
+
+/* Apple ID Profile Pill in Settings Sidebar */
+.apple-settings-id-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.035);
+  border: 0.75px solid rgba(0, 0, 0, 0.06);
+  transition: all 160ms ease;
+}
+.dark .apple-settings-id-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.20);
+}
+
+.apple-settings-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1c1c1e;
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dark .apple-settings-avatar {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.30);
+}
+
+/* Sidebar Search */
+.apple-settings-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 0.75px solid rgba(0, 0, 0, 0.08);
+  transition: all 140ms ease;
+}
+.dark .apple-settings-search-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.apple-settings-search-box:focus-within {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(0, 113, 227, 0.40);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+.dark .apple-settings-search-box:focus-within {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(10, 132, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.16);
+}
+
+.apple-settings-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #1c1c1e;
+  font-family: var(--font-sans);
+}
+.dark .apple-settings-search-input {
+  color: #f5f5f7;
+}
+.apple-settings-search-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Grouped Navigation List */
+.apple-settings-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.apple-settings-nav-group-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8e8e93;
+  padding: 4px 8px 2px;
+}
+.dark .apple-settings-nav-group-title {
+  color: rgba(245, 245, 247, 0.45);
+}
+
+.apple-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 0.75px solid transparent;
+  background: transparent;
+  color: #1c1c1e;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 130ms ease;
+  font-family: var(--font-sans);
+  width: 100%;
+}
+.dark .apple-settings-nav-item {
+  color: rgba(245, 245, 247, 0.85);
+}
+.apple-settings-nav-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #0f172a;
+}
+.dark .apple-settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.apple-settings-nav-item--active {
+  background: rgba(0, 113, 227, 0.12) !important;
+  border-color: rgba(0, 113, 227, 0.25) !important;
+  color: #0071e3 !important;
+  font-weight: 600;
+}
+.dark .apple-settings-nav-item--active {
+  background: rgba(10, 132, 255, 0.20) !important;
+  border-color: rgba(10, 132, 255, 0.35) !important;
+  color: #5ac8fa !important;
+}
+
+.apple-settings-nav-icon {
+  color: #64748b;
+  flex-shrink: 0;
+  transition: color 130ms ease;
+}
+.dark .apple-settings-nav-icon {
+  color: rgba(245, 245, 247, 0.65);
+}
+.apple-settings-nav-item:hover .apple-settings-nav-icon {
+  color: #0f172a;
+}
+.dark .apple-settings-nav-item:hover .apple-settings-nav-icon {
+  color: #ffffff;
+}
+.apple-settings-nav-item--active .apple-settings-nav-icon {
+  color: #0071e3 !important;
+}
+.dark .apple-settings-nav-item--active .apple-settings-nav-icon {
+  color: #5ac8fa !important;
+}
+
+/* Right Content Area */
+.apple-settings-content {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 22px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+@media (min-width: 860px) {
+  .apple-settings-content {
+    padding: 26px 32px 36px;
+  }
+}
+
+.apple-settings-header {
+  border-bottom: 0.75px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+}
+.dark .apple-settings-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.apple-settings-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1c1c1e;
+  line-height: 1.2;
+}
+.dark .apple-settings-title {
+  color: #ffffff;
+}
+
+.apple-settings-subtitle {
+  font-size: 13px;
+  font-weight: 450;
+  color: #8e8e93;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.dark .apple-settings-subtitle {
+  color: rgba(245, 245, 247, 0.55);
+}
+
+/* Apple Inset Grouped Settings Card */
+.apple-settings-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 0.75px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.80),
+    0 2px 10px rgba(0, 0, 0, 0.03);
+  padding: 20px 22px;
+  transition: all 180ms ease;
+}
+.dark .apple-settings-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.30);
+}

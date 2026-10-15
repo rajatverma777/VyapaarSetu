@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Settings, Building2, Users, Database, Key, Plus, Trash2, Sun, Moon, Palette, User, FileText, Copy, Check } from 'lucide-react'
+import {
+  Settings, Building2, Users, Database, Key, Plus, Trash2,
+  Sun, Moon, Palette, User, FileText, Copy, Check,
+  ChevronRight, Search, X
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import { settingsAPI, backupAPI, userAPI } from '../services/api'
 import { FormSkeleton, Modal, FormField } from '../components/ui'
@@ -8,7 +12,61 @@ import { useTheme } from '../context/ThemeContext'
 import { format } from 'date-fns'
 import { INDIAN_STATES } from '../services/constants'
 
-const TABS = ['profile', 'company', 'users', 'documents', 'appearance', 'backup', 'password']
+const SETTINGS_GROUPS = [
+  {
+    title: 'Account',
+    items: [
+      { id: 'profile',  label: 'Personal Profile',   hint: 'Name, email & contact',  icon: User },
+      { id: 'password', label: 'Password & Security', hint: 'Login credentials',       icon: Key },
+    ]
+  },
+  {
+    title: 'Organization',
+    items: [
+      { id: 'company',   label: 'Company Profile',    hint: 'GSTIN, bank & branding',  icon: Building2, permission: 'company' },
+      { id: 'users',     label: 'Users & Staff',      hint: 'Team access & roles',     icon: Users },
+      { id: 'documents', label: 'Invoice Documents',  hint: 'Numbering & watermark',   icon: FileText,  permission: 'documents' },
+    ]
+  },
+  {
+    title: 'System Preferences',
+    items: [
+      { id: 'appearance', label: 'Appearance',        hint: 'Light & dark theme',      icon: Palette },
+      { id: 'backup',     label: 'Database Backup',   hint: 'Exports & data safety',   icon: Database,  permission: 'backup' },
+    ]
+  }
+]
+
+const TAB_METADATA = {
+  profile: {
+    title: 'Personal Profile',
+    subtitle: 'Manage your personal account details, contact phone, and official email address.'
+  },
+  company: {
+    title: 'Company Settings',
+    subtitle: 'Manage registered business profile, GSTIN tax details, banking info, and invoice letterhead branding.'
+  },
+  users: {
+    title: 'Users & Staff Permissions',
+    subtitle: 'Invite team members with your company code and configure role-based access control.'
+  },
+  documents: {
+    title: 'Document Settings',
+    subtitle: 'Configure automated numbering sequences and watermark displays for printed letterhead documents.'
+  },
+  appearance: {
+    title: 'Appearance Settings',
+    subtitle: 'Customize the visual theme and liquid glass translucency of your workspace.'
+  },
+  backup: {
+    title: 'Database Backup & Restore',
+    subtitle: 'Generate on-demand database snapshots and download safe recovery archives.'
+  },
+  password: {
+    title: 'Password & Security',
+    subtitle: 'Update your authentication password and safeguard your enterprise account.'
+  }
+}
 
 const compressImage = (file, maxWidth, maxHeight, callback) => {
   const reader = new FileReader()
@@ -48,6 +106,7 @@ export default function SettingsPage() {
   const { user, isAdmin, updateUser } = useAuth()
   const { dark, toggle } = useTheme()
   const [tab, setTab]     = useState('profile')
+  const [sidebarSearch, setSidebarSearch] = useState('')
   const [loading, setLoading]  = useState(false)
   const [saving, setSaving]    = useState(false)
 
@@ -226,362 +285,510 @@ export default function SettingsPage() {
     finally { setPwSaving(false) }
   }
 
-  const tabIcons = { profile: User, company: Building2, users: Users, documents: FileText, appearance: Palette, backup: Database, password: Key }
   const setC = (k, v) => setCompany(c => ({ ...c, [k]: v }))
   const setU = (k, v) => setUserForm(f => ({ ...f, [k]: v }))
 
-  const visibleTabs = TABS.filter(t => {
-    if (t === 'company') return isAdmin || user?.permissions?.can_manage_settings
-    if (t === 'documents') return isAdmin || user?.permissions?.can_manage_settings
-    if (t === 'backup') return isAdmin
+  const isNavVisible = (item) => {
+    if (item.permission === 'company')   return isAdmin || user?.permissions?.can_manage_settings
+    if (item.permission === 'documents') return isAdmin || user?.permissions?.can_manage_settings
+    if (item.permission === 'backup')    return isAdmin
     return true
-  })
+  }
+
+  const q = sidebarSearch.trim().toLowerCase()
+  const filteredNavGroups = SETTINGS_GROUPS.map(group => {
+    const visibleItems = group.items
+      .filter(isNavVisible)
+      .filter(i => !q || i.label.toLowerCase().includes(q) || i.hint.toLowerCase().includes(q))
+    return { ...group, items: visibleItems }
+  }).filter(group => group.items.length > 0)
+
+  const activeMeta = TAB_METADATA[tab] || {
+    title: 'Settings',
+    subtitle: 'Manage and customize your system configuration.'
+  }
 
   return (
-    <div className="space-y-5">
-      <h1 className="page-title">Settings</h1>
+    <div className="space-y-4">
+      {/* macOS System Settings Split-View Window */}
+      <div className="apple-settings-frame">
 
-      <div className="glass-tab-track">
-        {visibleTabs.map(t => {
-          const Icon = tabIcons[t]
-          const isActive = tab === t
-          return (
-            <button
-              key={t}
-              onClick={() => {
-                setTab(t)
-              }}
-              className={`glass-tab-btn capitalize ${isActive ? 'active' : ''}`}
-            >
-              {isActive && (
-                <>
-                  <div className="glass-tab-active-pill" />
-                  <div className="glass-tab-active-shadow" />
-                </>
-              )}
-              <Icon size={14} className="relative z-10" />
-              <span className="relative z-10">{t}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Profile Tab */}
-      {tab === 'profile' && (
-        <div className="card p-6 max-w-md animate-fade-in">
-          <h2 className="section-title mb-5">Personal Profile Details</h2>
-          <div className="space-y-4">
-            <FormField label="Full Name" required>
-              <input 
-                type="text" 
-                className="input" 
-                value={profileForm.full_name} 
-                onChange={e => setProfileForm(f => ({ ...f, full_name: e.target.value }))} 
-              />
-            </FormField>
-            <FormField label="Email Address">
-              <input 
-                type="email" 
-                className="input" 
-                value={profileForm.email} 
-                onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} 
-              />
-            </FormField>
-            <FormField label="Mobile Number">
-              <input 
-                type="text" 
-                className="input" 
-                value={profileForm.mobile} 
-                onChange={e => setProfileForm(f => ({ ...f, mobile: e.target.value }))} 
-              />
-            </FormField>
-            <button onClick={saveProfile} disabled={profileSaving} className="btn-primary w-full justify-center">
-              {profileSaving ? 'Saving…' : 'Save Profile'}
-            </button>
+        {/* ── Left Sidebar ────────────────────────────────────────── */}
+        <aside className="apple-settings-sidebar">
+          {/* Apple ID User Pill */}
+          <div className="apple-settings-id-card">
+            <div className="apple-settings-avatar">
+              {user?.full_name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                {user?.full_name || 'My Account'}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="bnav-sheet-role-badge">
+                  {user?.role || 'Staff'}
+                </span>
+                {(user?.tenant_id || user?.company_code) && (
+                  <span className="bnav-sheet-tenant-pill">
+                    {user?.tenant_id || user?.company_code}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Quick Search inside settings */}
+          <div className="apple-settings-search-box">
+            <Search size={13} className="text-slate-400 flex-shrink-0" />
+            <input
+              type="text"
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              placeholder="Search settings…"
+              className="apple-settings-search-input"
+            />
+            {sidebarSearch && (
+              <button
+                type="button"
+                onClick={() => setSidebarSearch('')}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                aria-label="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Navigation Groups */}
+          <nav className="flex flex-col gap-4 overflow-y-auto">
+            {filteredNavGroups.map(group => (
+              <div key={group.title} className="apple-settings-nav-group">
+                <span className="apple-settings-nav-group-title">{group.title}</span>
+                <div className="flex flex-col gap-1">
+                  {group.items.map(item => {
+                    const Icon = item.icon
+                    const isActive = tab === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setTab(item.id)}
+                        className={`apple-settings-nav-item ${isActive ? 'apple-settings-nav-item--active' : ''}`}
+                      >
+                        <Icon size={16} strokeWidth={isActive ? 2.2 : 1.9} className="apple-settings-nav-icon" />
+                        <div className="flex-1 min-w-0">
+                          <span className="block truncate text-xs font-semibold leading-tight">{item.label}</span>
+                          <span className="block truncate text-[10.5px] text-slate-400 dark:text-slate-500 leading-tight mt-0.5">{item.hint}</span>
+                        </div>
+                        <ChevronRight size={13} className={`opacity-25 flex-shrink-0 transition-opacity ${isActive ? 'opacity-80 text-blue-500 dark:text-blue-400' : ''}`} />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        {/* ── Right Content Pane ──────────────────────────────────── */}
+        <section className="apple-settings-content">
+          {/* Section Header */}
+          <div className="apple-settings-header">
+            <h2 className="apple-settings-title">{activeMeta.title}</h2>
+            <p className="apple-settings-subtitle">{activeMeta.subtitle}</p>
+          </div>
+
+          {/* Profile Tab */}
+          {tab === 'profile' && (
+            <div className="space-y-5 animate-fade-in">
+              {/* Apple ID Hero Card */}
+              <div className="apple-settings-card flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-slate-200 to-slate-100 dark:from-white/10 dark:to-white/5 border border-black/10 dark:border-white/15 flex items-center justify-center text-xl font-extrabold text-slate-800 dark:text-white shadow-sm flex-shrink-0">
+                  {user?.full_name?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div className="flex-1 min-w-0 text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      {user?.full_name || 'My Account'}
+                    </h3>
+                    <span className="badge-blue text-[10px] font-bold uppercase tracking-wider">
+                      {user?.role || 'Staff'}
+                    </span>
+                    {(user?.tenant_id || user?.company_code) && (
+                      <span className="badge-gray text-[10px] font-mono">
+                        {user?.tenant_id || user?.company_code}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Vyapaar Setu Cloud Account · {user?.email || user?.username || 'Verified Business Account'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Profile Form Card */}
+              <div className="apple-settings-card">
+                <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3.5 mb-5">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Contact & Account Details</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    These details are used across invoice creation, purchase approvals, and system logs.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <FormField label="Full Name" required>
+                      <input 
+                        type="text" 
+                        className="input" 
+                        value={profileForm.full_name} 
+                        onChange={e => setProfileForm(f => ({ ...f, full_name: e.target.value }))} 
+                        placeholder="Enter full name"
+                      />
+                    </FormField>
+                  </div>
+
+                  <FormField label="Email Address">
+                    <input 
+                      type="email" 
+                      className="input" 
+                      value={profileForm.email} 
+                      onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} 
+                      placeholder="name@company.com"
+                    />
+                  </FormField>
+
+                  <FormField label="Mobile Number">
+                    <input 
+                      type="text" 
+                      className="input" 
+                      value={profileForm.mobile} 
+                      onChange={e => setProfileForm(f => ({ ...f, mobile: e.target.value }))} 
+                      placeholder="+91 9876543210"
+                    />
+                  </FormField>
+
+                  <div className="sm:col-span-2 border-t border-black/[0.06] dark:border-white/[0.08] pt-4 mt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-black/[0.02] dark:bg-white/[0.02] p-3.5 rounded-xl border border-black/[0.04] dark:border-white/[0.05]">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Role</span>
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 capitalize mt-0.5 block">{user?.role || 'Staff'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Company Code</span>
+                        <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{user?.tenant_id || user?.company_code || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-black/[0.06] dark:border-white/[0.08] pt-4 mt-6">
+                  <span className="text-xs text-slate-400">Profile changes take effect immediately.</span>
+                  <button onClick={saveProfile} disabled={profileSaving} className="btn-primary">
+                    {profileSaving ? 'Saving…' : 'Save Profile'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
       {/* Company Tab */}
       {tab === 'company' && (isAdmin || user?.permissions?.can_manage_settings) && (
         loading ? <FormSkeleton /> : (
-          <div className="card p-6">
-            <h2 className="section-title mb-5">Company Information</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <FormField label="Company Name" required>
-                  <input className="input" value={company.company_name} onChange={e => setC('company_name', e.target.value)} />
-                </FormField>
+          <div className="space-y-6 animate-fade-in">
+            {/* Identity & Legal Card */}
+            <div className="apple-settings-card">
+              <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Business Identity &amp; Tax</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Legal registered business name and government identifiers.</p>
               </div>
-              <FormField label="GSTIN">
-                <input 
-                  className="input font-mono" 
-                  value={company.gstin} 
-                  onChange={e => {
-                    const val = e.target.value.toUpperCase()
-                    const stateCode = val.slice(0, 2)
-                    const matchedState = INDIAN_STATES.find(s => s.code === stateCode)
-                    setCompany(prev => ({
-                      ...prev,
-                      gstin: val,
-                      state_code: stateCode.length === 2 && /^\d+$/.test(stateCode) ? stateCode : prev.state_code,
-                      state: matchedState ? matchedState.name : prev.state
-                    }))
-                  }} 
-                  placeholder="22AAAAA0000A1Z5" 
-                />
-              </FormField>
-
-              <FormField label="Drug License No.">
-                <input className="input font-mono" value={company.drug_license} onChange={e => setC('drug_license', e.target.value)} placeholder="MH-MUM-123456" />
-              </FormField>
-
-              <FormField label="Mobile">
-                <input className="input" value={company.mobile} onChange={e => setC('mobile', e.target.value)} />
-              </FormField>
-              <FormField label="Email">
-                <input type="email" className="input" value={company.email} onChange={e => setC('email', e.target.value)} />
-              </FormField>
-              <FormField label="Website">
-                <input className="input" value={company.website} onChange={e => setC('website', e.target.value)} />
-              </FormField>
-              <FormField label="Invoice Prefix">
-                <input className="input" value={company.invoice_prefix} onChange={e => setC('invoice_prefix', e.target.value)} />
-              </FormField>
-              <FormField label="Document Prefix">
-                <input className="input" placeholder="DOC" value={company.document_prefix} onChange={e => setC('document_prefix', e.target.value)} />
-              </FormField>
-              <div className="sm:col-span-2">
-                <FormField label="Address">
-                  <textarea className="input" rows={2} value={company.address} onChange={e => setC('address', e.target.value)} />
-                </FormField>
-              </div>
-              <div className="sm:col-span-2">
-                <div className="grid grid-cols-3 gap-3">
-                  <FormField label="City"><input className="input" value={company.city} onChange={e => setC('city', e.target.value)} /></FormField>
-                  <FormField label="State">
-                    <select 
-                      className="select" 
-                      value={company.state} 
-                      onChange={e => {
-                        const stateName = e.target.value
-                        const matched = INDIAN_STATES.find(s => s.name === stateName)
-                        setCompany(prev => {
-                          let updatedGstin = prev.gstin || ''
-                          if (matched && (!prev.gstin || /^\d{2}$/.test(prev.gstin.slice(0, 2)) || prev.gstin.length < 2)) {
-                            updatedGstin = matched.code + updatedGstin.slice(2)
-                          }
-                          return {
-                            ...prev,
-                            state: stateName,
-                            state_code: matched ? matched.code : prev.state_code,
-                            gstin: updatedGstin
-                          }
-                        })
-                      }}
-                    >
-                      <option value="">Select State</option>
-                      {INDIAN_STATES.map(s => (
-                        <option key={s.code + '-' + s.name} value={s.name}>{s.name}</option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <FormField label="State Code">
-                    <input 
-                      className="input font-mono opacity-60 cursor-not-allowed bg-gray-50/10 dark:bg-gray-800/10" 
-                      value={company.state_code} 
-                      disabled 
-                      readOnly 
-                      placeholder="09" 
-                    />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <FormField label="Company Name" required>
+                    <input className="input" value={company.company_name} onChange={e => setC('company_name', e.target.value)} />
                   </FormField>
                 </div>
-              </div>
+                <FormField label="GSTIN">
+                  <input 
+                    className="input font-mono" 
+                    value={company.gstin} 
+                    onChange={e => {
+                      const val = e.target.value.toUpperCase()
+                      const stateCode = val.slice(0, 2)
+                      const matchedState = INDIAN_STATES.find(s => s.code === stateCode)
+                      setCompany(prev => ({
+                        ...prev,
+                        gstin: val,
+                        state_code: stateCode.length === 2 && /^\d+$/.test(stateCode) ? stateCode : prev.state_code,
+                        state: matchedState ? matchedState.name : prev.state
+                      }))
+                    }} 
+                    placeholder="22AAAAA0000A1Z5" 
+                  />
+                </FormField>
 
-              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Bank Details (for Invoice)</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <FormField label="Bank Name"><input className="input" value={company.bank_name} onChange={e => setC('bank_name', e.target.value)} /></FormField>
-                  <FormField label="Account No."><input className="input font-mono" value={company.bank_account} onChange={e => setC('bank_account', e.target.value)} /></FormField>
-                  <FormField label="IFSC Code"><input className="input font-mono" value={company.bank_ifsc} onChange={e => setC('bank_ifsc', e.target.value.toUpperCase())} /></FormField>
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <FormField label="Invoice Terms">
-                  <textarea className="input" rows={2} value={company.invoice_terms} onChange={e => setC('invoice_terms', e.target.value)} placeholder="e.g. Goods once sold will not be taken back." />
+                <FormField label="Drug License No.">
+                  <input className="input font-mono" value={company.drug_license} onChange={e => setC('drug_license', e.target.value)} placeholder="MH-MUM-123456" />
+                </FormField>
+
+                <FormField label="Invoice Prefix">
+                  <input className="input" value={company.invoice_prefix} onChange={e => setC('invoice_prefix', e.target.value)} />
+                </FormField>
+
+                <FormField label="Document Prefix">
+                  <input className="input" placeholder="DOC" value={company.document_prefix} onChange={e => setC('document_prefix', e.target.value)} />
                 </FormField>
               </div>
-              <div className="sm:col-span-2">
-                <FormField label="Invoice Footer">
-                  <input className="input" value={company.invoice_footer} onChange={e => setC('invoice_footer', e.target.value)} placeholder="e.g. Thank you for your business!" />
+            </div>
+
+            {/* Contact & Location Card */}
+            <div className="apple-settings-card">
+              <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Contact &amp; Physical Location</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Customer contact numbers and business premises address.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Mobile">
+                  <input className="input" value={company.mobile} onChange={e => setC('mobile', e.target.value)} />
                 </FormField>
-              </div>
-
-              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Invoice Branding</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Logo Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
-                    <label className="text-xs font-semibold text-gray-500 mb-2">Company Logo (Header)</label>
-                    {company.logo_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
-                        <img src={company.logo_base64} alt="Company Logo" className="max-w-full max-h-full object-contain" />
-                        <button
-                          onClick={() => setC('logo_base64', '')}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-400">
-                        <Building2 size={32} />
-                      </div>
-                    )}
-                    <label className="btn-secondary text-xs cursor-pointer">
-                      Upload Logo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files[0]
-                          if (file) {
-                            compressImage(file, 400, 400, (base64) => {
-                              setC('logo_base64', base64)
-                            })
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Watermark Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
-                    <label className="text-xs font-semibold text-gray-500 mb-2">Invoice Watermark (Background)</label>
-                    {company.watermark_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
-                        <img src={company.watermark_base64} alt="Invoice Watermark" className="max-w-full max-h-full object-contain opacity-50" />
-                        <button
-                          onClick={() => setC('watermark_base64', '')}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-400">
-                        <Palette size={32} />
-                      </div>
-                    )}
-                    <label className="btn-secondary text-xs cursor-pointer">
-                      Upload Watermark
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files[0]
-                          if (file) {
-                            compressImage(file, 800, 800, (base64) => {
-                              setC('watermark_base64', base64)
-                            })
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
+                <FormField label="Email">
+                  <input type="email" className="input" value={company.email} onChange={e => setC('email', e.target.value)} />
+                </FormField>
+                <div className="sm:col-span-2">
+                  <FormField label="Website">
+                    <input className="input" value={company.website} onChange={e => setC('website', e.target.value)} />
+                  </FormField>
                 </div>
-              </div>
-
-              {/* Digital Signature & Seal */}
-              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4 mt-2">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Digital Signature &amp; Company Seal
-                </h3>
-                <p className="text-xs text-gray-400 mb-4">
-                  Signature appears on printed invoices and letterhead documents. Use a transparent PNG for best results.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Signature Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
-                    <label className="text-xs font-semibold text-gray-500 mb-2">Digital Signature</label>
-                    {company.signature_base64 ? (
-                      <div className="relative group mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center p-2" style={{ minHeight: '80px', maxHeight: '90px' }}>
-                        <img
-                          src={company.signature_base64}
-                          alt="Digital Signature"
-                          style={{ maxHeight: '80px', maxWidth: '200px', objectFit: 'contain' }}
-                        />
-                        <button
-                          onClick={() => setC('signature_base64', '')}
-                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-full mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-300 dark:text-gray-600" style={{ height: '80px' }}>
-                        <span className="text-xs">No signature uploaded</span>
-                      </div>
-                    )}
-                    <label className="btn-secondary text-xs cursor-pointer">
-                      Upload Signature
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files[0]
-                          if (!file) return
-                          if (file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed')
-                          compressImage(file, 600, 200, (base64) => setC('signature_base64', base64))
+                <div className="sm:col-span-2">
+                  <FormField label="Address">
+                    <textarea className="input" rows={2} value={company.address} onChange={e => setC('address', e.target.value)} />
+                  </FormField>
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <FormField label="City"><input className="input" value={company.city} onChange={e => setC('city', e.target.value)} /></FormField>
+                    <FormField label="State">
+                      <select 
+                        className="select" 
+                        value={company.state} 
+                        onChange={e => {
+                          const stateName = e.target.value
+                          const matched = INDIAN_STATES.find(s => s.name === stateName)
+                          setCompany(prev => {
+                            let updatedGstin = prev.gstin || ''
+                            if (matched && (!prev.gstin || /^\d{2}$/.test(prev.gstin.slice(0, 2)) || prev.gstin.length < 2)) {
+                              updatedGstin = matched.code + updatedGstin.slice(2)
+                            }
+                            return {
+                              ...prev,
+                              state: stateName,
+                              state_code: matched ? matched.code : prev.state_code,
+                              gstin: updatedGstin
+                            }
+                          })
                         }}
+                      >
+                        <option value="">Select State</option>
+                        {INDIAN_STATES.map(s => (
+                          <option key={s.code + '-' + s.name} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField label="State Code">
+                      <input 
+                        className="input font-mono opacity-60 cursor-not-allowed bg-gray-50/10 dark:bg-gray-800/10" 
+                        value={company.state_code} 
+                        disabled 
+                        readOnly 
+                        placeholder="09" 
                       />
-                    </label>
-                    <p className="text-[10px] text-gray-400 mt-1.5 text-center">PNG (transparent) recommended · Max 2MB</p>
-                  </div>
-
-                  {/* Seal Upload */}
-                  <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
-                    <label className="text-xs font-semibold text-gray-500 mb-2">Company Seal (Optional)</label>
-                    {company.seal_base64 ? (
-                      <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
-                        <img src={company.seal_base64} alt="Company Seal" className="max-w-full max-h-full object-contain" />
-                        <button
-                          onClick={() => setC('seal_base64', '')}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-300 dark:text-gray-600">
-                        <span className="text-[10px] text-center px-2">No seal</span>
-                      </div>
-                    )}
-                    <label className="btn-secondary text-xs cursor-pointer">
-                      Upload Seal
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files[0]
-                          if (!file) return
-                          if (file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed')
-                          compressImage(file, 400, 400, (base64) => setC('seal_base64', base64))
-                        }}
-                      />
-                    </label>
-                    <p className="text-[10px] text-gray-400 mt-1.5 text-center">PNG · Max 2MB · Round seal works best</p>
+                    </FormField>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex justify-end mt-5">
+
+            {/* Bank Details & Terms Card */}
+            <div className="apple-settings-card">
+              <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Bank Account &amp; Terms</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Direct settlement payment details and invoice policies.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <FormField label="Bank Name"><input className="input" value={company.bank_name} onChange={e => setC('bank_name', e.target.value)} /></FormField>
+                <FormField label="Account No."><input className="input font-mono" value={company.bank_account} onChange={e => setC('bank_account', e.target.value)} /></FormField>
+                <FormField label="IFSC Code"><input className="input font-mono" value={company.bank_ifsc} onChange={e => setC('bank_ifsc', e.target.value.toUpperCase())} /></FormField>
+              </div>
+              <div className="space-y-4">
+                <FormField label="Invoice Terms">
+                  <textarea className="input" rows={2} value={company.invoice_terms} onChange={e => setC('invoice_terms', e.target.value)} placeholder="e.g. Goods once sold will not be taken back." />
+                </FormField>
+                <FormField label="Invoice Footer">
+                  <input className="input" value={company.invoice_footer} onChange={e => setC('invoice_footer', e.target.value)} placeholder="e.g. Thank you for your business!" />
+                </FormField>
+              </div>
+            </div>
+
+            {/* Invoice Branding & Signatures Card */}
+            <div className="apple-settings-card">
+              <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Branding, Watermark &amp; Signatures</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Visual branding assets printed on tax invoices and receipts.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Logo Upload */}
+                <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
+                  <label className="text-xs font-semibold text-gray-500 mb-2">Company Logo (Header)</label>
+                  {company.logo_base64 ? (
+                    <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
+                      <img src={company.logo_base64} alt="Company Logo" className="max-w-full max-h-full object-contain" />
+                      <button
+                        onClick={() => setC('logo_base64', '')}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-400">
+                      <Building2 size={32} />
+                    </div>
+                  )}
+                  <label className="btn-secondary text-xs cursor-pointer">
+                    Upload Logo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                          compressImage(file, 400, 400, (base64) => {
+                            setC('logo_base64', base64)
+                          })
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Watermark Upload */}
+                <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
+                  <label className="text-xs font-semibold text-gray-500 mb-2">Invoice Watermark (Background)</label>
+                  {company.watermark_base64 ? (
+                    <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
+                      <img src={company.watermark_base64} alt="Invoice Watermark" className="max-w-full max-h-full object-contain opacity-50" />
+                      <button
+                        onClick={() => setC('watermark_base64', '')}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-400">
+                      <Palette size={32} />
+                    </div>
+                  )}
+                  <label className="btn-secondary text-xs cursor-pointer">
+                    Upload Watermark
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                          compressImage(file, 800, 800, (base64) => {
+                            setC('watermark_base64', base64)
+                          })
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Signature Upload */}
+                <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
+                  <label className="text-xs font-semibold text-gray-500 mb-2">Digital Signature</label>
+                  {company.signature_base64 ? (
+                    <div className="relative group mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center p-2" style={{ minHeight: '80px', maxHeight: '90px' }}>
+                      <img
+                        src={company.signature_base64}
+                        alt="Digital Signature"
+                        style={{ maxHeight: '80px', maxWidth: '200px', objectFit: 'contain' }}
+                      />
+                      <button
+                        onClick={() => setC('signature_base64', '')}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-full mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-300 dark:text-gray-600" style={{ height: '80px' }}>
+                      <span className="text-xs">No signature uploaded</span>
+                    </div>
+                  )}
+                  <label className="btn-secondary text-xs cursor-pointer">
+                    Upload Signature
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (!file) return
+                        if (file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed')
+                        compressImage(file, 600, 200, (base64) => setC('signature_base64', base64))
+                      }}
+                    />
+                  </label>
+                  <p className="text-[10px] text-gray-400 mt-1.5 text-center">PNG (transparent) recommended · Max 2MB</p>
+                </div>
+
+                {/* Seal Upload */}
+                <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-300 dark:border-white/15 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03]">
+                  <label className="text-xs font-semibold text-gray-500 mb-2">Company Seal (Optional)</label>
+                  {company.seal_base64 ? (
+                    <div className="relative group w-24 h-24 mb-3 rounded-xl overflow-hidden border border-black/[0.06] dark:border-white/10 bg-white dark:bg-white/[0.05] flex items-center justify-center">
+                      <img src={company.seal_base64} alt="Company Seal" className="max-w-full max-h-full object-contain" />
+                      <button
+                        onClick={() => setC('seal_base64', '')}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 mb-3 border border-black/[0.06] dark:border-white/10 rounded-xl bg-white dark:bg-white/[0.05] flex items-center justify-center text-gray-300 dark:text-gray-600">
+                      <span className="text-[10px] text-center px-2">No seal</span>
+                    </div>
+                  )}
+                  <label className="btn-secondary text-xs cursor-pointer">
+                    Upload Seal
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (!file) return
+                        if (file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed')
+                        compressImage(file, 400, 400, (base64) => setC('seal_base64', base64))
+                      }}
+                    />
+                  </label>
+                  <p className="text-[10px] text-gray-400 mt-1.5 text-center">PNG · Max 2MB · Round seal works best</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs text-slate-400">Settings are synced across your business workspace.</span>
               <button onClick={saveCompany} disabled={saving} className="btn-primary">
-                {saving ? 'Saving…' : 'Save Settings'}
+                {saving ? 'Saving…' : 'Save Company Settings'}
               </button>
             </div>
           </div>
@@ -590,11 +797,13 @@ export default function SettingsPage() {
 
       {/* Documents Settings Tab */}
       {tab === 'documents' && (isAdmin || user?.permissions?.can_manage_settings) && (
-        <div className="card p-6 max-w-lg animate-fade-in">
-          <h2 className="section-title mb-2">Document Settings</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-            Configure how company letterhead documents are generated.
-          </p>
+        <div className="apple-settings-card max-w-2xl animate-fade-in space-y-5">
+          <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Document Generation</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Configure how company letterhead and official documents are generated.
+            </p>
+          </div>
           <div className="space-y-4">
             <FormField label="Document Reference Prefix">
               <input
@@ -603,16 +812,17 @@ export default function SettingsPage() {
                 value={company.document_prefix}
                 onChange={e => setC('document_prefix', e.target.value.toUpperCase())}
               />
-              <p className="text-[10px] text-gray-400 mt-1">
-                Documents will be numbered as: {company.document_prefix || 'DOC'}-2026-00001
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5">
+                Preview format: <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{company.document_prefix || 'DOC'}-2026-00001</span>
               </p>
             </FormField>
-            <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl border border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+            <label className="flex items-center justify-between cursor-pointer p-3.5 rounded-xl border border-black/[0.06] dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
               <div>
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Enable Watermark on Documents</p>
-                <p className="text-xs text-gray-400 mt-0.5">Company logo appears as a faint watermark behind content</p>
+                <p className="text-xs text-gray-400 mt-0.5">Company logo appears as a faint watermark behind document body</p>
               </div>
               <button
+                type="button"
                 role="switch"
                 aria-checked={!!company.watermark_enabled}
                 onClick={() => setC('watermark_enabled', !company.watermark_enabled)}
@@ -626,7 +836,7 @@ export default function SettingsPage() {
                 />
               </button>
             </label>
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
               <button onClick={saveCompany} disabled={saving} className="btn-primary">
                 {saving ? 'Saving…' : 'Save Document Settings'}
               </button>
@@ -637,7 +847,7 @@ export default function SettingsPage() {
 
       {/* Users Tab */}
       {tab === 'users' && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           {/* Prominent Company Code Box */}
           {isAdmin && (
             <div className="apple-callout-card p-4.5 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -755,26 +965,35 @@ export default function SettingsPage() {
 
       {/* Backup Tab */}
       {tab === 'backup' && isAdmin && (
-        <div className="space-y-4">
-          <div className="card p-5">
-            <h2 className="section-title mb-3">Database Backup</h2>
-            <p className="text-sm text-gray-500 mb-4">Create a full backup of all your data including products, customers, sales, and more.</p>
-            <button onClick={createBackup} disabled={backupLoading} className="btn-primary">
-              <Database size={15} />{backupLoading ? 'Creating backup…' : 'Create Backup Now'}
-            </button>
+        <div className="space-y-5 animate-fade-in">
+          <div className="apple-settings-card">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Database Snapshot Backup</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Generate an instant full backup of all your data (products, sales, customers, ledger, company settings).
+                </p>
+              </div>
+              <button onClick={createBackup} disabled={backupLoading} className="btn-primary flex-shrink-0">
+                <Database size={15} />{backupLoading ? 'Creating backup…' : 'Create Backup Now'}
+              </button>
+            </div>
           </div>
-          <div className="card">
-            <div className="card-header"><h2 className="section-title">Available Backups</h2></div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="apple-settings-card">
+            <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Available Backups</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Saved database snapshots available for download.</p>
+            </div>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {backups.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No backups yet</div>
+                <div className="p-8 text-center text-gray-400 text-xs">No backups available yet. Click &quot;Create Backup Now&quot; above.</div>
               ) : backups.map(b => (
-                <div key={b.filename} className="px-5 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{b.filename}</p>
-                    <p className="text-xs text-gray-500">{format(new Date(b.created), 'dd/MM/yyyy HH:mm')} · {(b.size / 1024).toFixed(1)} KB</p>
+                <div key={b.filename} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{b.filename}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{format(new Date(b.created), 'dd/MM/yyyy HH:mm')} · {(b.size / 1024).toFixed(1)} KB</p>
                   </div>
-                  <a href={b.url} download className="btn-secondary text-xs">Download</a>
+                  <a href={b.url} download className="btn-secondary text-xs flex-shrink-0">Download</a>
                 </div>
               ))}
             </div>
@@ -784,51 +1003,70 @@ export default function SettingsPage() {
 
       {/* Password Tab */}
       {tab === 'password' && (
-        <div className="card p-6 max-w-md">
-          <h2 className="section-title mb-5">Change Password</h2>
+        <div className="apple-settings-card max-w-xl animate-fade-in">
+          <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-5">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Account Password</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Change your password to keep your Vyapaar Setu account secure.
+            </p>
+          </div>
           <div className="space-y-4">
             <FormField label="Current Password" required>
-              <input type="password" className="input" value={pwForm.old_password} onChange={e => setPwForm(f => ({ ...f, old_password: e.target.value }))} />
+              <input type="password" className="input" value={pwForm.old_password} onChange={e => setPwForm(f => ({ ...f, old_password: e.target.value }))} placeholder="Enter your current password" />
             </FormField>
             <FormField label="New Password" required>
-              <input type="password" className="input" value={pwForm.new_password} onChange={e => setPwForm(f => ({ ...f, new_password: e.target.value }))} />
+              <input type="password" className="input" value={pwForm.new_password} onChange={e => setPwForm(f => ({ ...f, new_password: e.target.value }))} placeholder="Enter new strong password" />
             </FormField>
             <FormField label="Confirm New Password" required>
-              <input type="password" className="input" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} />
+              <input type="password" className="input" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} placeholder="Re-type new password" />
             </FormField>
-            <button onClick={changePassword} disabled={pwSaving} className="btn-primary w-full justify-center">
-              {pwSaving ? 'Updating…' : 'Update Password'}
-            </button>
+            
+            <div className="p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.06] text-xs text-slate-500 dark:text-slate-400 space-y-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-300 block">Password Requirements:</span>
+              <ul className="list-disc pl-4 space-y-0.5 text-[11.5px]">
+                <li>At least 6 characters long</li>
+                <li>Include a mix of letters, numbers, and symbols for best security</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
+              <button onClick={changePassword} disabled={pwSaving} className="btn-primary">
+                {pwSaving ? 'Updating…' : 'Update Password'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Appearance Tab */}
       {tab === 'appearance' && (
-        <div className="card p-6">
-          <h2 className="section-title mb-3">Appearance Settings</h2>
-          <p className="text-sm text-gray-500 mb-6">Customize the interface theme of your Vyapaar Setu system.</p>
+        <div className="apple-settings-card max-w-2xl animate-fade-in">
+          <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-5">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Interface Theme</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Select your preferred appearance for the Vyapaar Setu ERP workspace.
+            </p>
+          </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Light Mode Option */}
             <div 
               onClick={() => { if (dark) toggle() }}
-              className={`cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-4 transition-all duration-200 hover:scale-[1.02] ${
+              className={`cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-4 transition-all duration-200 hover:scale-[1.01] ${
                 !dark 
-                  ? 'border-[#0071e3] bg-white/90 dark:bg-white/10 shadow-md ring-1 ring-[#0071e3]/20' 
-                  : 'border-transparent bg-white/20 dark:bg-white/5 opacity-70 hover:opacity-100'
+                  ? 'border-[#0071e3] bg-white dark:bg-white/10 shadow-md ring-2 ring-[#0071e3]/20' 
+                  : 'border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] opacity-75 hover:opacity-100'
               }`}
             >
-              <div className="w-full aspect-video rounded-xl bg-gray-50 border border-gray-250 flex items-center justify-center relative overflow-hidden shadow-sm">
-                {/* Light Mode Mockup */}
-                <div className="absolute top-2 left-2 right-2 h-3 bg-white border-b border-gray-250 rounded-sm flex items-center px-1 gap-1">
+              <div className="w-full aspect-video rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative overflow-hidden shadow-sm">
+                <div className="absolute top-2 left-2 right-2 h-3 bg-white border-b border-slate-250 rounded-sm flex items-center px-1 gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
                 </div>
                 <div className="flex flex-col items-center gap-1.5 mt-2">
                   <Sun className="text-amber-500" size={24} />
-                  <span className="text-[10px] font-bold text-gray-700">Light Mode</span>
+                  <span className="text-[10px] font-bold text-slate-700">Light Mode</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -838,21 +1076,20 @@ export default function SettingsPage() {
                   onChange={() => { if (dark) toggle() }}
                   className="accent-[#0071e3] cursor-pointer" 
                 />
-                <span className="text-sm font-semibold text-gray-950 dark:text-white">Light Theme</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white">Light Mode</span>
               </div>
             </div>
 
             {/* Dark Mode Option */}
             <div 
               onClick={() => { if (!dark) toggle() }}
-              className={`cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-4 transition-all duration-200 hover:scale-[1.02] ${
+              className={`cursor-pointer rounded-2xl border-2 p-4 flex flex-col items-center gap-4 transition-all duration-200 hover:scale-[1.01] ${
                 dark 
-                  ? 'border-[#0a84ff] bg-white/90 dark:bg-white/10 shadow-md ring-1 ring-[#0a84ff]/25' 
-                  : 'border-transparent bg-white/20 dark:bg-white/5 opacity-70 hover:opacity-100'
+                  ? 'border-[#0a84ff] bg-white dark:bg-white/10 shadow-md ring-2 ring-[#0a84ff]/25' 
+                  : 'border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] opacity-75 hover:opacity-100'
               }`}
             >
               <div className="w-full aspect-video rounded-xl bg-[#0b101d] border border-gray-800 flex items-center justify-center relative overflow-hidden shadow-sm">
-                {/* Dark Mode Mockup */}
                 <div className="absolute top-2 left-2 right-2 h-3 bg-[#0d1527] border-b border-white/5 rounded-sm flex items-center px-1 gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
                   <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
@@ -870,12 +1107,15 @@ export default function SettingsPage() {
                   onChange={() => { if (!dark) toggle() }}
                   className="accent-[#0a84ff] cursor-pointer" 
                 />
-                <span className="text-sm font-semibold text-gray-950 dark:text-white">Dark Theme</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white">Dark Mode</span>
               </div>
             </div>
           </div>
         </div>
       )}
+
+        </section>
+      </div>
 
       <Modal open={showUserForm} onClose={() => setShowUserForm(false)} title="Add User" size="md"
         footer={<>
