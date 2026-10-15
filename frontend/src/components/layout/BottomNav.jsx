@@ -9,7 +9,7 @@ import {
   Search, Sparkles, Plus, X, User,
   Users, Truck, ShoppingBag, CreditCard,
   BarChart3, RotateCcw, Activity, FileText, Settings,
-  ShoppingCart, Zap, Sun, Moon, LogOut, ChevronUp, ChevronRight
+  ShoppingCart, Zap, Sun, Moon, LogOut, ChevronUp
 } from 'lucide-react'
 
 // ── Primary 5 tabs always in the capsule ────────────────────────────
@@ -25,30 +25,30 @@ const MORE_GROUPS = [
   {
     title: 'Sales & Customers',
     items: [
-      { to: '/customers',  icon: Users,       label: 'Customers',    subtitle: 'Khata & Balances',    color: 'blue', isCustomerRow: true },
-      { to: '/payments',   icon: CreditCard,  label: 'Payments',     subtitle: 'Receipts & Dues',     color: 'emerald' },
+      { to: '/customers',  icon: Users,       label: 'Customers', isCustomerRow: true },
+      { to: '/payments',   icon: CreditCard,  label: 'Payments' },
     ]
   },
   {
     title: 'Inventory & Supply',
     items: [
-      { to: '/purchases',  icon: ShoppingBag, label: 'Purchases',    subtitle: 'Orders & PO Bills',   color: 'amber', quickTo: '/purchases/new' },
-      { to: '/suppliers',  icon: Truck,       label: 'Suppliers',    subtitle: 'Vendor Directory',    color: 'cyan' },
+      { to: '/purchases',  icon: ShoppingBag, label: 'Purchases', quickTo: '/purchases/new' },
+      { to: '/suppliers',  icon: Truck,       label: 'Suppliers' },
     ]
   },
   {
-    title: 'Operations & Insights',
+    title: 'Operations',
     items: [
-      { to: '/reports',       icon: BarChart3,  label: 'Reports',      subtitle: 'GST & Sales P&L',     color: 'purple' },
-      { to: '/returns',       icon: RotateCcw,  label: 'Returns',      subtitle: 'Credit & Debit Notes',color: 'rose' },
-      { to: '/traceability',  icon: Activity,   label: 'Traceability', subtitle: 'Batch & Expiry',      color: 'teal' },
-      { to: '/documents',     icon: FileText,   label: 'Letterhead',   subtitle: 'Custom Print Layouts',color: 'indigo' },
+      { to: '/reports',       icon: BarChart3,  label: 'Reports' },
+      { to: '/returns',       icon: RotateCcw,  label: 'Returns' },
+      { to: '/traceability',  icon: Activity,   label: 'Traceability' },
+      { to: '/documents',     icon: FileText,   label: 'Letterhead' },
     ]
   },
   {
     title: 'System & Security',
     items: [
-      { to: '/settings', icon: Settings, label: 'Settings', subtitle: 'Company & Preferences', color: 'slate' },
+      { to: '/settings', icon: Settings, label: 'Settings' },
     ]
   },
 ]
@@ -218,7 +218,7 @@ export default function BottomNav({ visible = true }) {
               title={dark ? 'Light mode' : 'Dark mode'}
               aria-label="Toggle theme"
             >
-              {dark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-blue-500" />}
+              {dark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
             <button
               type="button"
@@ -268,49 +268,43 @@ export default function BottomNav({ visible = true }) {
                 className="bnav-sheet-cmd-pill"
                 title="Open Global Search (Ctrl+K)"
               >
-                <Sparkles size={9} strokeWidth={2.5} className="text-amber-400 dark:text-amber-300 mr-1" />
+                <Sparkles size={9} strokeWidth={2.5} className="mr-1 text-slate-400" />
                 <span>⌘K</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Apple Hero Action Tiles (Quick Sale & Quick Khata) */}
+        {/* Quick Action Tiles (Quick Sale & Quick Khata Duo) */}
         {!q && (
           <div className="bnav-hero-actions-grid">
             <button
               type="button"
-              className="bnav-hero-card bnav-hero-card--sale"
+              className="bnav-hero-card"
               onClick={() => go('/sales/new')}
             >
               <div className="bnav-hero-card-icon">
-                <Plus size={16} strokeWidth={2.5} />
+                <Plus size={15} strokeWidth={2.4} />
               </div>
-              <div className="bnav-hero-card-body">
-                <span className="bnav-hero-card-title">Quick Sale</span>
-                <span className="bnav-hero-card-sub">Fast POS billing</span>
-              </div>
+              <span className="bnav-hero-card-title">Quick Sale</span>
               <kbd className="bnav-hero-card-kbd">F2</kbd>
             </button>
 
             <button
               type="button"
-              className="bnav-hero-card bnav-hero-card--khata"
+              className="bnav-hero-card"
               onClick={() => { setCMOpen(true); setMoreOpen(false) }}
             >
               <div className="bnav-hero-card-icon">
-                <Zap size={15} strokeWidth={2.5} />
+                <Zap size={14} strokeWidth={2.4} />
               </div>
-              <div className="bnav-hero-card-body">
-                <span className="bnav-hero-card-title">Quick Khata</span>
-                <span className="bnav-hero-card-sub">Customer ledger</span>
-              </div>
+              <span className="bnav-hero-card-title">Quick Khata</span>
               <span className="bnav-hero-card-badge">Instant</span>
             </button>
           </div>
         )}
 
-        {/* Navigation groups in 2-Column Apple Control Center Cards */}
+        {/* Navigation groups in 2-Column Grid */}
         <div className="bnav-sheet-scroll">
           {filteredGroups.length === 0 ? (
             <div className="py-8 px-4 text-center">
@@ -343,14 +337,8 @@ export default function BottomNav({ visible = true }) {
                             onClick={() => go(item.to)}
                             aria-current={isActive ? 'page' : undefined}
                           >
-                            <div className={`bnav-card-squircle bnav-card-squircle--${item.color || 'blue'}`}>
-                              <Icon size={17} strokeWidth={2.2} />
-                            </div>
-                            <div className="bnav-card-content">
-                              <span className="bnav-card-title">{item.label}</span>
-                              <span className="bnav-card-sub">{item.subtitle}</span>
-                            </div>
-                            <ChevronRight size={13} className="bnav-card-arrow" />
+                            <Icon size={16} strokeWidth={isActive ? 2.2 : 1.9} className="bnav-card-icon" />
+                            <span className="bnav-card-title">{item.label}</span>
                           </button>
 
                           {/* Inline quick buttons */}
