@@ -5584,6 +5584,142 @@ input[type=number] {
 .bnav-sheet-close:hover { background: rgba(0,0,0,0.10); transform: scale(1.08); }
 .dark .bnav-sheet-close:hover { background: rgba(255,255,255,0.16); }
 
+/* ── Search box inside More sheet ────────────────────────────────── */
+.bnav-sheet-search-wrap {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 0.75px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+.dark .bnav-sheet-search-wrap {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.bnav-sheet-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 0.75px solid rgba(0, 0, 0, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dark .bnav-sheet-search-box {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.20),
+    0 1px 4px rgba(0, 0, 0, 0.20);
+}
+.bnav-sheet-search-box:focus-within {
+  border-color: rgba(0, 110, 255, 0.50);
+  box-shadow:
+    0 0 0 3px rgba(0, 110, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+}
+.dark .bnav-sheet-search-box:focus-within {
+  border-color: rgba(90, 170, 255, 0.50);
+  box-shadow:
+    0 0 0 3px rgba(90, 170, 255, 0.16),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.40);
+}
+
+.bnav-sheet-search-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+.dark .bnav-sheet-search-icon {
+  color: #94a3b8;
+}
+
+.bnav-sheet-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  font-family: var(--font-sans);
+}
+.dark .bnav-sheet-search-input {
+  color: #f1f5f9;
+}
+.bnav-sheet-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+.dark .bnav-sheet-search-input::placeholder {
+  color: #64748b;
+}
+
+.bnav-sheet-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.08);
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 120ms ease;
+}
+.dark .bnav-sheet-search-clear {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+.bnav-sheet-search-clear:hover {
+  background: rgba(0, 0, 0, 0.15);
+  color: #0f172a;
+}
+.dark .bnav-sheet-search-clear:hover {
+  background: rgba(255, 255, 255, 0.20);
+  color: #ffffff;
+}
+
+.bnav-sheet-cmd-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 0.75px solid rgba(0, 0, 0, 0.10);
+  background: rgba(0, 0, 0, 0.04);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 120ms ease;
+}
+.dark .bnav-sheet-cmd-pill {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+.bnav-sheet-cmd-pill:hover {
+  background: rgba(0, 100, 220, 0.10);
+  color: #0057d9;
+  border-color: rgba(0, 100, 220, 0.25);
+}
+.dark .bnav-sheet-cmd-pill:hover {
+  background: rgba(90, 170, 255, 0.15);
+  color: #5ac8fa;
+  border-color: rgba(90, 170, 255, 0.30);
+}
+
 /* Quick Sale row inside sheet */
 .bnav-quick-sale-row {
   display: flex;
@@ -5810,12 +5946,11 @@ input[type=number] {
 
 /* ── Mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .bnav-capsule { width: calc(100vw - 174px); height: 62px; gap: 0; padding: 4px 4px; }
-  .bnav-tab     { height: 52px; padding: 0 2px; }
-  .bnav-tab-label { font-size: 9px; }
+  .bnav-capsule { width: calc(100vw - 92px); max-width: 580px; height: 62px; gap: 0; padding: 4px 4px; }
+  .bnav-tab     { height: 52px; padding: 0 3px; }
+  .bnav-tab-label { font-size: 9.5px; }
   .bnav-tab-icon  { width: 19px; height: 19px; }
-  .bnav-search-btn, .bnav-sale-btn { width: 62px; height: 62px; }
-  .bnav-wrapper { gap: 9px; }
-  .bnav-sparkle { top: 13px; right: 13px; }
+  .bnav-sale-btn { width: 62px; height: 62px; }
+  .bnav-wrapper { gap: 10px; }
   .bnav-sheet   { width: calc(100vw - 24px); bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 78px); }
 }

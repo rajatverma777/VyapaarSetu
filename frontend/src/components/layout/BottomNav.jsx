@@ -85,7 +85,16 @@ export default function BottomNav({ visible = true }) {
 
   const [moreOpen, setMoreOpen]             = useState(false)
   const [customerModalOpen, setCMOpen]      = useState(false)
+  const [searchQuery, setSearchQuery]       = useState('')
   const sheetRef = useRef(null)
+  const searchInputRef = useRef(null)
+
+  // Reset search when sheet closes
+  useEffect(() => {
+    if (!moreOpen) {
+      setSearchQuery('')
+    }
+  }, [moreOpen])
 
   // Close sheet on outside click
   useEffect(() => {
@@ -119,6 +128,15 @@ export default function BottomNav({ visible = true }) {
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [navigate])
+
+  // Filter groups based on search query inside the sheet
+  const q = searchQuery.trim().toLowerCase()
+  const filteredGroups = MORE_GROUPS.map((group) => {
+    const visibleItems = group.items
+      .filter((i) => hasPermission(i.to))
+      .filter((i) => !q || i.label.toLowerCase().includes(q) || (i.isCustomerRow && 'khata'.includes(q)))
+    return { ...group, items: visibleItems }
+  }).filter((group) => group.items.length > 0)
 
   // Check if any more-item is active (to highlight the ••• tab)
   const moreRoutes = MORE_GROUPS.flatMap(g => g.items.map(i => i.to))
@@ -164,6 +182,41 @@ export default function BottomNav({ visible = true }) {
           </button>
         </div>
 
+        {/* Global Search inside More sheet */}
+        <div className="bnav-sheet-search-wrap">
+          <div className="bnav-sheet-search-box">
+            <Search size={15} strokeWidth={2.2} className="bnav-sheet-search-icon" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search sections or jump to… (Ctrl+K)"
+              className="bnav-sheet-search-input"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="bnav-sheet-search-clear"
+                aria-label="Clear search"
+              >
+                <X size={12} strokeWidth={2.5} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setMoreOpen(false); openSearch(); }}
+                className="bnav-sheet-cmd-pill"
+                title="Open Global Search (Ctrl+K)"
+              >
+                <Sparkles size={9} strokeWidth={2.5} className="text-amber-400 dark:text-amber-300 mr-1" />
+                <span>⌘K</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Quick Sale prominent row */}
         <button
           className="bnav-quick-sale-row"
@@ -178,62 +231,69 @@ export default function BottomNav({ visible = true }) {
 
         {/* Navigation groups */}
         <div className="bnav-sheet-scroll">
-          {MORE_GROUPS.map((group) => {
-            const visibleItems = group.items.filter(i => hasPermission(i.to))
-            if (!visibleItems.length) return null
-            return (
-              <div key={group.title} className="bnav-sheet-group">
-                <p className="bnav-sheet-group-title">{group.title}</p>
-                <div className="bnav-sheet-items">
-                  {visibleItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = location.pathname === item.to ||
-                      (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
-                    return (
-                      <div key={item.to} className="bnav-sheet-item-row">
-                        <button
-                          className={`bnav-sheet-item ${isActive ? 'bnav-sheet-item--active' : ''}`}
-                          onClick={() => {
-                            if (item.isCustomerRow) {
-                              go(item.to)
-                            } else {
-                              go(item.to)
-                            }
-                          }}
-                          aria-current={isActive ? 'page' : undefined}
-                        >
-                          <Icon size={15} strokeWidth={isActive ? 2.2 : 1.8} />
-                          <span>{item.label}</span>
-                        </button>
-
-                        {/* Customers: Khata button */}
-                        {item.isCustomerRow && (
+          {filteredGroups.length === 0 ? (
+            <div className="py-8 px-4 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                No sections found matching "{searchQuery}"
+              </p>
+              <button
+                type="button"
+                onClick={() => { setMoreOpen(false); openSearch(); }}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1.5 hover:underline"
+              >
+                <Sparkles size={11} /> Search all records with Global Search (Ctrl+K)
+              </button>
+            </div>
+          ) : (
+            filteredGroups.map((group) => {
+              return (
+                <div key={group.title} className="bnav-sheet-group">
+                  <p className="bnav-sheet-group-title">{group.title}</p>
+                  <div className="bnav-sheet-items">
+                    {group.items.map((item) => {
+                      const Icon = item.icon
+                      const isActive = location.pathname === item.to ||
+                        (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
+                      return (
+                        <div key={item.to} className="bnav-sheet-item-row">
                           <button
-                            className="bnav-khata-btn"
-                            onClick={() => { setCMOpen(true); setMoreOpen(false) }}
-                            title="Quick Khata / Ledger"
+                            className={`bnav-sheet-item ${isActive ? 'bnav-sheet-item--active' : ''}`}
+                            onClick={() => go(item.to)}
+                            aria-current={isActive ? 'page' : undefined}
                           >
-                            <Zap size={9} /> Khata
+                            <Icon size={15} strokeWidth={isActive ? 2.2 : 1.8} />
+                            <span>{item.label}</span>
                           </button>
-                        )}
 
-                        {/* Purchases/Sales: quick create */}
-                        {item.quickTo && (
-                          <button
-                            className="bnav-quick-btn"
-                            onClick={() => go(item.quickTo)}
-                            title="Create new"
-                          >
-                            <Plus size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })}
+                          {/* Customers: Khata button */}
+                          {item.isCustomerRow && (
+                            <button
+                              className="bnav-khata-btn"
+                              onClick={() => { setCMOpen(true); setMoreOpen(false) }}
+                              title="Quick Khata / Ledger"
+                            >
+                              <Zap size={9} /> Khata
+                            </button>
+                          )}
+
+                          {/* Purchases/Sales: quick create */}
+                          {item.quickTo && (
+                            <button
+                              className="bnav-quick-btn"
+                              onClick={() => go(item.quickTo)}
+                              title="Create new"
+                            >
+                              <Plus size={12} />
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
 
         {/* User footer in sheet */}
@@ -311,17 +371,6 @@ export default function BottomNav({ visible = true }) {
             <span className="bnav-tab-label">More</span>
           </button>
         </div>
-
-        {/* Circular search button */}
-        <button
-          className="bnav-search-btn"
-          onClick={openSearch}
-          aria-label="Open global search (Ctrl+K)"
-          title="Search (Ctrl+K)"
-        >
-          <Sparkles size={8} strokeWidth={2.5} className="bnav-sparkle" aria-hidden="true" />
-          <Search size={19} strokeWidth={2} aria-hidden="true" />
-        </button>
 
         {/* Circular Quick Sale button */}
         <button
