@@ -75,7 +75,7 @@ function usePermission(user) {
   }, [user])
 }
 
-export default function BottomNav() {
+export default function BottomNav({ visible = true }) {
   const location   = useLocation()
   const navigate   = useNavigate()
   const { user, logout } = useAuth()
@@ -260,7 +260,7 @@ export default function BottomNav() {
 
       {/* ── Main floating bar ────────────────────────────────────────── */}
       <nav
-        className="bnav-wrapper no-print"
+        className={`bnav-wrapper no-print ${(!visible && !moreOpen) ? 'bnav-wrapper--hidden' : ''}`}
         role="navigation"
         aria-label="Main navigation"
       >

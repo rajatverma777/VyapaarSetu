@@ -39,7 +39,7 @@ function ThemeCycleBtn() {
   )
 }
 
-export default function TopNavbar() {
+export default function TopNavbar({ visible = true }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
@@ -104,8 +104,10 @@ export default function TopNavbar() {
   const currentLabel = ROUTE_LABELS[location.pathname]
     || (location.pathname.startsWith('/documents/') ? 'Letterhead Editor' : 'VyapaarSetu')
 
+  const isHidden = !visible && !menuOpen
+
   return (
-    <div className="top-navbar no-print">
+    <div className={`top-navbar no-print ${isHidden ? 'top-navbar--hidden' : ''}`}>
       {/* Brand logo & Current section label — Apple Liquid Glass Capsule */}
       <button
         onClick={() => navigate('/dashboard')}
