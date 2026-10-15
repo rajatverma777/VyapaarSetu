@@ -557,14 +557,6 @@ export default function LetterheadPage() {
       <div className="flex flex-col h-full min-h-screen -mt-1 no-print">
         {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 flex-wrap px-2 pb-3 border-b border-gray-200/40 dark:border-white/5 no-print">
-          {/* Main Sidebar Toggle */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all duration-150 flex-shrink-0"
-            title="Toggle main navigation sidebar"
-          >
-            <Menu size={18} />
-          </button>
 
           {/* Back button */}
           <button

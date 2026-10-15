@@ -39,7 +39,7 @@ function ThemeCycleBtn() {
   )
 }
 
-export default function TopNavbar({ onMenuToggle }) {
+export default function TopNavbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
@@ -106,24 +106,31 @@ export default function TopNavbar({ onMenuToggle }) {
 
   return (
     <div className="top-navbar no-print">
-      {/* Mobile menu toggle */}
+      {/* Brand logo & Current section label (links to Dashboard) */}
       <button
-        className="navbar-icon-btn lg:hidden flex-shrink-0"
-        onClick={onMenuToggle}
-        aria-label="Toggle menu"
+        onClick={() => navigate('/dashboard')}
+        className="flex items-center gap-2.5 flex-shrink-0 text-left group focus:outline-none"
+        title="Go to Dashboard"
       >
-        <Menu size={16} />
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm font-black text-xs tracking-wider transition-transform duration-200 group-hover:scale-105">
+          VS
+        </div>
+        <div className="flex flex-col">
+          <span
+            className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight flex items-center gap-1.5"
+            style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}
+          >
+            VyapaarSetu
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline font-normal">/</span>
+            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hidden sm:inline">
+              {currentLabel}
+            </span>
+          </span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium sm:hidden">
+            {currentLabel}
+          </span>
+        </div>
       </button>
-
-      {/* Page Title */}
-      <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-        <span
-          className="text-sm font-bold text-gray-800 dark:text-gray-100"
-          style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif", letterSpacing: '-0.01em' }}
-        >
-          {currentLabel}
-        </span>
-      </div>
 
       {/* Spacer */}
       <div className="flex-1" />
