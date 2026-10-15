@@ -106,27 +106,21 @@ export default function TopNavbar() {
 
   return (
     <div className="top-navbar no-print">
-      {/* Brand logo & Current section label (links to Dashboard) */}
+      {/* Brand logo & Current section label — Apple Liquid Glass Capsule */}
       <button
         onClick={() => navigate('/dashboard')}
-        className="flex items-center gap-2.5 flex-shrink-0 text-left group focus:outline-none"
-        title="Go to Dashboard"
+        className="glass-brand-pill focus:outline-none"
+        title="VyapaarSetu — Click to return to Dashboard"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm font-black text-xs tracking-wider transition-transform duration-200 group-hover:scale-105">
+        <div className="glass-brand-icon" aria-hidden="true">
           VS
         </div>
-        <div className="flex flex-col">
-          <span
-            className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight flex items-center gap-1.5"
-            style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}
-          >
+        <div className="flex items-center gap-1.5 pr-0.5">
+          <span className="glass-brand-title">
             VyapaarSetu
-            <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline font-normal">/</span>
-            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hidden sm:inline">
-              {currentLabel}
-            </span>
           </span>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium sm:hidden">
+          <span className="glass-brand-divider" aria-hidden="true">/</span>
+          <span className="glass-brand-section">
             {currentLabel}
           </span>
         </div>

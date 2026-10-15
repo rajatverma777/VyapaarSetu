@@ -35,7 +35,7 @@ export default function AppLayout() {
 
       {/* ── MAIN CONTENT (Full Width without left sidebar) ───────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 p-3.5 lg:p-4 min-w-0">
-        <main className="flex-1 overflow-hidden bg-white/65 dark:bg-[#121316] border border-black/[0.06] dark:border-white/[0.08] rounded-[20px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_24px_64px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.10)] flex flex-col min-h-0" style={{ backdropFilter: 'blur(36px) saturate(160%)', WebkitBackdropFilter: 'blur(36px) saturate(160%)' }}>
+        <main className="flex-1 overflow-hidden bg-white/55 dark:bg-[#121318]/55 border border-white/60 dark:border-white/[0.14] rounded-[22px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_24px_64px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.25)] flex flex-col min-h-0" style={{ backdropFilter: 'blur(44px) saturate(190%) brightness(1.12)', WebkitBackdropFilter: 'blur(44px) saturate(190%) brightness(1.12)' }}>
 
           {/* TopNavbar inside glass panel */}
           <TopNavbar />

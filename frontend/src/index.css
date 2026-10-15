@@ -3169,29 +3169,167 @@ input[type=number] {
 }
 
 
-/* ── TopNavbar ───────────────────────────────────────────────────────────── */
+/* ── TopNavbar — Apple Liquid Glass ────────────────────────────────────────── */
 .top-navbar {
   height: var(--navbar-height);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
+  padding: 0 18px;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(229,231,235,0.5);
-  background: rgba(255,255,255,0.70);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 16px 16px 0 0;
+  background: rgba(255, 255, 255, 0.40);
+  backdrop-filter: blur(40px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.08);
+  border-bottom: 0.75px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: 22px 22px 0 0;
   position: relative;
   z-index: 20;
 }
 
 .dark .top-navbar {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  background: rgba(24, 24, 30, 0.42);
+  backdrop-filter: blur(48px) saturate(200%) brightness(1.35);
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.35);
+  border-bottom: 0.75px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.20),
+    0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* ── Apple Liquid Glass Brand Pill (TopNavbar) ────────────────────── */
+.glass-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3.5px 12px 3.5px 4px;
+  border-radius: 9999px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(32px) saturate(190%) brightness(1.08);
+  -webkit-backdrop-filter: blur(32px) saturate(190%) brightness(1.08);
+  border: 0.75px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 160ms ease,
+              border-color 160ms ease,
+              box-shadow 160ms ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.glass-brand-pill:hover {
+  transform: translateY(-1px) scale(1.02);
+  background: rgba(255, 255, 255, 0.70);
+  border-color: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.glass-brand-pill:active {
+  transform: scale(0.96);
+}
+
+.dark .glass-brand-pill {
+  background: rgba(32, 32, 38, 0.55);
+  backdrop-filter: blur(36px) saturate(200%) brightness(1.35);
+  -webkit-backdrop-filter: blur(36px) saturate(200%) brightness(1.35);
+  border: 0.75px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.30),
+    0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.dark .glass-brand-pill:hover {
+  background: rgba(42, 42, 50, 0.68);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.85),
+    0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* ── 'VS' icon badge: matching bottom nav circular & active pill style ── */
+.glass-brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: -0.01em;
+  color: #0066f0;
+  background: rgba(0, 100, 240, 0.16);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 0.75px solid rgba(0, 110, 255, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    inset 0 -0.5px 0 rgba(0, 80, 200, 0.20),
+    0 2px 8px rgba(0, 100, 240, 0.18);
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+
+.dark .glass-brand-icon {
+  color: #5ac8fa;
+  background: rgba(10, 110, 255, 0.25);
+  border-color: rgba(80, 160, 255, 0.36);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -0.5px 0 rgba(0, 60, 180, 0.35),
+    0 2px 10px rgba(30, 120, 255, 0.30);
+}
+
+.glass-brand-pill:hover .glass-brand-icon {
+  transform: scale(1.08);
+}
+
+/* ── Brand text & section pill ── */
+.glass-brand-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1f2937;
+  font-family: var(--font-sans);
+}
+.dark .glass-brand-title {
+  color: #f3f4f6;
+}
+
+.glass-brand-divider {
+  font-size: 11px;
+  color: rgba(156, 163, 175, 0.6);
+  font-weight: 300;
+  user-select: none;
+}
+
+.glass-brand-section {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #0066f0;
+  background: rgba(0, 100, 240, 0.10);
+  border: 0.5px solid rgba(0, 110, 255, 0.22);
+}
+
+.dark .glass-brand-section {
+  color: #5ac8fa;
+  background: rgba(10, 110, 255, 0.20);
+  border: 0.5px solid rgba(80, 160, 255, 0.30);
 }
 
 /* Search trigger button inside top navbar */
@@ -3200,33 +3338,36 @@ input[type=number] {
   align-items: center;
   gap: 8px;
   flex: 1;
-  max-width: 380px;
-  padding: 7px 12px;
-  border-radius: 10px;
+  max-width: 360px;
+  padding: 6px 14px;
+  border-radius: 9999px;
   cursor: pointer;
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  transition: all 150ms ease;
-  color: #8e8e93;
-  font-size: 13px;
+  background: rgba(255, 255, 255, 0.40);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 0.75px solid rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.85);
+  transition: all 160ms ease;
+  color: #6b7280;
+  font-size: 12.5px;
   font-weight: 500;
 }
 .navbar-search-trigger:hover {
-  background: rgba(0, 0, 0, 0.07);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: #1d1d1f;
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.95);
+  color: #111827;
 }
 .dark .navbar-search-trigger {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border-color: rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.50);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(32, 32, 38, 0.50);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.25);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.25);
+  border: 0.75px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.40);
+  color: rgba(245, 245, 247, 0.65);
 }
 .dark .navbar-search-trigger:hover {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(42, 42, 50, 0.65);
+  border-color: rgba(255, 255, 255, 0.25);
   color: #ffffff;
 }
 
@@ -3279,46 +3420,44 @@ input[type=number] {
   animation: none;
 }
 
-/* Navbar icon button */
+/* Navbar icon button — Liquid Glass Circle */
 .navbar-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(229,231,235,0.6);
-  background: rgba(255,255,255,0.6);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0.75px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   cursor: pointer;
-  transition: all 200ms ease;
-  color: #6b7280;
+  transition: all 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: #4b5563;
   flex-shrink: 0;
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.85);
 }
 .navbar-icon-btn:hover {
-  background: rgba(255,255,255,0.95);
-  border-color: rgba(209,213,219,0.8);
-  color: #374151;
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px) scale(1.05);
+  color: #111827;
 }
 .dark .navbar-icon-btn {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.18);
-  color: #94a3b8;
+  background: rgba(32, 32, 38, 0.55);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(245, 245, 247, 0.80);
   box-shadow:
-    inset 0 0.5px 0 rgba(255,255,255,0.50),
-    inset 0 -0.5px 0 rgba(0,0,0,0.15);
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.50),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.20);
 }
 .dark .navbar-icon-btn:hover {
-  background: rgba(255,255,255,0.14);
-  border-color: rgba(255,255,255,0.28);
-  color: #e2e8f0;
-  box-shadow:
-    inset 0 0.5px 0 rgba(255,255,255,0.65),
-    inset 0 -0.5px 0 rgba(0,0,0,0.12);
+  background: rgba(48, 48, 56, 0.70);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
-/* User avatar button in navbar */
+/* User avatar button in navbar — Liquid Glass */
 .navbar-avatar {
   width: 32px;
   height: 32px;
@@ -3328,23 +3467,28 @@ input[type=number] {
   justify-content: center;
   font-size: 12px;
   font-weight: 800;
-  color: #4338ca;
-  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-  border: 2px solid rgba(255,255,255,0.8);
-  box-shadow: 0 2px 8px rgba(99,102,241,0.2);
   cursor: pointer;
-  transition: all 200ms ease;
+  background: rgba(0, 100, 240, 0.16);
+  color: #0066f0;
+  border: 0.75px solid rgba(0, 110, 255, 0.32);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.85),
+    0 2px 6px rgba(0, 100, 240, 0.15);
+  transition: transform 160ms ease;
   flex-shrink: 0;
-  letter-spacing: 0;
 }
 .navbar-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+  transform: scale(1.08);
 }
 .dark .navbar-avatar {
-  background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(79,70,229,0.2));
-  color: #a5b4fc;
-  border-color: rgba(99,102,241,0.35);
+  background: rgba(10, 110, 255, 0.25);
+  color: #5ac8fa;
+  border-color: rgba(80, 160, 255, 0.36);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.70),
+    0 2px 8px rgba(30, 120, 255, 0.25);
 }
 
 
