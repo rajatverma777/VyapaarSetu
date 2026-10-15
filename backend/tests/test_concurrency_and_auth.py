@@ -1,18 +1,21 @@
 import asyncio
 import httpx
+import uuid
+import random
 import sys
 
 async def test_auth_refresh():
     print("Testing Authentication Refresh Flow...")
     async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=30.0) as client:
-        username = f"testuser_{int(asyncio.get_event_loop().time())}"
+        u_suffix = uuid.uuid4().hex[:8]
+        username = f"testuser_{u_suffix}"
         reg_payload = {
             "username": username,
             "password": "testpassword123",
             "full_name": "Test User",
             "email": f"{username}@example.com",
             "role": "staff",
-            "mobile": "9999999999"
+            "mobile": f"9{random.randint(100000000, 999999999)}"
         }
         reg_res = await client.post("/api/auth/register", json=reg_payload)
         print("Registration status:", reg_res.status_code, reg_res.json())
@@ -48,15 +51,16 @@ async def test_auth_refresh():
 async def test_concurrency():
     print("\nTesting Concurrent Stock Depletion & Transactions...")
     async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=30.0) as client:
-        username = f"saleuser_{int(asyncio.get_event_loop().time())}"
+        u_suffix = uuid.uuid4().hex[:8]
+        username = f"saleuser_{u_suffix}"
         reg_res = await client.post("/api/auth/register", json={
             "username": username,
             "password": "password123",
             "full_name": "Sale Tester",
             "email": f"{username}@example.com",
             "role": "admin",
-            "mobile": "8888888888",
-            "company_name": "Sale Test Business"
+            "mobile": f"8{random.randint(100000000, 999999999)}",
+            "company_name": f"Sale Test {u_suffix}"
         })
         print("Registration status:", reg_res.status_code, reg_res.text)
         

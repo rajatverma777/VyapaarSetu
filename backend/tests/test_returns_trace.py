@@ -1,5 +1,7 @@
 import asyncio
 import httpx
+import uuid
+import random
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from datetime import datetime
@@ -16,16 +18,17 @@ async def test_returns_trace():
     
     async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=60.0) as client:
         # 1. Register and login
-        username = f"traceuser_{int(asyncio.get_event_loop().time())}"
+        u_suffix = uuid.uuid4().hex[:8]
+        username = f"traceuser_{u_suffix}"
         reg_res = await client.post("/api/auth/register", json={
             "username": username,
             "password": "password123",
             "full_name": "Traceability Tester",
             "email": f"{username}@example.com",
             "role": "admin",
-            "mobile": "9999988888"
+            "mobile": f"9{random.randint(100000000, 999999999)}"
         })
-        assert reg_res.status_code == 200
+        assert reg_res.status_code == 200, f"Registration failed: {reg_res.text}"
         
         login_res = await client.post("/api/auth/token", data={"username": username, "password": "password123"})
         assert login_res.status_code == 200

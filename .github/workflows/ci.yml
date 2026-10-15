@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -68,6 +68,20 @@ jobs:
           cd backend
           # Stop build if there are Python syntax errors or undefined names
           flake8 . --exclude=venv --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Verify MongoDB Readiness
+        run: |
+          python -c "import time; from pymongo import MongoClient; client = MongoClient('mongodb://localhost:27017', serverSelectionTimeoutMS=2000); t0 = time.time()
+          while time.time() - t0 < 30:
+              try:
+                  client.admin.command('ping')
+                  print('MongoDB service is connected and ready.')
+                  break
+              except Exception as e:
+                  time.sleep(1)
+          else:
+              raise TimeoutError('MongoDB failed to become ready within 30s')
+          "
 
       - name: Run Backend Tests (Unit, Service, & Integration)
         env:

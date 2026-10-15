@@ -11,7 +11,7 @@ if backend_dir not in sys.path:
 
 def is_server_online():
     try:
-        res = httpx.get("http://127.0.0.1:8000/api/health", timeout=1.0)
+        res = httpx.get("http://127.0.0.1:8000/api/health", timeout=1.5)
         return res.status_code == 200
     except Exception:
         return False
@@ -34,14 +34,18 @@ def run_server():
 
         try:
             proc = subprocess.Popen(cmd, cwd=backend_dir, env=python_env)
-        except Exception:
+        except Exception as e:
+            print(f"[conftest] Failed to start uvicorn: {e}", file=sys.stderr)
             proc = None
 
         start_time = time.time()
-        while time.time() - start_time < 15:
+        # Allow up to 45 seconds for CI runner to connect to MongoDB and build indexes
+        while time.time() - start_time < 45:
             if proc and proc.poll() is not None:
+                print(f"[conftest] Uvicorn exited prematurely with exit code {proc.returncode}", file=sys.stderr)
                 break
             if is_server_online():
+                print(f"[conftest] Backend server is healthy after {round(time.time() - start_time, 2)}s.")
                 break
             time.sleep(0.5)
 
@@ -64,6 +68,11 @@ def skip_live_tests_if_offline(request):
         "test_returns_trace.py",
         "test_stock_sync.py",
     }
-    file_name = os.path.basename(str(getattr(request, "fspath", "")))
+    path_obj = getattr(request, "path", None)
+    if path_obj:
+        file_name = path_obj.name
+    else:
+        file_name = os.path.basename(str(getattr(request, "fspath", "")))
+
     if file_name in live_tests and not is_server_online():
-        pytest.skip("Live FastAPI backend and MongoDB service required. Runs in CI with active MongoDB container.")
+        pytest.skip(f"Live FastAPI backend required for {file_name}. Server was offline.")

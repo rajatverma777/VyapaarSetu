@@ -1,5 +1,6 @@
 import asyncio
 import httpx
+import uuid
 import sys
 
 async def test_brand_categories():
@@ -7,13 +8,14 @@ async def test_brand_categories():
     
     async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=30.0) as client:
         # 1. Register a new Admin
-        admin_username = f"admin_brand_{int(asyncio.get_event_loop().time())}"
+        u_suffix = uuid.uuid4().hex[:8]
+        admin_username = f"admin_brand_{u_suffix}"
         reg_admin_payload = {
             "username": admin_username,
             "password": "brandpassword123",
             "full_name": "Admin Brand User",
             "role": "admin",
-            "company_name": "Brand Business"
+            "company_name": f"Brand Business {u_suffix}"
         }
         reg_admin_res = await client.post("/api/auth/register", json=reg_admin_payload)
         assert reg_admin_res.status_code == 200, f"Admin registration failed: {reg_admin_res.text}"

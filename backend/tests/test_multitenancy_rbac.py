@@ -1,5 +1,6 @@
 import asyncio
 import httpx
+import uuid
 import sys
 
 async def test_multitenancy_rbac():
@@ -7,13 +8,13 @@ async def test_multitenancy_rbac():
     
     async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=30.0) as client:
         # 1. Register Admin A
-        admin_username = f"admin_a_{int(asyncio.get_event_loop().time())}"
+        admin_username = f"admin_a_{uuid.uuid4().hex[:8]}"
         reg_admin_payload = {
             "username": admin_username,
             "password": "adminpassword123",
             "full_name": "Admin A User",
             "role": "admin",
-            "company_name": "Business A"
+            "company_name": f"Business A {uuid.uuid4().hex[:6]}"
         }
         reg_admin_res = await client.post("/api/auth/register", json=reg_admin_payload)
         assert reg_admin_res.status_code == 200, f"Admin A registration failed: {reg_admin_res.text}"
@@ -45,7 +46,7 @@ async def test_multitenancy_rbac():
         print("Product A created in Business A.")
         
         # 4. Register a user without Company Code (should succeed as Admin)
-        another_username = f"admin_c_{int(asyncio.get_event_loop().time())}"
+        another_username = f"admin_c_{uuid.uuid4().hex[:8]}"
         reg_admin_success = await client.post("/api/auth/register", json={
             "username": another_username,
             "password": "adminpassword123",
@@ -55,7 +56,7 @@ async def test_multitenancy_rbac():
         assert reg_admin_success.json()["role"] == "admin"
         print("Registration without Company Code registered as Admin successfully.")
         
-        staff_username = f"staff_u_{int(asyncio.get_event_loop().time())}"
+        staff_username = f"staff_u_{uuid.uuid4().hex[:8]}"
         
         # 5. Register Staff member with invalid Company Code (should fail)
         reg_staff_fail_2 = await client.post("/api/auth/register", json={

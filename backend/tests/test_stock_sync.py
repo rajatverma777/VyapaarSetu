@@ -1,11 +1,13 @@
 import asyncio
 import httpx
+import uuid
+import random
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from datetime import datetime
 import sys
-
 import os
+
 # Add parent dir to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.config import settings
@@ -16,17 +18,20 @@ async def test_stock_sync():
     
     # 1. Register and login a user to get auth headers
     async with httpx.AsyncClient(base_url="http://127.0.0.1:8000", timeout=60.0) as client:
-        username = f"syncuser_{int(asyncio.get_event_loop().time())}"
-        await client.post("/api/auth/register", json={
+        u_suffix = uuid.uuid4().hex[:8]
+        username = f"syncuser_{u_suffix}"
+        reg_res = await client.post("/api/auth/register", json={
             "username": username,
             "password": "password123",
             "full_name": "Sync Tester",
             "email": f"{username}@example.com",
             "role": "admin",
-            "mobile": "7777777777"
+            "mobile": f"7{random.randint(100000000, 999999999)}"
         })
+        assert reg_res.status_code == 200, f"Registration failed: {reg_res.text}"
         
         login_res = await client.post("/api/auth/token", data={"username": username, "password": "password123"})
+        assert login_res.status_code == 200, f"Login failed: {login_res.text}"
         login_data = login_res.json()
         tenant_id = login_data["user"]["tenant_id"]
         auth_headers = {"Authorization": f"Bearer {login_data['access_token']}"}
