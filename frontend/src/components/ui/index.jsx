@@ -159,7 +159,7 @@ export function Pagination({ page, total, limit, onChange }) {
               key={p}
               onClick={() => onChange(p)}
               className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                p === page ? 'bg-indigo-500/20 dark:bg-indigo-500/30 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 dark:border-indigo-400/30 font-bold backdrop-blur-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400'
+                p === page ? 'bg-[#0071e3]/12 dark:bg-[#0a84ff]/20 text-[#0071e3] dark:text-[#0a84ff] border border-[#0071e3]/25 dark:border-[#0a84ff]/30 font-semibold backdrop-blur-md shadow-sm' : 'hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400'
               }`}
             >
               {p}

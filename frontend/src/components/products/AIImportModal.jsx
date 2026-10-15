@@ -1569,7 +1569,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                       <th style={{ width: '80px', minWidth: '80px' }} className="py-2.5 px-3 text-center">Cases</th>
                       <th style={{ width: '100px', minWidth: '100px' }} className="py-2.5 px-3 text-center">Quantity</th>
                       <th style={{ width: '110px', minWidth: '110px' }} className="py-2.5 px-3 text-right">Purchase Rate (₹)</th>
-                      <th style={{ width: '110px', minWidth: '110px' }} className="py-2.5 px-3 text-right font-bold text-indigo-600 dark:text-indigo-400">Selling Price (₹)</th>
+                      <th style={{ width: '110px', minWidth: '110px' }} className="py-2.5 px-3 text-right font-bold text-[#0071e3] dark:text-[#0a84ff]">Selling Price (₹)</th>
                       <th style={{ width: '120px', minWidth: '120px' }} className="py-2.5 px-3 text-right">Amount (₹)</th>
                       <th style={{ width: '80px', minWidth: '80px' }} className="py-2.5 px-3 text-center">GST %</th>
                       <th style={{ width: '110px', minWidth: '110px' }} className="py-2.5 px-3 text-center">HSN</th>
@@ -1598,7 +1598,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                               <button
                                 type="button"
                                 onClick={() => setOverridingIdx(overridingIdx === idx ? null : idx)}
-                                className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                                className="text-[10px] text-[#0071e3] dark:text-[#0a84ff] hover:underline font-semibold"
                               >
                                 {item.product_id ? 'Change Link' : 'Link Database Product'}
                               </button>
@@ -1622,7 +1622,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                                           key={sugg.product_id}
                                           type="button"
                                           onClick={() => handleOverrideProduct(idx, sugg)}
-                                          className="text-left px-2 py-1 bg-gray-50 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border dark:border-gray-700 rounded text-xs flex justify-between items-center"
+                                          className="text-left px-2 py-1 bg-black/[0.03] dark:bg-white/[0.06] hover:bg-[#0071e3]/10 dark:hover:bg-[#0a84ff]/20 border border-black/5 dark:border-white/10 rounded-lg text-xs flex justify-between items-center transition-colors"
                                         >
                                           <span className="font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[180px]">{sugg.product_name}</span>
                                           <span className="text-[9px] badge-blue px-1 py-0.2 rounded font-mono">{sugg.confidence}% match</span>
@@ -1721,7 +1721,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
                         <td style={{ width: '110px', minWidth: '110px' }} className="p-1.5 px-2">
                           <input
                             type="number"
-                            className="input py-1 px-1.5 text-right text-xs font-bold text-indigo-600 dark:text-indigo-300 border-indigo-400/30"
+                            className="input py-1 px-1.5 text-right text-xs font-bold text-[#0071e3] dark:text-[#0a84ff] border-[#0071e3]/30 dark:border-[#0a84ff]/30"
                             value={item.selling_price || ''}
                             onChange={e => updateEnrichedItemField(idx, 'selling_price', Number(e.target.value) || 0)}
                           />
@@ -1832,7 +1832,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
               </div>
               <div className="flex justify-between text-xs border-t pt-2 dark:border-gray-800">
                 <span className="text-gray-400 font-medium">Imported items:</span>
-                <span className="font-bold text-indigo-650 dark:text-indigo-400">{importResult.imported_count} Products</span>
+                <span className="font-bold text-[#0071e3] dark:text-[#0a84ff]">{importResult.imported_count} Products</span>
               </div>
               <div className="flex justify-between text-xs border-t pt-2 dark:border-gray-800">
                 <span className="text-gray-400 font-medium">Purchase Invoice ID:</span>

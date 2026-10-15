@@ -327,7 +327,7 @@ export default function NewSalePage() {
           <button onClick={handleSave} disabled={saving || items.length === 0} className="btn-primary">
             <Save size={16} />
             <span>{saving ? 'Saving…' : 'Save & Print'}</span>
-            <span className="text-[10px] text-indigo-200 font-bold ml-1">(Ctrl+↵)</span>
+            <span className="text-[10px] text-white/80 font-bold ml-1">(Ctrl+↵)</span>
           </button>
         </div>
       </div>

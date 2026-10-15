@@ -35,14 +35,14 @@ const daysSince = (dateStr) => {
 
 // ── Avatar gradient palettes (deterministic from name) ─────────────────────────
 const AVATAR_GRADIENTS = [
-  ['#6366f1', '#8b5cf6'],
-  ['#3b82f6', '#6366f1'],
+  ['#0071e3', '#5ac8fa'],
+  ['#0071e3', '#34c759'],
   ['#10b981', '#059669'],
   ['#f59e0b', '#ef4444'],
-  ['#ec4899', '#8b5cf6'],
-  ['#14b8a6', '#3b82f6'],
-  ['#f97316', '#ef4444'],
-  ['#8b5cf6', '#ec4899'],
+  ['#ff2d55', '#ff375f'],
+  ['#14b8a6', '#0071e3'],
+  ['#f97316', '#ff9f0a'],
+  ['#0071e3', '#5ac8fa'],
 ]
 const getGradient = (name = '') => {
   const idx = name.charCodeAt(0) % AVATAR_GRADIENTS.length
@@ -113,7 +113,7 @@ TypeBadge.displayName = 'TypeBadge'
 
 // ── Stat Chip ──────────────────────────────────────────────────────────────────
 const StatChip = memo(({ label, value, sub, accent }) => (
-  <div className="cpc-stat-chip" style={{ '--accent': accent || '#6366f1' }}>
+  <div className="cpc-stat-chip" style={{ '--accent': accent || '#0071e3' }}>
     <p className="cpc-stat-label">{label}</p>
     <p className="cpc-stat-value" style={{ color: accent }}>{value}</p>
     {sub && <p className="cpc-stat-sub">{sub}</p>}
@@ -128,7 +128,7 @@ const ActionBtn = memo(({ icon: Icon, label, onClick, accent, danger }) => (
     onClick={onClick}
     title={label}
     className="cpc-action-btn"
-    style={{ '--ab-accent': danger ? '#ef4444' : (accent || '#6366f1') }}
+    style={{ '--ab-accent': danger ? '#ef4444' : (accent || '#0071e3') }}
   >
     <Icon size={14} />
     <span>{label}</span>

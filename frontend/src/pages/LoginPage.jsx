@@ -133,7 +133,7 @@ export default function LoginPage() {
           className="navbar-icon-btn"
           title="Toggle Theme"
         >
-          {dark ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-indigo-500" />}
+          {dark ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-[#0071e3]" />}
         </button>
       </div>
 
@@ -141,7 +141,7 @@ export default function LoginPage() {
         {/* Logo Header */}
         <Link to="/" className="flex items-center justify-center gap-3.5 mb-8 px-2 hover:opacity-85 transition-opacity select-none cursor-pointer group">
           <div className="w-12 h-12 flex items-center justify-center rounded-2xl flex-shrink-0 shadow-lg" style={{
-            background: 'linear-gradient(135deg, #0071e3, #6366f1)',
+            background: 'linear-gradient(135deg, #0071e3, #0a84ff)',
             boxShadow: '0 8px 32px rgba(0,113,227,0.35), inset 0 1px 0 rgba(255,255,255,0.3)'
           }}>
             <Building2 size={22} className="text-white" />

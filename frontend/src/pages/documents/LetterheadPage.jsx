@@ -528,7 +528,7 @@ export default function LetterheadPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#6366f1] opacity-30" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] opacity-30" />
           <div className="text-sm text-gray-400">Loading editor…</div>
         </div>
       </div>
@@ -1171,7 +1171,7 @@ export default function LetterheadPage() {
 
                       {/* Subject */}
                       {doc.subject && (
-                        <div className="print-subject-block" style={{ margin: '14px 0 18px 0', paddingLeft: '8px', borderLeft: '3px solid #6366f1' }}>
+                        <div className="print-subject-block" style={{ margin: '14px 0 18px 0', paddingLeft: '8px', borderLeft: '3px solid #0071e3' }}>
                           <h2 style={{ fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.025em' }}>
                             Subject: {doc.subject}
                           </h2>
@@ -1235,7 +1235,7 @@ export default function LetterheadPage() {
 
           {/* Subject */}
           {doc.subject && (
-            <div className="print-subject-block" style={{ margin: '14px 0 18px 0', paddingLeft: '8px', borderLeft: '3px solid #6366f1' }}>
+            <div className="print-subject-block" style={{ margin: '14px 0 18px 0', paddingLeft: '8px', borderLeft: '3px solid #0071e3' }}>
               <h2 style={{ fontSize: '10pt', fontWeight: '700', color: '#0f172a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.025em' }}>
                 Subject: {doc.subject}
               </h2>

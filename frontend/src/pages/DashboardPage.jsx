@@ -55,7 +55,7 @@ function StatCard({ icon: Icon, label, value, sub, accentColor = '#0071e3', onCl
         <div>
           <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
             {label}
-            <ArrowRight size={10} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-indigo-500" />
+            <ArrowRight size={10} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#0071e3] dark:text-[#0a84ff]" />
           </p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white animated-counter leading-none tracking-tight">
             {displayValue}
@@ -113,9 +113,9 @@ function StatCard({ icon: Icon, label, value, sub, accentColor = '#0071e3', onCl
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-3 border border-gray-200/60 dark:border-gray-700/60 backdrop-blur-md">
+    <div className="bg-white/80 dark:bg-black/70 shadow-xl rounded-xl p-3 border border-white/60 dark:border-white/10 backdrop-blur-xl">
       <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{label}</p>
-      <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+      <p className="text-sm font-bold text-[#0071e3] dark:text-[#0a84ff]">
         ₹{Number(payload[0]?.value || 0).toLocaleString('en-IN')}
       </p>
       <p className="text-xs text-gray-500">{payload[0]?.payload?.count} invoices</p>
@@ -308,22 +308,22 @@ export default function DashboardPage() {
         {/* Sales Area Chart */}
         <div
           onClick={() => navigate('/reports')}
-          className="lg:col-span-2 card p-5 cursor-pointer group hover:border-indigo-400/50 transition-all duration-200"
+          className="lg:col-span-2 card p-5 cursor-pointer group hover:border-[#0071e3]/40 dark:hover:border-[#0a84ff]/40 transition-all duration-200"
           title="Click to view full Sales Report"
         >
           <div className="section-header mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.1)' }}>
-                <BarChart2 size={14} style={{ color: '#6366f1' }} />
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,113,227,0.1)' }}>
+                <BarChart2 size={14} style={{ color: '#0071e3' }} />
               </div>
-              <h2 className="section-header-title group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors flex items-center gap-1.5">
+              <h2 className="section-header-title group-hover:text-[#0071e3] dark:group-hover:text-[#0a84ff] transition-colors flex items-center gap-1.5">
                 Sales — Last 7 Days
-                <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-indigo-500" />
+                <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-[#0071e3] dark:text-[#0a84ff]" />
               </h2>
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); navigate('/reports') }}
-              className="text-xs text-indigo-500 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
+              className="text-xs text-[#0071e3] dark:text-[#0a84ff] hover:underline flex items-center gap-1 font-semibold"
             >
               Full Report <ArrowRight size={11} />
             </button>
@@ -333,8 +333,8 @@ export default function DashboardPage() {
               <AreaChart data={chart} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="grad-main" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%"  stopColor="#0071e3" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#0071e3" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.04)" className="dark:opacity-20" />
@@ -344,11 +344,11 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="amount"
-                  stroke="#6366f1"
+                  stroke="#0071e3"
                   fill="url(#grad-main)"
                   strokeWidth={2}
-                  dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: '#6366f1', stroke: 'white', strokeWidth: 2 }}
+                  dot={{ r: 3, fill: '#0071e3', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#0071e3', stroke: 'white', strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -370,7 +370,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => navigate('/sales')}
-              className="text-xs text-indigo-500 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
+              className="text-xs text-[#0071e3] dark:text-[#0a84ff] hover:underline flex items-center gap-1 font-semibold"
             >
               All Sales <ArrowRight size={11} />
             </button>
@@ -386,11 +386,11 @@ export default function DashboardPage() {
                     title="Click to view sales invoices"
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <p className="text-[13px] font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors flex items-center gap-1.5">
+                      <p className="text-[13px] font-semibold text-gray-900 dark:text-white truncate group-hover:text-[#0071e3] dark:group-hover:text-[#0a84ff] transition-colors flex items-center gap-1.5">
                         {s.customer_name}
                         <ArrowRight size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                       </p>
-                      <Amount value={s.total_amount} className="text-[13px] font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0 ml-2" />
+                      <Amount value={s.total_amount} className="text-[13px] font-bold text-[#0071e3] dark:text-[#0a84ff] flex-shrink-0 ml-2" />
                     </div>
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">{s.invoice_number}</p>
@@ -405,8 +405,8 @@ export default function DashboardPage() {
                 className="flex items-center justify-center h-full py-12 cursor-pointer group"
               >
                 <div className="text-center">
-                  <ShoppingCart size={28} className="text-gray-200 dark:text-gray-700 mx-auto mb-2 group-hover:text-indigo-400 transition-colors" />
-                  <p className="text-sm text-gray-400 group-hover:text-indigo-500 transition-colors">No sales yet today · Click for Sales</p>
+                  <ShoppingCart size={28} className="text-gray-200 dark:text-gray-700 mx-auto mb-2 group-hover:text-[#0071e3] dark:group-hover:text-[#0a84ff] transition-colors" />
+                  <p className="text-sm text-gray-400 group-hover:text-[#0071e3] dark:group-hover:text-[#0a84ff] transition-colors">No sales yet today · Click for Sales</p>
                 </div>
               </div>
             )}
@@ -419,14 +419,14 @@ export default function DashboardPage() {
         <div className="card p-5">
           <div className="section-header mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.1)' }}>
-                <TrendingUp size={14} style={{ color: '#6366f1' }} />
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,113,227,0.1)' }}>
+                <TrendingUp size={14} style={{ color: '#0071e3' }} />
               </div>
               <h2 className="section-header-title">Brand Performance</h2>
             </div>
             <button
               onClick={() => navigate('/reports')}
-              className="text-xs text-indigo-500 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold"
+              className="text-xs text-[#0071e3] dark:text-[#0a84ff] hover:underline flex items-center gap-1 font-semibold"
             >
               Full Analytics <ArrowRight size={11} />
             </button>
@@ -434,12 +434,12 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-4">
             <div
               onClick={() => navigate('/reports')}
-              className="p-3 -m-1 rounded-xl cursor-pointer hover:bg-indigo-500/[0.04] dark:hover:bg-indigo-500/[0.08] transition-all group"
+              className="p-3 -m-1 rounded-xl cursor-pointer hover:bg-[#0071e3]/[0.05] dark:hover:bg-[#0a84ff]/[0.08] transition-all group"
               title="Click to view volume reports"
             >
               <div className="flex items-center justify-between mb-2 border-b border-gray-100 dark:border-white/5 pb-1.5">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Top Volume</p>
-                <span className="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity font-semibold flex items-center gap-0.5">
+                <span className="text-[10px] text-[#0071e3] dark:text-[#0a84ff] opacity-0 group-hover:opacity-100 transition-opacity font-semibold flex items-center gap-0.5">
                   Report <ArrowRight size={9} />
                 </span>
               </div>
@@ -451,10 +451,10 @@ export default function DashboardPage() {
                     <div key={idx} className="space-y-1">
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[100px]">{b.brand}</span>
-                        <span className="font-bold text-indigo-600 dark:text-indigo-400 text-[11px]">{b.quantity} pcs</span>
+                        <span className="font-bold text-[#0071e3] dark:text-[#0a84ff] text-[11px]">{b.quantity} pcs</span>
                       </div>
                       <div className="w-full bg-gray-100 dark:bg-white/5 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-indigo-500/80 dark:bg-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                        <div className="bg-[#0071e3] dark:bg-[#0a84ff] h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   )
@@ -565,14 +565,14 @@ export default function DashboardPage() {
             {/* Recent Movement Logs Column — Clickable to /traceability */}
             <div
               onClick={() => navigate('/traceability')}
-              className="p-3 -m-1 rounded-xl cursor-pointer hover:bg-indigo-500/[0.05] dark:hover:bg-indigo-500/[0.08] transition-all group"
+              className="p-3 -m-1 rounded-xl cursor-pointer hover:bg-[#0071e3]/[0.05] dark:hover:bg-[#0a84ff]/[0.08] transition-all group"
               title="Click to open Traceability module"
             >
               <div className="flex items-center justify-between mb-2 border-b border-gray-100 dark:border-white/5 pb-1.5">
                 <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1">
                   Recent Logs
                 </p>
-                <span className="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity font-semibold flex items-center gap-0.5">
+                <span className="text-[10px] text-[#0071e3] dark:text-[#0a84ff] opacity-0 group-hover:opacity-100 transition-opacity font-semibold flex items-center gap-0.5">
                   Trace <ArrowRight size={9} />
                 </span>
               </div>
@@ -594,7 +594,7 @@ export default function DashboardPage() {
                 {!data?.product_movement_history?.length && (
                   <div className="py-3 text-center">
                     <p className="text-xs text-gray-400">No recent movement logs</p>
-                    <span className="text-[11px] text-indigo-500 font-semibold group-hover:underline mt-0.5 inline-block">
+                    <span className="text-[11px] text-[#0071e3] dark:text-[#0a84ff] font-semibold group-hover:underline mt-0.5 inline-block">
                       View Traceability →
                     </span>
                   </div>
@@ -641,7 +641,7 @@ export default function DashboardPage() {
           <button onClick={() => navigate('/suppliers')} className="btn-secondary text-xs justify-center py-2.5">
             Suppliers
           </button>
-          <button onClick={() => navigate('/returns')} className="btn-secondary text-xs justify-center py-2.5 border-rose-500/30 text-rose-600 dark:text-rose-400 hover:border-rose-500">
+          <button onClick={() => navigate('/returns')} className="btn-secondary text-xs justify-center py-2.5">
             Returns Center
           </button>
           <button onClick={() => navigate('/traceability')} className="btn-secondary text-xs justify-center py-2.5">
