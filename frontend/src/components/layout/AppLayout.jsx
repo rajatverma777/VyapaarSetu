@@ -26,6 +26,7 @@ export default function AppLayout() {
   }, [])
 
   const isPosPage = location.pathname === '/sales/new'
+  const isSettingsPage = location.pathname === '/settings'
 
   // Page-transition key & reset nav visibility on navigation
   const [pageKey, setPageKey] = useState(location.pathname)
@@ -92,10 +93,12 @@ export default function AppLayout() {
             className={`flex-1 min-h-0 h-full ${
               isPosPage
                 ? 'overflow-hidden pt-[68px] px-3 lg:px-4 pb-3 flex flex-col'
-                : 'overflow-y-auto pt-[82px] lg:pt-[90px] px-4 lg:px-6 pb-28 lg:pb-32'
+                : isSettingsPage
+                  ? 'overflow-y-auto min-[860px]:overflow-hidden pt-[82px] lg:pt-[90px] px-4 lg:px-6 pb-28 lg:pb-32 flex flex-col'
+                  : 'overflow-y-auto pt-[82px] lg:pt-[90px] px-4 lg:px-6 pb-28 lg:pb-32'
             }`}
           >
-            <div key={pageKey} className="page-transition-enter flex-1 flex flex-col min-h-0">
+            <div key={pageKey} className="page-transition-enter flex-1 flex flex-col min-h-0 h-full">
               <Outlet />
             </div>
           </div>

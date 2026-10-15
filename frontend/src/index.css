@@ -6241,6 +6241,19 @@ input[type=number] {
 }
 
 /* ── Apple macOS System Settings Layout ───────────────────────────── */
+.apple-settings-page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  flex: 1;
+}
+@media (min-width: 860px) {
+  .apple-settings-page-container {
+    overflow: hidden;
+  }
+}
+
 .apple-settings-frame {
   display: flex;
   flex-direction: column;
@@ -6271,6 +6284,11 @@ input[type=number] {
 @media (min-width: 860px) {
   .apple-settings-frame {
     flex-direction: row;
+    height: 100%;
+    min-height: 480px;
+    max-height: 100%;
+    overflow: hidden;
+    flex: 1;
   }
 }
 
@@ -6292,8 +6310,13 @@ input[type=number] {
 @media (min-width: 860px) {
   .apple-settings-sidebar {
     width: 275px;
+    height: 100%;
+    max-height: 100%;
     border-bottom: none;
     border-right: 0.75px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    position: sticky;
+    top: 0;
   }
   .dark .apple-settings-sidebar {
     border-right-color: rgba(255, 255, 255, 0.08);
@@ -6475,14 +6498,46 @@ input[type=number] {
   min-width: 0;
   padding: 20px 22px 32px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 @media (min-width: 860px) {
   .apple-settings-content {
-    padding: 26px 32px 36px;
+    height: 100%;
+    max-height: 100%;
+    padding: 26px 32px 48px;
   }
+}
+
+/* Subtle Apple Scrollbars */
+.apple-settings-nav-scroll::-webkit-scrollbar,
+.apple-settings-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.apple-settings-nav-scroll::-webkit-scrollbar-track,
+.apple-settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.apple-settings-nav-scroll::-webkit-scrollbar-thumb,
+.apple-settings-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 9999px;
+}
+.dark .apple-settings-nav-scroll::-webkit-scrollbar-thumb,
+.dark .apple-settings-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+.apple-settings-nav-scroll::-webkit-scrollbar-thumb:hover,
+.apple-settings-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+.dark .apple-settings-nav-scroll::-webkit-scrollbar-thumb:hover,
+.dark .apple-settings-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.30);
 }
 
 .apple-settings-header {

@@ -309,7 +309,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="apple-settings-page-container">
       {/* macOS System Settings Split-View Window */}
       <div className="apple-settings-frame">
 
@@ -360,7 +360,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Navigation Groups */}
-          <nav className="flex flex-col gap-4 overflow-y-auto">
+          <nav className="flex-1 flex flex-col gap-4 overflow-y-auto min-h-0 apple-settings-nav-scroll pr-1">
             {filteredNavGroups.map(group => (
               <div key={group.title} className="apple-settings-nav-group">
                 <span className="apple-settings-nav-group-title">{group.title}</span>
