@@ -9,7 +9,7 @@ import {
   Search, Sparkles, Plus, X, User,
   Users, Truck, ShoppingBag, CreditCard,
   BarChart3, RotateCcw, Activity, FileText, Settings,
-  ShoppingCart, Zap, Sun, Moon, LogOut, ChevronUp
+  ShoppingCart, Zap, Sun, Moon, LogOut, ChevronUp, ChevronRight
 } from 'lucide-react'
 
 // ── Primary 5 tabs always in the capsule ────────────────────────────
@@ -25,30 +25,30 @@ const MORE_GROUPS = [
   {
     title: 'Sales & Customers',
     items: [
-      { to: '/customers',  icon: Users,       label: 'Customers',    isCustomerRow: true },
-      { to: '/payments',   icon: CreditCard,  label: 'Payments'      },
+      { to: '/customers',  icon: Users,       label: 'Customers',    subtitle: 'Khata & Balances',    color: 'blue', isCustomerRow: true },
+      { to: '/payments',   icon: CreditCard,  label: 'Payments',     subtitle: 'Receipts & Dues',     color: 'emerald' },
     ]
   },
   {
     title: 'Inventory & Supply',
     items: [
-      { to: '/purchases',  icon: ShoppingBag, label: 'Purchases', quickTo: '/purchases/new' },
-      { to: '/suppliers',  icon: Truck,       label: 'Suppliers'     },
+      { to: '/purchases',  icon: ShoppingBag, label: 'Purchases',    subtitle: 'Orders & PO Bills',   color: 'amber', quickTo: '/purchases/new' },
+      { to: '/suppliers',  icon: Truck,       label: 'Suppliers',    subtitle: 'Vendor Directory',    color: 'cyan' },
     ]
   },
   {
-    title: 'Operations',
+    title: 'Operations & Insights',
     items: [
-      { to: '/reports',       icon: BarChart3,  label: 'Reports'      },
-      { to: '/returns',       icon: RotateCcw,  label: 'Returns'      },
-      { to: '/traceability',  icon: Activity,   label: 'Traceability' },
-      { to: '/documents',     icon: FileText,   label: 'Letterhead'   },
+      { to: '/reports',       icon: BarChart3,  label: 'Reports',      subtitle: 'GST & Sales P&L',     color: 'purple' },
+      { to: '/returns',       icon: RotateCcw,  label: 'Returns',      subtitle: 'Credit & Debit Notes',color: 'rose' },
+      { to: '/traceability',  icon: Activity,   label: 'Traceability', subtitle: 'Batch & Expiry',      color: 'teal' },
+      { to: '/documents',     icon: FileText,   label: 'Letterhead',   subtitle: 'Custom Print Layouts',color: 'indigo' },
     ]
   },
   {
-    title: 'Preferences',
+    title: 'System & Security',
     items: [
-      { to: '/settings', icon: Settings, label: 'Settings' },
+      { to: '/settings', icon: Settings, label: 'Settings', subtitle: 'Company & Preferences', color: 'slate' },
     ]
   },
 ]
@@ -177,7 +177,7 @@ export default function BottomNav({ visible = true }) {
         />
       )}
 
-      {/* ── Account & Options Glass Sheet (Apple Liquid Glass) ──────── */}
+      {/* ── Account & Options Glass Sheet (Apple Liquid Glass Control Center) ── */}
       <div
         ref={sheetRef}
         className={`bnav-sheet ${moreOpen ? 'bnav-sheet--open' : ''}`}
@@ -185,11 +185,14 @@ export default function BottomNav({ visible = true }) {
         aria-modal="true"
         aria-label="Account and options"
       >
-        {/* Apple-style Profile Header */}
+        {/* Apple ID Style Profile Header */}
         <div className="bnav-sheet-profile-header">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="bnav-sheet-avatar">
-              {user?.full_name?.[0]?.toUpperCase() || 'U'}
+            <div className="bnav-sheet-avatar-wrap">
+              <div className="bnav-sheet-avatar">
+                {user?.full_name?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <span className="bnav-sheet-status-dot" />
             </div>
             <div className="min-w-0">
               <div className="bnav-sheet-user-name truncate">
@@ -199,6 +202,11 @@ export default function BottomNav({ visible = true }) {
                 <span className="bnav-sheet-role-badge">
                   {user?.role || 'Staff'}
                 </span>
+                {(user?.tenant_id || user?.company_code) && (
+                  <span className="bnav-sheet-tenant-pill">
+                    {user?.tenant_id || user?.company_code}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -210,7 +218,7 @@ export default function BottomNav({ visible = true }) {
               title={dark ? 'Light mode' : 'Dark mode'}
               aria-label="Toggle theme"
             >
-              {dark ? <Sun size={15} /> : <Moon size={15} />}
+              {dark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-blue-500" />}
             </button>
             <button
               type="button"
@@ -232,7 +240,7 @@ export default function BottomNav({ visible = true }) {
           </div>
         </div>
 
-        {/* Global Search inside More sheet */}
+        {/* Global Spotlight Search */}
         <div className="bnav-sheet-search-wrap">
           <div className="bnav-sheet-search-box">
             <Search size={15} strokeWidth={2.2} className="bnav-sheet-search-icon" />
@@ -267,19 +275,42 @@ export default function BottomNav({ visible = true }) {
           </div>
         </div>
 
-        {/* Quick Sale prominent row */}
-        <button
-          className="bnav-quick-sale-row"
-          onClick={() => go('/sales/new')}
-        >
-          <div className="bnav-qs-icon">
-            <Plus size={14} strokeWidth={2.5} />
-          </div>
-          <span className="bnav-qs-label">Quick Sale</span>
-          <kbd className="bnav-qs-kbd">F2</kbd>
-        </button>
+        {/* Apple Hero Action Tiles (Quick Sale & Quick Khata) */}
+        {!q && (
+          <div className="bnav-hero-actions-grid">
+            <button
+              type="button"
+              className="bnav-hero-card bnav-hero-card--sale"
+              onClick={() => go('/sales/new')}
+            >
+              <div className="bnav-hero-card-icon">
+                <Plus size={16} strokeWidth={2.5} />
+              </div>
+              <div className="bnav-hero-card-body">
+                <span className="bnav-hero-card-title">Quick Sale</span>
+                <span className="bnav-hero-card-sub">Fast POS billing</span>
+              </div>
+              <kbd className="bnav-hero-card-kbd">F2</kbd>
+            </button>
 
-        {/* Navigation groups */}
+            <button
+              type="button"
+              className="bnav-hero-card bnav-hero-card--khata"
+              onClick={() => { setCMOpen(true); setMoreOpen(false) }}
+            >
+              <div className="bnav-hero-card-icon">
+                <Zap size={15} strokeWidth={2.5} />
+              </div>
+              <div className="bnav-hero-card-body">
+                <span className="bnav-hero-card-title">Quick Khata</span>
+                <span className="bnav-hero-card-sub">Customer ledger</span>
+              </div>
+              <span className="bnav-hero-card-badge">Instant</span>
+            </button>
+          </div>
+        )}
+
+        {/* Navigation groups in 2-Column Apple Control Center Cards */}
         <div className="bnav-sheet-scroll">
           {filteredGroups.length === 0 ? (
             <div className="py-8 px-4 text-center">
@@ -299,41 +330,49 @@ export default function BottomNav({ visible = true }) {
               return (
                 <div key={group.title} className="bnav-sheet-group">
                   <p className="bnav-sheet-group-title">{group.title}</p>
-                  <div className="bnav-sheet-items">
+                  <div className="bnav-sheet-grid">
                     {group.items.map((item) => {
                       const Icon = item.icon
                       const isActive = location.pathname === item.to ||
                         (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
                       return (
-                        <div key={item.to} className="bnav-sheet-item-row">
+                        <div key={item.to} className="bnav-grid-card-wrap">
                           <button
-                            className={`bnav-sheet-item ${isActive ? 'bnav-sheet-item--active' : ''}`}
+                            type="button"
+                            className={`bnav-grid-card ${isActive ? 'bnav-grid-card--active' : ''}`}
                             onClick={() => go(item.to)}
                             aria-current={isActive ? 'page' : undefined}
                           >
-                            <Icon size={15} strokeWidth={isActive ? 2.2 : 1.8} />
-                            <span>{item.label}</span>
+                            <div className={`bnav-card-squircle bnav-card-squircle--${item.color || 'blue'}`}>
+                              <Icon size={17} strokeWidth={2.2} />
+                            </div>
+                            <div className="bnav-card-content">
+                              <span className="bnav-card-title">{item.label}</span>
+                              <span className="bnav-card-sub">{item.subtitle}</span>
+                            </div>
+                            <ChevronRight size={13} className="bnav-card-arrow" />
                           </button>
 
-                          {/* Customers: Khata button */}
+                          {/* Inline quick buttons */}
                           {item.isCustomerRow && (
                             <button
-                              className="bnav-khata-btn"
-                              onClick={() => { setCMOpen(true); setMoreOpen(false) }}
+                              type="button"
+                              className="bnav-card-badge-btn"
+                              onClick={(e) => { e.stopPropagation(); setCMOpen(true); setMoreOpen(false) }}
                               title="Quick Khata / Ledger"
                             >
                               <Zap size={9} /> Khata
                             </button>
                           )}
 
-                          {/* Purchases/Sales: quick create */}
                           {item.quickTo && (
                             <button
-                              className="bnav-quick-btn"
-                              onClick={() => go(item.quickTo)}
+                              type="button"
+                              className="bnav-card-badge-btn"
+                              onClick={(e) => { e.stopPropagation(); go(item.quickTo) }}
                               title="Create new"
                             >
-                              <Plus size={12} />
+                              <Plus size={11} strokeWidth={2.5} />
                             </button>
                           )}
                         </div>
