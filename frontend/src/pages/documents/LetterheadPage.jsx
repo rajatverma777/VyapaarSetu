@@ -554,7 +554,7 @@ export default function LetterheadPage() {
         />
       )}
 
-      <div className="flex flex-col h-full min-h-screen -mt-1 no-print">
+      <div className="flex flex-col h-full -mt-1 no-print">
         {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 flex-wrap px-2 pb-3 border-b border-gray-200/40 dark:border-white/5 no-print">
 

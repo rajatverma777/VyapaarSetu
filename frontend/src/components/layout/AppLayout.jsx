@@ -78,9 +78,9 @@ export default function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="flex h-screen h-[100dvh] ambient-bg overflow-hidden relative w-full">
+    <div className="flex flex-1 min-h-0 ambient-bg overflow-hidden relative w-full">
 
-      {/* ── MAIN CONTENT (Edge-to-Edge Full Screen without artificial box framing) ── */}
+      {/* ── MAIN CONTENT (fills #root which is position:fixed inset:0 — true edge-to-edge) ── */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 min-w-0 w-full h-full">
         <main className="flex-1 overflow-hidden relative flex flex-col min-h-0 w-full h-full">
 

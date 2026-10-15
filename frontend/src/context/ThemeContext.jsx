@@ -16,6 +16,14 @@ export function ThemeProvider({ children }) {
       document.documentElement.classList.remove('dark')
       localStorage.setItem('theme', 'light')
     }
+
+    // Sync status bar / browser chrome color with the active theme.
+    // This makes the area behind the notch/status bar on mobile match the app background,
+    // which is the key to the "Google-style" true edge-to-edge look.
+    const themeColor = dark ? '#0b0c0e' : '#f5f5f7'
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+      m.setAttribute('content', themeColor)
+    })
   }, [dark])
 
   const toggle = () => {

@@ -117,7 +117,7 @@ export default function LoginPage() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center ambient-bg p-4 overflow-hidden relative">
+    <div className="min-h-full flex items-center justify-center ambient-bg p-4 overflow-auto relative">
       {/* Top right controls */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         <Link
