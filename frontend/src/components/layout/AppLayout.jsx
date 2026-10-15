@@ -78,24 +78,24 @@ export default function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="flex h-screen ambient-bg overflow-hidden relative">
+    <div className="flex h-screen h-[100dvh] ambient-bg overflow-hidden relative w-full">
 
-      {/* ── MAIN CONTENT (Full Width without left sidebar) ───────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10 p-3.5 lg:p-4 min-w-0">
-        <main className="flex-1 overflow-hidden relative bg-white/45 dark:bg-[#121318]/45 border border-white/60 dark:border-white/[0.14] rounded-[22px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] dark:shadow-[0_24px_64px_-10px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.25)] flex flex-col min-h-0" style={{ backdropFilter: 'blur(44px) saturate(190%) brightness(1.12)', WebkitBackdropFilter: 'blur(44px) saturate(190%) brightness(1.12)' }}>
+      {/* ── MAIN CONTENT (Edge-to-Edge Full Screen without artificial box framing) ── */}
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10 min-w-0 w-full h-full">
+        <main className="flex-1 overflow-hidden relative flex flex-col min-h-0 w-full h-full">
 
           {/* TopNavbar floating inside glass panel */}
           <TopNavbar visible={navVisible} />
 
-          {/* Scrollable page content — extra top padding prevents overlap with TopNavbar */}
+          {/* Scrollable page content — safe-area padding prevents overlap with TopNavbar & BottomNav */}
           <div
             ref={scrollContainerRef}
             className={`flex-1 min-h-0 h-full ${
               isPosPage
-                ? 'overflow-hidden pt-[68px] px-3 lg:px-4 pb-3 flex flex-col'
+                ? 'overflow-hidden pt-[calc(60px+env(safe-area-inset-top,0px))] px-3 lg:px-4 pb-3 flex flex-col'
                 : isSettingsPage
-                  ? 'overflow-y-auto min-[860px]:overflow-hidden pt-[82px] lg:pt-[90px] px-4 lg:px-6 pb-28 lg:pb-32 flex flex-col'
-                  : 'overflow-y-auto pt-[82px] lg:pt-[90px] px-4 lg:px-6 pb-28 lg:pb-32'
+                  ? 'overflow-y-auto min-[860px]:overflow-hidden pt-[calc(72px+env(safe-area-inset-top,0px))] lg:pt-[82px] px-3.5 sm:px-6 lg:px-8 pb-[calc(104px+env(safe-area-inset-bottom,0px))] lg:pb-32 flex flex-col'
+                  : 'overflow-y-auto pt-[calc(72px+env(safe-area-inset-top,0px))] lg:pt-[82px] px-3.5 sm:px-6 lg:px-8 pb-[calc(104px+env(safe-area-inset-bottom,0px))] lg:pb-32'
             }`}
           >
             <div key={pageKey} className="page-transition-enter flex-1 flex flex-col min-h-0 h-full">

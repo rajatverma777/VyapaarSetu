@@ -77,6 +77,13 @@
   /* ── Base Styles ─────────────────────────────────────────────────────────── */
   * { box-sizing: border-box; }
 
+  html, body, #root {
+    height: 100%;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -86,8 +93,9 @@
 
   body {
     font-family: var(--font-sans);
-    @apply antialiased text-gray-900 bg-gray-50 dark:text-gray-100 dark:bg-[#0b0c0e] min-h-screen;
+    @apply antialiased text-gray-900 bg-gray-50 dark:text-gray-100 dark:bg-[#0b0c0e];
     transition: background-color 350ms ease, color 350ms ease;
+    overflow-x: hidden;
   }
 
   /* ── Scrollbar ───────────────────────────────────────────────────────────── */
@@ -3241,20 +3249,23 @@ input[type=number] {
   top: 0;
   left: 0;
   right: 0;
-  height: var(--navbar-height, 58px);
+  height: calc(56px + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 18px;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+  padding-bottom: 0;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(36px) saturate(190%) brightness(1.08);
   -webkit-backdrop-filter: blur(36px) saturate(190%) brightness(1.08);
   border-bottom: 0.75px solid rgba(255, 255, 255, 0.70);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.90),
     0 4px 20px rgba(0, 0, 0, 0.03);
-  border-radius: 22px 22px 0 0;
+  border-radius: 0;
   z-index: 20;
   transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
               opacity 280ms ease;
@@ -3262,7 +3273,7 @@ input[type=number] {
 }
 
 .dark .top-navbar {
-  background: rgba(18, 18, 24, 0.30);
+  background: rgba(14, 15, 20, 0.55);
   backdrop-filter: blur(40px) saturate(200%) brightness(1.30);
   -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.30);
   border-bottom: 0.75px solid rgba(255, 255, 255, 0.10);
@@ -3273,7 +3284,7 @@ input[type=number] {
 }
 
 .top-navbar--hidden {
-  transform: translateY(-135%) !important;
+  transform: translateY(-100%) !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
@@ -5404,7 +5415,7 @@ input[type=number] {
 /* ── Main wrapper: centres the capsule + two circle buttons ─────── */
 .bnav-wrapper {
   position: fixed;
-  bottom: max(18px, env(safe-area-inset-bottom, 18px));
+  bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 49;
@@ -5650,7 +5661,7 @@ input[type=number] {
 
 .bnav-sheet {
   position: fixed;
-  bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 84px);
+  bottom: calc(max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px)) + 80px);
   left: 50%;
   width: clamp(320px, 92vw, 440px);
   max-height: 82vh;
@@ -6237,7 +6248,7 @@ input[type=number] {
   .bnav-tab-icon  { width: 19px; height: 19px; }
   .bnav-sale-btn { width: 62px; height: 62px; }
   .bnav-wrapper { gap: 10px; }
-  .bnav-sheet   { width: calc(100vw - 24px); bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 78px); }
+  .bnav-sheet   { width: calc(100vw - 24px); bottom: calc(max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px)) + 74px); }
 }
 
 /* ── Apple macOS System Settings Layout ───────────────────────────── */
