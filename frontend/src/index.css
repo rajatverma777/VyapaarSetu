@@ -5634,47 +5634,49 @@ input[type=number] {
 .dark .bnav-sheet-backdrop { background: rgba(0,0,0,0.45); }
 @keyframes bnavFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* ── More glass sheet ───────────────────────────────────────────── */
+/* ── User / Options Glass Sheet (Apple Liquid Glass) ───────────── */
 .bnav-sheet {
   position: fixed;
   bottom: calc(max(18px, env(safe-area-inset-bottom, 18px)) + 86px);
   left: 50%;
-  width: clamp(300px, 88vw, 560px);
-  max-height: 70vh;
-  border-radius: 24px;
+  width: clamp(320px, 90vw, 560px);
+  max-height: 74vh;
+  border-radius: 26px;
   z-index: 48;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 
-  /* Glass material */
-  background: rgba(255,255,255,0.64);
-  backdrop-filter: blur(48px) saturate(220%) brightness(1.08);
-  -webkit-backdrop-filter: blur(48px) saturate(220%) brightness(1.08);
-  border: 0.75px solid rgba(255,255,255,0.80);
+  /* True Apple Liquid Glass */
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(48px) saturate(210%) brightness(1.10);
+  -webkit-backdrop-filter: blur(48px) saturate(210%) brightness(1.10);
+  border: 0.75px solid rgba(255, 255, 255, 0.75);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.95),
-    inset 0 -0.5px 0 rgba(0,0,0,0.06),
-    0 8px 32px rgba(0,0,0,0.12),
-    0 32px 80px rgba(0,0,0,0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.04),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.14);
 
   /* Hidden off-screen by default */
   transform: translateX(-50%) translateY(20px) scale(0.95);
   opacity: 0;
   pointer-events: none;
-  transition: transform 240ms cubic-bezier(0.22,1,0.36,1),
-              opacity   200ms ease,
-              filter    200ms ease;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+              opacity   220ms ease,
+              filter    220ms ease;
   filter: blur(4px);
 }
 .dark .bnav-sheet {
-  background: rgba(22,22,26,0.72);
-  border-color: rgba(255,255,255,0.16);
+  background: rgba(14, 14, 20, 0.55);
+  backdrop-filter: blur(52px) saturate(210%) brightness(1.30);
+  -webkit-backdrop-filter: blur(52px) saturate(210%) brightness(1.30);
+  border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
-    inset 0 0.75px 0 rgba(255,255,255,0.65),
-    inset 0 -0.5px 0 rgba(0,0,0,0.30),
-    0 8px 32px rgba(0,0,0,0.40),
-    0 32px 80px rgba(0,0,0,0.55);
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.30),
+    0 12px 36px rgba(0, 0, 0, 0.45),
+    0 32px 80px rgba(0, 0, 0, 0.65);
 }
 .bnav-sheet--open {
   transform: translateX(-50%) translateY(0) scale(1);
@@ -5683,28 +5685,106 @@ input[type=number] {
   filter: blur(0);
 }
 
-/* Sheet header */
-.bnav-sheet-header {
+/* Apple-style Profile Header in Sheet */
+.bnav-sheet-profile-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 10px;
-  border-bottom: 0.75px solid rgba(0,0,0,0.06);
+  padding: 14px 16px 12px;
+  border-bottom: 0.75px solid rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
-.dark .bnav-sheet-header { border-color: rgba(255,255,255,0.08); }
-
-.bnav-sheet-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1c1c1e;
-  letter-spacing: -0.02em;
-  font-family: var(--font-display);
+.dark .bnav-sheet-profile-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
-.dark .bnav-sheet-title { color: rgba(245,245,247,0.95); }
+
+.bnav-sheet-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 113, 227, 0.12);
+  border: 0.75px solid rgba(0, 113, 227, 0.25);
+  color: #0071e3;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80);
+  flex-shrink: 0;
+}
+.dark .bnav-sheet-avatar {
+  background: rgba(10, 132, 255, 0.20);
+  border-color: rgba(80, 160, 255, 0.35);
+  color: #5ac8fa;
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.40);
+}
+
+.bnav-sheet-user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+.dark .bnav-sheet-user-name {
+  color: #ffffff;
+}
+
+.bnav-sheet-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(0, 113, 227, 0.10);
+  color: #0071e3;
+  border: 0.5px solid rgba(0, 113, 227, 0.20);
+}
+.dark .bnav-sheet-role-badge {
+  background: rgba(10, 132, 255, 0.18);
+  color: #5ac8fa;
+  border-color: rgba(10, 132, 255, 0.30);
+}
+
+.bnav-sheet-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.04);
+  border: 0.75px solid rgba(0, 0, 0, 0.06);
+  color: #64748b;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.dark .bnav-sheet-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+.bnav-sheet-action-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  transform: scale(1.05);
+}
+.dark .bnav-sheet-action-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+.bnav-sheet-action-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.30) !important;
+}
 
 .bnav-sheet-close {
-  width: 26px; height: 26px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   border: none;
   background: rgba(0,0,0,0.06);

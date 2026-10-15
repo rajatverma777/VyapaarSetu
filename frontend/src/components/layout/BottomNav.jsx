@@ -6,7 +6,7 @@ import { useCommandPalette } from '../../context/CommandPaletteContext'
 import QuickCustomerModal from '../customers/QuickCustomerModal'
 import {
   LayoutDashboard, TrendingUp, Warehouse, Package,
-  Search, Sparkles, Plus, MoreHorizontal, X,
+  Search, Sparkles, Plus, X, User,
   Users, Truck, ShoppingBag, CreditCard,
   BarChart3, RotateCcw, Activity, FileText, Settings,
   ShoppingCart, Zap, Sun, Moon, LogOut, ChevronUp
@@ -87,6 +87,7 @@ export default function BottomNav({ visible = true }) {
   const [customerModalOpen, setCMOpen]      = useState(false)
   const [searchQuery, setSearchQuery]       = useState('')
   const sheetRef = useRef(null)
+  const userTabBtnRef = useRef(null)
   const searchInputRef = useRef(null)
 
   // Reset search when sheet closes
@@ -96,11 +97,16 @@ export default function BottomNav({ visible = true }) {
     }
   }, [moreOpen])
 
-  // Close sheet on outside click
+  // Close sheet on outside click (ignoring clicks on the Account tab button)
   useEffect(() => {
     if (!moreOpen) return
     const handler = (e) => {
-      if (sheetRef.current && !sheetRef.current.contains(e.target)) {
+      if (
+        sheetRef.current &&
+        !sheetRef.current.contains(e.target) &&
+        userTabBtnRef.current &&
+        !userTabBtnRef.current.contains(e.target)
+      ) {
         setMoreOpen(false)
       }
     }
@@ -129,6 +135,11 @@ export default function BottomNav({ visible = true }) {
     return () => window.removeEventListener('keydown', h)
   }, [navigate])
 
+  const handleToggleUserSheet = (e) => {
+    e.stopPropagation()
+    setMoreOpen(prev => !prev)
+  }
+
   // Filter groups based on search query inside the sheet
   const q = searchQuery.trim().toLowerCase()
   const filteredGroups = MORE_GROUPS.map((group) => {
@@ -138,16 +149,20 @@ export default function BottomNav({ visible = true }) {
     return { ...group, items: visibleItems }
   }).filter((group) => group.items.length > 0)
 
-  // Check if any more-item is active (to highlight the ••• tab)
-  const moreRoutes = MORE_GROUPS.flatMap(g => g.items.map(i => i.to))
-  const moreIsActive = moreRoutes.some(r =>
-    location.pathname === r || (r !== '/dashboard' && location.pathname.startsWith(r + '/'))
-  )
-
-  const activeIndex = PRIMARY_TABS.findIndex(item =>
+  // Active primary tab index (-1 if none)
+  const activePrimaryIndex = PRIMARY_TABS.findIndex(item =>
     location.pathname === item.to ||
     (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
   )
+
+  // Secondary routes (inside Account sheet)
+  const secondaryRoutes = MORE_GROUPS.flatMap(g => g.items.map(i => i.to))
+  const isSecondaryActive = secondaryRoutes.some(r =>
+    location.pathname === r || (r !== '/dashboard' && location.pathname.startsWith(r + '/'))
+  )
+
+  // User / Account tab is active when sheet is open OR when viewing a secondary route
+  const userTabIsActive = moreOpen || (activePrimaryIndex === -1 && isSecondaryActive)
 
   const go = (to) => { navigate(to); setMoreOpen(false) }
 
@@ -162,24 +177,59 @@ export default function BottomNav({ visible = true }) {
         />
       )}
 
-      {/* ── More glass sheet (slides up above the nav) ──────────────── */}
+      {/* ── Account & Options Glass Sheet (Apple Liquid Glass) ──────── */}
       <div
         ref={sheetRef}
         className={`bnav-sheet ${moreOpen ? 'bnav-sheet--open' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-label="All navigation"
+        aria-label="Account and options"
       >
-        {/* Sheet header */}
-        <div className="bnav-sheet-header">
-          <span className="bnav-sheet-title">All Sections</span>
-          <button
-            className="bnav-sheet-close"
-            onClick={() => setMoreOpen(false)}
-            aria-label="Close"
-          >
-            <X size={14} strokeWidth={2.5} />
-          </button>
+        {/* Apple-style Profile Header */}
+        <div className="bnav-sheet-profile-header">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="bnav-sheet-avatar">
+              {user?.full_name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="min-w-0">
+              <div className="bnav-sheet-user-name truncate">
+                {user?.full_name || 'My Account'}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="bnav-sheet-role-badge">
+                  {user?.role || 'Staff'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              type="button"
+              className="bnav-sheet-action-btn"
+              onClick={toggleTheme}
+              title={dark ? 'Light mode' : 'Dark mode'}
+              aria-label="Toggle theme"
+            >
+              {dark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+            <button
+              type="button"
+              className="bnav-sheet-action-btn bnav-sheet-action-btn--danger"
+              onClick={() => { setMoreOpen(false); logout(); }}
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <LogOut size={15} />
+            </button>
+            <button
+              type="button"
+              className="bnav-sheet-close ml-1"
+              onClick={() => setMoreOpen(false)}
+              aria-label="Close sheet"
+            >
+              <X size={15} strokeWidth={2.4} />
+            </button>
+          </div>
         </div>
 
         {/* Global Search inside More sheet */}
@@ -295,27 +345,6 @@ export default function BottomNav({ visible = true }) {
             })
           )}
         </div>
-
-        {/* User footer in sheet */}
-        <div className="bnav-sheet-footer">
-          <div className="bnav-sheet-user">
-            <div className="bnav-avatar">
-              {user?.full_name?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div className="bnav-user-info">
-              <p className="bnav-user-name">{user?.full_name}</p>
-              <p className="bnav-user-role">{user?.role}</p>
-            </div>
-          </div>
-          <div className="bnav-sheet-footer-actions">
-            <button className="bnav-footer-btn" onClick={toggleTheme} title="Toggle theme">
-              {dark ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-            <button className="bnav-footer-btn bnav-footer-btn--danger" onClick={logout} title="Sign out">
-              <LogOut size={14} />
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* ── Main floating bar ────────────────────────────────────────── */}
@@ -328,7 +357,7 @@ export default function BottomNav({ visible = true }) {
         <div className="bnav-capsule" role="tablist">
           {PRIMARY_TABS.map((item, idx) => {
             const Icon = item.icon
-            const isActive = idx === activeIndex
+            const isActive = !moreOpen && idx === activePrimaryIndex
             return (
               <button
                 key={item.to}
@@ -352,23 +381,24 @@ export default function BottomNav({ visible = true }) {
             )
           })}
 
-          {/* More ••• tab */}
+          {/* User Account / Options tab */}
           <button
+            ref={userTabBtnRef}
             role="tab"
-            aria-selected={moreIsActive || moreOpen}
-            aria-label="More sections"
+            aria-selected={userTabIsActive}
+            aria-label="Account & Options"
             tabIndex={0}
-            className={`bnav-tab ${(moreIsActive || moreOpen) ? 'bnav-tab--active' : ''}`}
-            onClick={() => setMoreOpen(o => !o)}
+            className={`bnav-tab ${userTabIsActive ? 'bnav-tab--active' : ''}`}
+            onClick={handleToggleUserSheet}
           >
-            {(moreIsActive || moreOpen) && <span className="bnav-active-pill" aria-hidden="true" />}
-            <MoreHorizontal
+            {userTabIsActive && <span className="bnav-active-pill" aria-hidden="true" />}
+            <User
               size={20}
-              strokeWidth={(moreIsActive || moreOpen) ? 2.4 : 1.9}
+              strokeWidth={userTabIsActive ? 2.4 : 1.9}
               className="bnav-tab-icon"
               aria-hidden="true"
             />
-            <span className="bnav-tab-label">More</span>
+            <span className="bnav-tab-label">Account</span>
           </button>
         </div>
 
