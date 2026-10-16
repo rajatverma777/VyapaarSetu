@@ -448,16 +448,14 @@
     pointer-events: none;
   }
   .dark .qty-btn {
-    background: rgba(255, 255, 255, 0.10);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
   }
   .dark .qty-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.28);
-    color: #ffffff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.40), 0 2px 6px rgba(0, 0, 0, 0.25);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.95);
   }
 
   /* Add to Cart Apple Style Button */
@@ -474,22 +472,17 @@
     box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);
   }
   .dark .btn-add-to-cart {
-    background: rgba(255, 255, 255, 0.09);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
     color: #ffffff;
-    backdrop-filter: blur(20px) brightness(1.20);
-    -webkit-backdrop-filter: blur(20px) brightness(1.20);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 2px 8px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   .dark .btn-add-to-cart:hover:not(:disabled) {
-    background: #0071e3;
-    border-color: #0071e3;
+    background: #0a84ff;
+    border-color: #0a84ff;
     color: #ffffff;
-    box-shadow:
-      0 4px 18px rgba(0, 113, 227, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.40);
+    box-shadow: 0 4px 16px rgba(10, 132, 255, 0.35);
   }
   
   /* Added State */
@@ -537,20 +530,20 @@
   }
   .dark .input {
     color: #f1f5f9;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(24px) saturate(180%) brightness(1.24);
-    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.24);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-color: rgba(255,255,255,0.18);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      inset 0 -0.5px 0 rgba(0, 0, 0, 0.20),
-      0 2px 8px rgba(0, 0, 0, 0.25);
+      inset 0 0.5px 0 rgba(255,255,255,0.60),
+      inset 0 -0.5px 0 rgba(0,0,0,0.15),
+      0 2px 8px rgba(0,0,0,0.20);
   }
   .input::placeholder {
     color: #86868b;
   }
   .dark .input::placeholder {
-    color: rgba(200, 210, 230, 0.45);
+    color: rgba(200, 210, 230, 0.40);
   }
   .input:focus {
     background: #ffffff;
@@ -560,12 +553,12 @@
       0 1px 3px rgba(0, 0, 0, 0.04);
   }
   .dark .input:focus {
-    background: rgba(255, 255, 255, 0.11);
-    border-color: #0a84ff;
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(10, 132, 255, 0.55);
     box-shadow:
-      0 0 0 3px rgba(10, 132, 255, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      0 4px 16px rgba(0, 0, 0, 0.30);
+      0 4px 16px rgba(0, 0, 0, 0.30),
+      0 0 0 3px rgba(10, 132, 255, 0.22),
+      inset 0 1.5px 1.5px rgba(255, 255, 255, 0.14);
   }
   .input-error { @apply input border-red-500/50 focus:ring-red-500/50; }
   .label { @apply block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5 uppercase tracking-wider text-[11px]; }
@@ -597,17 +590,15 @@
     transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
   }
   .dark .card {
-    /* Apple macOS Sonoma / visionOS Crystal Liquid Glass */
-    background: rgba(255, 255, 255, 0.065);
-    backdrop-filter: blur(32px) saturate(190%) brightness(1.28);
-    -webkit-backdrop-filter: blur(32px) saturate(190%) brightness(1.28);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Apple macOS dark: deep, sleek translucent glass */
+    background: rgba(255, 255, 255, 0.045);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.50),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-      0 0 0 1px rgba(255, 255, 255, 0.04),
-      0 16px 48px -8px rgba(0, 0, 0, 0.65),
-      0 4px 16px rgba(0, 0, 0, 0.35);
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 8px 32px -4px rgba(0, 0, 0, 0.5),
+      0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   /* Apple Liquid Glass Callout Card (Company Code / Highlight Banners) */
@@ -726,16 +717,14 @@
   }
   
   .dark .product-card {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(28px) saturate(190%) brightness(1.26);
-    -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.26);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.045);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-      0 0 0 1px rgba(255, 255, 255, 0.04),
-      0 12px 36px -6px rgba(0, 0, 0, 0.55),
-      0 2px 8px rgba(0, 0, 0, 0.30);
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 4px 20px -2px rgba(0, 0, 0, 0.4),
+      0 1px 4px rgba(0, 0, 0, 0.25);
   }
 
   .product-card:hover {
@@ -748,15 +737,12 @@
   }
   
   .dark .product-card:hover {
-    transform: translateY(-3px) scale(1.01);
-    background: rgba(255, 255, 255, 0.095);
-    border-color: rgba(255, 255, 255, 0.28);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
     box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.70),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-      0 0 0 1px rgba(255, 255, 255, 0.08),
-      0 24px 56px -6px rgba(0, 0, 0, 0.70),
-      0 4px 16px rgba(0, 0, 0, 0.35);
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 12px 36px -4px rgba(0, 0, 0, 0.6);
   }
 
   .card-header { @apply px-6 py-4 border-b border-black/[0.06] dark:border-white/5; }
@@ -777,15 +763,13 @@
     transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
   }
   .dark .table-container {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(32px) saturate(190%) brightness(1.28);
-    -webkit-backdrop-filter: blur(32px) saturate(190%) brightness(1.28);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.30),
-      0 16px 48px -8px rgba(0, 0, 0, 0.60),
-      0 4px 16px rgba(0, 0, 0, 0.30);
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 8px 32px rgba(0, 0, 0, 0.4);
   }
   .card .table-container {
     background: transparent !important;
@@ -892,13 +876,10 @@
       radial-gradient(ellipse 80% 60% at 0% 100%, rgba(0, 0, 0, 0.015) 0%, transparent 60%);
   }
   .dark .ambient-bg {
-    /* Apple macOS dark: deep space obsidian with luminous optical atmospheric flares */
-    background-color: #08090c;
+    /* Apple macOS dark: deep neutral obsidian canvas */
+    background-color: #0b0c0e;
     background-image:
-      radial-gradient(ellipse 70% 50% at 5% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 65%),
-      radial-gradient(ellipse 60% 50% at 95% 5%, rgba(0, 113, 227, 0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 65% 55% at 90% 95%, rgba(168, 85, 247, 0.09) 0%, transparent 65%),
-      radial-gradient(ellipse 80% 60% at 50% 50%, #12141a 0%, #08090c 80%);
+      radial-gradient(ellipse 120% 80% at 50% -20%, #181a20 0%, #0b0c0e 70%);
   }
 
 
@@ -924,14 +905,13 @@
       inset 0 1px 0 rgba(255, 255, 255, 1);
   }
   .dark .dropdown-glass {
-    background: rgba(18, 20, 28, 0.82);
-    backdrop-filter: blur(36px) saturate(190%) brightness(1.30);
-    -webkit-backdrop-filter: blur(36px) saturate(190%) brightness(1.30);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(18,20,30,0.88);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.12);
     box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.40),
-      0 20px 60px rgba(0, 0, 0, 0.70),
-      0 4px 16px rgba(0, 0, 0, 0.40);
+      0 16px 40px rgba(0,0,0,0.50),
+      inset 0 1px 0 rgba(255,255,255,0.12);
   }
 }
 
@@ -1449,25 +1429,23 @@ input[type=number] {
 /* Dark mode — neutral white glass on dark obsidian */
 .dark .search-glass-input {
   color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(24px) saturate(180%) brightness(1.24);
-  -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.24);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-color: rgba(255,255,255,0.10);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -0.5px 0 rgba(0, 0, 0, 0.20),
-    0 2px 8px rgba(0, 0, 0, 0.25);
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 2px 8px rgba(0,0,0,0.25);
 }
 .dark .search-glass-input::placeholder {
-  color: rgba(200, 210, 230, 0.45);
+  color: rgba(255,255,255,0.35);
 }
 .dark .search-glass-input:focus {
-  background: rgba(255, 255, 255, 0.11);
+  background: rgba(255,255,255,0.09);
   border-color: #0a84ff;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    0 0 0 3px rgba(10, 132, 255, 0.25),
-    0 4px 16px rgba(0, 0, 0, 0.30);
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    0 0 0 3px rgba(10,132,255,0.25);
 }
 
 /* Search icon — always neutral gray */
@@ -2216,11 +2194,10 @@ input[type=number] {
 }
 
 .dark .glass-tab-track {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(28px) saturate(180%) brightness(1.20);
-  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.20);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 2px 8px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
 }
 
 .glass-tab-btn {
@@ -2307,13 +2284,14 @@ input[type=number] {
 }
 
 .dark .glass-tab-active-pill {
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  /* Match card style for design consistency */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.50),
-    0 2px 8px rgba(0, 0, 0, 0.25);
+    inset 0 2px 2px rgba(255, 255, 255, 0.35),
+    inset 0 -1.5px 2px rgba(255, 255, 255, 0.03);
 }
 
 /* Tab shadow sliding transition name */
@@ -5143,14 +5121,9 @@ input[type=number] {
   overflow: hidden;
 }
 .dark .cpc-searchbar-wrap {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(24px) saturate(180%) brightness(1.24);
-  -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.24);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -0.5px 0 rgba(0, 0, 0, 0.20),
-    0 4px 14px rgba(0, 0, 0, 0.30);
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.09);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.10);
 }
 .cpc-searchbar-wrap:focus-within {
   border-color: #0071e3;
@@ -5158,11 +5131,7 @@ input[type=number] {
 }
 .dark .cpc-searchbar-wrap:focus-within {
   border-color: #0a84ff;
-  background: rgba(255, 255, 255, 0.11);
-  box-shadow:
-    0 6px 24px rgba(0, 0, 0, 0.35),
-    0 0 0 3px rgba(10, 132, 255, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.30), 0 0 0 3px rgba(10,132,255,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 .cpc-search-input {
   flex: 1;
@@ -5235,14 +5204,9 @@ input[type=number] {
   overflow-y: auto;
 }
 .dark .cpc-dropdown {
-  background: rgba(18, 20, 28, 0.85);
-  backdrop-filter: blur(36px) saturate(190%) brightness(1.30);
-  -webkit-backdrop-filter: blur(36px) saturate(190%) brightness(1.30);
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.40),
-    0 24px 64px rgba(0, 0, 0, 0.75),
-    0 4px 16px rgba(0, 0, 0, 0.40);
+  background: rgba(20,22,27,0.94);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.65), 0 4px 16px rgba(0,0,0,0.40);
 }
 
 /* ── Search result row ─────────────────────────────────────────────────────── */
@@ -5375,12 +5339,10 @@ input[type=number] {
   white-space: nowrap;
 }
 .dark .cpc-quick-chip {
-  color: #e5e7eb;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.25), 0 1px 3px rgba(0, 0, 0, 0.20);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  color: #d1d5db;
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .cpc-quick-chip:hover {
   color: #111827;
@@ -5391,9 +5353,8 @@ input[type=number] {
 }
 .dark .cpc-quick-chip:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.24);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.40), 0 2px 6px rgba(0, 0, 0, 0.30);
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.15);
 }
 .cpc-quick-chip-primary {
   color: #0071e3;

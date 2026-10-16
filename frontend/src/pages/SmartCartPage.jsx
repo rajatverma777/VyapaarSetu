@@ -149,7 +149,7 @@ function ProductCard({ product, onAddToCart }) {
         <div className="flex items-start gap-3">
           {/* Glass icon bubble container */}
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-black/[0.03] dark:bg-white/[0.08] border border-black/[0.05] dark:border-white/[0.14] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+            <div className="w-9 h-9 rounded-[12px] flex items-center justify-center bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.08]">
               <Package size={15} className="text-gray-700 dark:text-gray-200" />
             </div>
 
@@ -169,7 +169,7 @@ function ProductCard({ product, onAddToCart }) {
               {product.name}
             </p>
             {product.brand && (
-              <span className="inline-block text-[9px] font-medium mt-1.5 px-2 py-0.5 rounded-md truncate max-w-full bg-black/[0.03] dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.12] text-gray-600 dark:text-gray-300 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <span className="inline-block text-[9px] font-medium mt-1.5 px-2 py-0.5 rounded-md truncate max-w-full bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.08] text-gray-600 dark:text-gray-400">
                 {product.brand}
               </span>
             )}
@@ -213,7 +213,7 @@ function ProductCard({ product, onAddToCart }) {
       {/* ── Add to Cart — glass pill / qty controller ── */}
       <div className="px-3 pb-4 z-10">
         {totalQtyInCart > 0 ? (
-          <div className="w-full flex items-center justify-between p-1 rounded-[12px] text-[11px] font-semibold tracking-wide transition-all duration-200 bg-black/[0.03] dark:bg-white/[0.10] border border-black/[0.05] dark:border-white/[0.16] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+          <div className="w-full flex items-center justify-between p-1 rounded-[12px] text-[11px] font-semibold tracking-wide transition-all duration-200 bg-black/[0.03] dark:bg-white/[0.08] border border-black/[0.05] dark:border-white/[0.10]">
             {/* Minus Button */}
             <button
               onClick={handleDecrease}
