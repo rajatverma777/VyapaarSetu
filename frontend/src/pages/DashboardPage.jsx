@@ -605,59 +605,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── All Sections & Quick Navigation (1-click to every section) ────────── */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="section-header-title">All Sections &amp; Direct Access</h2>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">1-click jump to any module without menus</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
-          <button onClick={() => navigate('/sales/new')} className="btn-primary text-xs justify-center py-2.5 shadow-sm">
-            ＋ New Sale
-          </button>
-          <button onClick={() => navigate('/sales')} className="btn-secondary text-xs justify-center py-2.5">
-            Sales &amp; Bills
-          </button>
-          <button onClick={() => navigate('/customers')} className="btn-secondary text-xs justify-center py-2.5">
-            Customers &amp; Khata
-          </button>
-          <button onClick={() => navigate('/payments')} className="btn-secondary text-xs justify-center py-2.5">
-            Payments / Dues
-          </button>
-          <button onClick={() => navigate('/inventory')} className="btn-secondary text-xs justify-center py-2.5">
-            Inventory &amp; Stock
-          </button>
-          <button onClick={() => navigate('/products')} className="btn-secondary text-xs justify-center py-2.5">
-            Products Catalog
-          </button>
-          <button onClick={() => navigate('/purchases/new')} className="btn-secondary text-xs justify-center py-2.5">
-            ＋ New Purchase
-          </button>
-          <button onClick={() => navigate('/purchases')} className="btn-secondary text-xs justify-center py-2.5">
-            Purchases List
-          </button>
-          <button onClick={() => navigate('/suppliers')} className="btn-secondary text-xs justify-center py-2.5">
-            Suppliers
-          </button>
-          <button onClick={() => navigate('/returns')} className="btn-secondary text-xs justify-center py-2.5">
-            Returns Center
-          </button>
-          <button onClick={() => navigate('/traceability')} className="btn-secondary text-xs justify-center py-2.5">
-            Traceability
-          </button>
-          <button onClick={() => navigate('/reports')} className="btn-secondary text-xs justify-center py-2.5">
-            GST Reports
-          </button>
-          <button onClick={() => navigate('/documents')} className="btn-secondary text-xs justify-center py-2.5">
-            Letterhead
-          </button>
-          <button onClick={() => navigate('/settings')} className="btn-secondary text-xs justify-center py-2.5">
-            Settings
-          </button>
-        </div>
-      </div>
 
     </div>
   )
