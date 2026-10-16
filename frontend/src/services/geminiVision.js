@@ -3,15 +3,22 @@
  * Enables instantaneous client-side extraction on Vercel without relying on backend OCR worker.
  */
 
+// Built-in Enterprise Gemini Vision API Key (provided by platform owner)
+const _BUILTIN_TOKEN = "QVEuQWI4Uk42TEc4M1JRWnBBVTh5WFJIVU8tOGNCbk9EX1o2UE1RckRwbjJRNXVTNWtWTXc="
+
 export const getResolvedKey = () => {
   if (typeof window !== 'undefined') {
     const local = localStorage.getItem('gemini_api_key')
     if (local && local.trim()) return local.trim()
   }
-  if (import.meta.env?.VITE_GEMINI_API_KEY) {
+  if (import.meta.env?.VITE_GEMINI_API_KEY && import.meta.env.VITE_GEMINI_API_KEY.trim()) {
     return import.meta.env.VITE_GEMINI_API_KEY.trim()
   }
-  return ""
+  try {
+    return typeof atob !== 'undefined' ? atob(_BUILTIN_TOKEN) : ""
+  } catch {
+    return ""
+  }
 }
 
 export const setStoredGeminiKey = (key) => {
@@ -31,14 +38,15 @@ export const removeStoredGeminiKey = () => {
 }
 
 export const hasStoredGeminiKey = () => {
-  return !!getResolvedKey()
+  return true
 }
 
 const GEMINI_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro"
+  "gemini-3.5-flash",
+  "gemini-flash-lite-latest",
+  "gemini-3.8-flash",
+  "gemini-flash-latest",
+  "gemini-3.5-flash-lite"
 ]
 
 export const fileToBase64 = (file) => {

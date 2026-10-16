@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supplierAPI, aiImportAPI, productAPI } from '../../services/api'
-import { extractInvoiceWithGemini, getResolvedKey, setStoredGeminiKey, removeStoredGeminiKey, hasStoredGeminiKey } from '../../services/geminiVision'
+import { extractInvoiceWithGemini } from '../../services/geminiVision'
 import { Modal, SearchAutocomplete, DatePicker, GlassSelect, Spinner } from '../ui'
 
 const AI_IMPORT_PROMPT = `You are an expert Document & Invoice Parsing AI. Your task is to analyze the provided invoice, bill, receipt, challan, purchase order, or document image/PDF and extract all invoice metadata and line-item products into clean, structured JSON.
@@ -204,20 +204,9 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
   const [showPromptDetails, setShowPromptDetails] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Gemini API Key Management
-  const [geminiApiKey, setGeminiApiKey] = useState(() => getResolvedKey())
-  const [showKeyConfig, setShowKeyConfig] = useState(!getResolvedKey())
-  const [inputKey, setInputKey] = useState('')
-  const [pendingScanFile, setPendingScanFile] = useState(null)
-
   // Reset modal state on open
   useEffect(() => {
     if (open) {
-      const existingKey = getResolvedKey()
-      setGeminiApiKey(existingKey)
-      setShowKeyConfig(!existingKey)
-      setInputKey('')
-      setPendingScanFile(null)
       setStep(1)
       setInputMode('scan')
       setIsScanning(false)
@@ -241,52 +230,16 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
     }
   }, [open])
 
-  // Save Gemini API Key & auto-resume pending scan if any
-  const handleSaveApiKey = (keyVal = inputKey) => {
-    const trimmed = (keyVal || '').trim()
-    if (!trimmed) {
-      toast.error('Please enter a valid Gemini API key')
-      return
-    }
-    setStoredGeminiKey(trimmed)
-    setGeminiApiKey(trimmed)
-    setShowKeyConfig(false)
-    setInputKey('')
-    toast.success('Gemini API key saved & activated!')
-
-    if (pendingScanFile) {
-      const fileToScan = pendingScanFile
-      setPendingScanFile(null)
-      handleDirectFileScan(fileToScan, trimmed)
-    }
-  }
-
-  // Remove stored Gemini API Key
-  const handleRemoveApiKey = () => {
-    removeStoredGeminiKey()
-    setGeminiApiKey('')
-    setShowKeyConfig(true)
-    setInputKey('')
-    toast.success('Gemini API key removed')
-  }
-
   // Direct File Scanner Handler using Gemini Vision
-  const handleDirectFileScan = async (file, customKey = null) => {
+  const handleDirectFileScan = async (file) => {
     if (!file) return
-    const activeKey = customKey || geminiApiKey || getResolvedKey()
-    if (!activeKey) {
-      setPendingScanFile(file)
-      setShowKeyConfig(true)
-      toast('Please enter your free Gemini API key below to scan invoice', { icon: '🔑' })
-      return
-    }
 
     setIsScanning(true)
     setScanProgress('Uploading and analyzing document with Gemini Vision AI...')
     const toastId = toast.loading('Reading invoice with Gemini Vision AI...')
 
     try {
-      const extracted = await extractInvoiceWithGemini(file, activeKey)
+      const extracted = await extractInvoiceWithGemini(file)
       if (!extracted || extracted.length === 0) {
         throw new Error("No items could be extracted from document.")
       }
@@ -366,13 +319,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
       toast.success(`Extracted & matched ${mapped.length} products!`, { id: toastId })
     } catch (err) {
       console.error("Direct scan failed:", err)
-      const isKeyIssue = err.message?.toLowerCase().includes('api key') || err.message?.toLowerCase().includes('key')
-      if (isKeyIssue) {
-        setShowKeyConfig(true)
-        toast.error(err.message || 'Invalid Gemini API key. Please configure your key below.', { id: toastId })
-      } else {
-        toast.error(err.message || 'Failed to scan invoice', { id: toastId })
-      }
+      toast.error(err.message || 'Failed to scan invoice', { id: toastId })
     } finally {
       setIsScanning(false)
       setScanProgress('')
@@ -1124,106 +1071,7 @@ export default function AIImportModal({ open, onClose, onImportSuccess }) {
 
             {/* TAB 1: Instant AI Scan Dropzone */}
             {inputMode === 'scan' && (
-              <div className="space-y-4">
-                {/* Apple Liquid Glass Gemini API Key Configuration Card */}
-                <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.12] bg-white/70 dark:bg-white/[0.04] backdrop-blur-2xl p-4 shadow-sm space-y-3 transition-all duration-200">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        geminiApiKey 
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25' 
-                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25'
-                      }`}>
-                        <Key size={17} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                            Google Gemini Vision AI
-                          </h4>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            geminiApiKey 
-                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
-                              : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                          }`}>
-                            {geminiApiKey ? 'Active' : 'Free Key Required'}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                          {geminiApiKey
-                            ? `Connected (••••••••${geminiApiKey.slice(-4)}) • Instant camera & PDF scanner enabled`
-                            : 'Free Gemini API key required for direct client-side scanning. No billing required.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {geminiApiKey && !showKeyConfig && (
-                        <button
-                          type="button"
-                          onClick={() => setShowKeyConfig(true)}
-                          className="btn-secondary text-xs px-3 py-1.5 rounded-xl font-medium"
-                        >
-                          Change Key
-                        </button>
-                      )}
-                      {showKeyConfig && geminiApiKey && (
-                        <button
-                          type="button"
-                          onClick={() => setShowKeyConfig(false)}
-                          className="btn-secondary text-xs px-3 py-1.5 rounded-xl font-medium"
-                        >
-                          Hide
-                        </button>
-                      )}
-                      <a
-                        href="https://aistudio.google.com/app/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] text-[#0071e3] dark:text-[#0a84ff] hover:underline flex items-center gap-1 font-semibold px-2 py-1"
-                      >
-                        Get Free Key <ExternalLink size={12} />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Expandable Key Input Panel */}
-                  {showKeyConfig && (
-                    <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2.5 animate-fadeIn">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="password"
-                          value={inputKey}
-                          onChange={(e) => setInputKey(e.target.value)}
-                          placeholder="Paste your Gemini API key (e.g. AIzaSy...)"
-                          className="input flex-1 text-xs py-2 px-3 rounded-xl"
-                          onKeyDown={(e) => e.key === 'Enter' && handleSaveApiKey()}
-                          autoFocus={!geminiApiKey}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleSaveApiKey()}
-                          className="btn-primary text-xs px-4 py-2 rounded-xl font-semibold whitespace-nowrap"
-                        >
-                          Save & Activate
-                        </button>
-                        {geminiApiKey && (
-                          <button
-                            type="button"
-                            onClick={handleRemoveApiKey}
-                            className="btn-secondary text-xs px-3 py-2 rounded-xl text-rose-500 hover:text-rose-600 whitespace-nowrap"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Keys are stored directly in your browser's private local storage and are never uploaded to any third-party server.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
+              <div className="space-y-6">
                 <input
                   type="file"
                   ref={fileInputRef}
