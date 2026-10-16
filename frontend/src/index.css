@@ -252,15 +252,16 @@
   
   .dark .btn-secondary {
     @apply text-slate-200;
-    border: 1px solid rgba(255,255,255,0.14);
-    box-shadow: 
-      0 4px 12px rgba(0,0,0,0.20),
-      inset 0 1px 0 rgba(255,255,255,0.10);
-  }
-  .dark .btn-secondary::before {
+    background: rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
-    background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%);
+    border: 0.5px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.20),
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.35);
+  }
+  .dark .btn-secondary::before {
+    background: transparent;
   }
   
   .btn-secondary:hover {
@@ -278,13 +279,27 @@
   
   .dark .btn-secondary:hover {
     @apply text-white;
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.28);
     box-shadow: 
       0 4px 14px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.50);
+    transform: translateY(-1px);
   }
   .dark .btn-secondary:hover::before {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
+    background: transparent;
+  }
+
+  .dark .btn-secondary:active {
+    background: rgba(255, 255, 255, 0.06) !important;
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-secondary:disabled,
+  .dark .btn-secondary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none !important;
   }
   
   /* Danger: Bright Crystal Ruby Glass */
