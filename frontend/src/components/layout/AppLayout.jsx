@@ -9,6 +9,7 @@ export default function AppLayout() {
   const location = useLocation()
   const [navVisible, setNavVisible] = useState(true)
   const layoutRef = useRef(null)
+  const scrollContainerRef = useRef(null)
   const progressRef = useRef(0)
   const lastScrollY = useRef(0)
   const lastDeltaRef = useRef(0)
