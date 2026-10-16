@@ -47,7 +47,7 @@ function StatCard({ icon: Icon, label, value, sub, accentColor = '#0071e3', onCl
   return (
     <button
       onClick={onClick}
-      className="stat-card-v2 text-left w-full relative overflow-hidden group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none"
+      className="stat-card-v2 text-left w-full relative overflow-hidden group cursor-pointer focus:outline-none"
       aria-label={label}
       title={`Click to view ${label}`}
     >
