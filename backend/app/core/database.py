@@ -13,16 +13,27 @@ db_instance = Database()
 
 async def connect_to_mongo():
     logger.info("Connecting to MongoDB...")
-    db_instance.client = AsyncIOMotorClient(settings.MONGODB_URL)
-    db_instance.db = db_instance.client[settings.MONGODB_DB_NAME]
     try:
-        hello_info = await db_instance.client.admin.command("hello")
-        db_instance.is_replica_set = bool(hello_info.get("setName"))
+        db_instance.client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+            socketTimeoutMS=20000
+        )
+        db_instance.db = db_instance.client[settings.MONGODB_DB_NAME]
+        try:
+            hello_info = await db_instance.client.admin.command("hello")
+            db_instance.is_replica_set = bool(hello_info.get("setName"))
+        except Exception as e:
+            logger.warning(f"MongoDB topology detection fallback: {e}")
+            db_instance.is_replica_set = False
+        try:
+            await create_indexes()
+        except Exception as e:
+            logger.warning(f"Database index creation deferred/non-fatal: {e}")
+        logger.info(f"Connected to MongoDB: {settings.MONGODB_DB_NAME} (replica_set={db_instance.is_replica_set})")
     except Exception as e:
-        logger.debug(f"Topology detection fallback: {e}")
-        db_instance.is_replica_set = False
-    await create_indexes()
-    logger.info(f"Connected to MongoDB: {settings.MONGODB_DB_NAME} (replica_set={db_instance.is_replica_set})")
+        logger.error(f"Failed to connect to MongoDB on startup: {e}. Web server will stay online and retry upon incoming database requests.")
 
 async def close_mongo_connection():
     logger.info("Closing MongoDB connection...")

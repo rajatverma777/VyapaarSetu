@@ -40,10 +40,11 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
+          --bind_ip_all
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
       - name: Checkout Code
@@ -71,16 +72,30 @@ jobs:
 
       - name: Verify MongoDB Readiness
         run: |
-          python -c "import time; from pymongo import MongoClient; client = MongoClient('mongodb://127.0.0.1:27017', serverSelectionTimeoutMS=2000); t0 = time.time()
-          while time.time() - t0 < 30:
-              try:
-                  client.admin.command('ping')
-                  print('MongoDB service is connected and ready.')
+          python -c "
+          import time, sys
+          from pymongo import MongoClient
+
+          t0 = time.time()
+          ready = False
+          while time.time() - t0 < 45:
+              for host in ['127.0.0.1', 'localhost']:
+                  try:
+                      c = MongoClient(f'mongodb://{host}:27017', serverSelectionTimeoutMS=1500)
+                      c.admin.command('ping')
+                      print(f'MongoDB connected via {host}:27017')
+                      ready = True
+                      break
+                  except Exception:
+                      pass
+              if ready:
                   break
-              except Exception as e:
-                  time.sleep(1)
-          else:
-              raise TimeoutError('MongoDB failed to become ready within 30s')
+              time.sleep(1)
+
+          if not ready:
+              print('ERROR: Timed out waiting for MongoDB to become ready', file=sys.stderr)
+              sys.exit(1)
+          print('MongoDB readiness verified successfully.')
           "
 
       - name: Run Backend Tests (Unit, Service, & Integration)
@@ -90,7 +105,7 @@ jobs:
           SECRET_KEY: test_secret_key_for_ci_pipeline_only_32_chars
         run: |
           cd backend
-          PYTHONPATH=. pytest tests/ -o asyncio_mode=auto -v
+          python -m pytest tests/ -o asyncio_mode=auto -v
 
   security-scan:
     name: Dependency & Security Verification

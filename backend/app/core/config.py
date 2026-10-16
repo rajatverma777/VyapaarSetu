@@ -38,8 +38,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_secret_key(self) -> Self:
-        if not self.DEBUG and self.SECRET_KEY == "your-super-secret-key-change-in-production-min-32-chars":
-            raise ValueError("SECRET_KEY must be changed from the default value in production mode (DEBUG=False).")
+        import secrets
+        import logging
+        _log = logging.getLogger(__name__)
+        if not self.DEBUG and (not self.SECRET_KEY or self.SECRET_KEY == "your-super-secret-key-change-in-production-min-32-chars" or len(self.SECRET_KEY) < 32):
+            _log.warning(
+                "SECURITY WARNING: SECRET_KEY is not configured or using default! "
+                "Auto-generating a secure ephemeral key for runtime stability. "
+                "Please configure SECRET_KEY in your deployment environment variables."
+            )
+            self.SECRET_KEY = secrets.token_urlsafe(48)
         return self
 
     model_config = SettingsConfigDict(

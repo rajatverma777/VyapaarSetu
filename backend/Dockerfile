@@ -17,8 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend files
 COPY . .
 
-# Expose FastAPI port
-EXPOSE 8000
+# Expose FastAPI and Render ports
+EXPOSE 8000 10000
 
-# Command to run uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run uvicorn respecting dynamic cloud port ($PORT on Render)
+CMD ["sh", "-c", "exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

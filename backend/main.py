@@ -120,6 +120,16 @@ app.include_router(documents.router, prefix="/api/documents", tags=["Documents"]
 app.include_router(pricing.router,   prefix="/api/pricing",   tags=["Pricing Intelligence"])
 
 
+@app.get("/")
+async def root():
+    return {
+        "app": "Vyapaar Setu API",
+        "status": "online",
+        "version": "1.1.0",
+        "health": "/api/health",
+        "docs": "/api/docs"
+    }
+
 @app.get("/api/health")
 async def health_check():
     return {
