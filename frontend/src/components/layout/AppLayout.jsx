@@ -8,8 +8,11 @@ import { healthAPI } from '../../services/api'
 export default function AppLayout() {
   const location = useLocation()
   const [navVisible, setNavVisible] = useState(true)
+  const layoutRef = useRef(null)
+  const progressRef = useRef(0)
   const lastScrollY = useRef(0)
-  const scrollContainerRef = useRef(null)
+  const lastDeltaRef = useRef(0)
+  const idleTimerRef = useRef(null)
 
   // Background warm-up to wake up Render free tier backend instantly on mount and periodically
   useEffect(() => {
@@ -28,20 +31,57 @@ export default function AppLayout() {
   const isPosPage = location.pathname === '/sales/new'
   const isSettingsPage = location.pathname === '/settings'
 
+  // Apply progress directly to CSS variables on layoutRef
+  // animate=false during active scroll for 1:1 direct speed tracking
+  // animate=true when settling into place after scroll stops
+  const applyNavProgress = (val, animate = false) => {
+    const layout = layoutRef.current
+    if (!layout) return
+    const p = Math.min(1, Math.max(0, Math.round(val * 1000) / 1000))
+    progressRef.current = p
+    layout.style.setProperty('--nav-progress', String(p))
+
+    if (animate) {
+      layout.style.setProperty(
+        '--nav-transition',
+        'transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease'
+      )
+    } else {
+      layout.style.setProperty('--nav-transition', 'none')
+    }
+
+    if (p >= 0.85) {
+      layout.setAttribute('data-nav-hidden', 'true')
+    } else {
+      layout.removeAttribute('data-nav-hidden')
+    }
+  }
+
   // Page-transition key & reset nav visibility on navigation
   const [pageKey, setPageKey] = useState(location.pathname)
   useEffect(() => {
     setPageKey(location.pathname)
     setNavVisible(true)
+    progressRef.current = 0
     lastScrollY.current = 0
+    lastDeltaRef.current = 0
+    applyNavProgress(0, false)
   }, [location.pathname])
 
-  // Scroll detection: auto-hide navbar & bottom nav on scroll down, reveal on scroll up
+  // Direct 1:1 Scroll Speed Tracking:
+  // With whatever speed user scrolls up or down, the navigation bars move at that exact speed!
   useEffect(() => {
     const container = scrollContainerRef.current
     if (!container) return
 
-    let lastY = container.scrollTop
+    // Travel range (pixels of scroll) for full navbar reveal/hide
+    // 70px gives exact 1:1 finger tracking speed on mobile and desktop
+    const TRAVEL_RANGE = 70
+
+    // Reset initial scroll position
+    lastScrollY.current = container.scrollTop
+    applyNavProgress(0, false)
+
     let rafId = null
 
     const handleScroll = () => {
@@ -50,35 +90,77 @@ export default function AppLayout() {
       rafId = window.requestAnimationFrame(() => {
         rafId = null
         const currentY = container.scrollTop
-        const delta = currentY - lastY
+        const delta = currentY - lastScrollY.current
+        lastScrollY.current = currentY
 
-        // When near top: always show
-        if (currentY <= 20) {
-          setNavVisible(true)
-        } else if (delta > 4) {
-          // Scrolling down (reading content) -> hide
-          setNavVisible(false)
-        } else if (delta < -4) {
-          // Scrolling up (returning to top) -> show
-          setNavVisible(true)
+        // Ignore 0 delta
+        if (delta === 0) return
+
+        // Overscroll protection on iOS / mobile Safari
+        if (currentY <= 0) {
+          applyNavProgress(0, false)
+          return
+        }
+        const maxScroll = container.scrollHeight - container.clientHeight
+        if (maxScroll > 0 && currentY >= maxScroll) {
+          if (delta > 0) return
         }
 
-        lastY = currentY
+        // Keep navbars visible if a dropdown or bottom sheet is open
+        const isMenuOpen = document.querySelector('.brand-nav-dropdown') ||
+                           document.querySelector('.bnav-sheet--open')
+        if (isMenuOpen) {
+          applyNavProgress(0, false)
+          return
+        }
+
+        // At the very top: always lock to fully visible
+        if (currentY <= 15) {
+          applyNavProgress(0, false)
+          return
+        }
+
+        lastDeltaRef.current = delta
+
+        // Directly increment/decrement progress proportional to scroll delta:
+        // Scroll down (delta > 0) -> progress increases towards 1 (hides at speed of scroll)
+        // Scroll up (delta < 0) -> progress decreases towards 0 (shows at speed of scroll)
+        // Fast swipe = huge delta = fast hide/show!
+        // Slow drag = tiny delta = slow hide/show!
+        const currentProgress = progressRef.current
+        const nextProgress = Math.min(1, Math.max(0, currentProgress + delta / TRAVEL_RANGE))
+
+        // Update immediately with NO transition lag during active scroll
+        applyNavProgress(nextProgress, false)
+
+        // When scrolling stops (user stops dragging / momentum ends),
+        // gently snap to fully open or fully closed
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = setTimeout(() => {
+          const p = progressRef.current
+          const lastDelta = lastDeltaRef.current
+          if (container.scrollTop <= 20) {
+            applyNavProgress(0, true)
+          } else if (lastDelta > 0 && p > 0.35) {
+            applyNavProgress(1, true)
+          } else if (lastDelta < 0 && p < 0.70) {
+            applyNavProgress(0, true)
+          }
+        }, 110)
       })
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
       if (rafId !== null) window.cancelAnimationFrame(rafId)
       container.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('scroll', handleScroll)
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     }
   }, [location.pathname])
 
   return (
-    <div className="flex flex-1 min-h-0 ambient-bg overflow-hidden relative w-full">
+    <div ref={layoutRef} className="flex flex-1 min-h-0 ambient-bg overflow-hidden relative w-full">
 
       {/* ── MAIN CONTENT (fills #root which is position:fixed inset:0 — true edge-to-edge) ── */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 min-w-0 w-full h-full">
