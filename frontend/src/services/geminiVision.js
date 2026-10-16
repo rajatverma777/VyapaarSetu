@@ -3,22 +3,42 @@
  * Enables instantaneous client-side extraction on Vercel without relying on backend OCR worker.
  */
 
-const getResolvedKey = () => {
+export const getResolvedKey = () => {
   if (typeof window !== 'undefined') {
     const local = localStorage.getItem('gemini_api_key')
-    if (local) return local
+    if (local && local.trim()) return local.trim()
   }
   if (import.meta.env?.VITE_GEMINI_API_KEY) {
-    return import.meta.env.VITE_GEMINI_API_KEY
+    return import.meta.env.VITE_GEMINI_API_KEY.trim()
   }
   return ""
 }
 
+export const setStoredGeminiKey = (key) => {
+  if (typeof window !== 'undefined') {
+    if (key && key.trim()) {
+      localStorage.setItem('gemini_api_key', key.trim())
+    } else {
+      localStorage.removeItem('gemini_api_key')
+    }
+  }
+}
+
+export const removeStoredGeminiKey = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('gemini_api_key')
+  }
+}
+
+export const hasStoredGeminiKey = () => {
+  return !!getResolvedKey()
+}
+
 const GEMINI_MODELS = [
-  "gemini-flash-lite-latest",
-  "gemini-3.5-flash-lite",
-  "gemini-3.5-flash",
-  "gemini-3.8-flash"
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-pro"
 ]
 
 export const fileToBase64 = (file) => {

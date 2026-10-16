@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { ThemeProvider } from './context/ThemeContext'
+import { ThemeProvider, useTheme } from './context/ThemeContext'
 import { CommandPaletteProvider } from './context/CommandPaletteContext'
 
 // Layout
@@ -66,45 +68,73 @@ const router = createBrowserRouter([
   }
 ])
 
+function GlobalToaster() {
+  const { dark } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted || typeof document === 'undefined') return null
+
+  return createPortal(
+    <Toaster
+      position="top-right"
+      gutter={10}
+      containerStyle={{
+        zIndex: 9999999,
+        pointerEvents: 'none',
+      }}
+      toastOptions={{
+        duration: 4000,
+        style: {
+          pointerEvents: 'auto',
+          fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
+          fontSize: '13px',
+          fontWeight: '500',
+          borderRadius: '16px',
+          padding: '12px 18px',
+          maxWidth: '420px',
+          background: dark ? 'rgba(20, 20, 26, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+          color: dark ? '#f8fafc' : '#0f172a',
+          border: dark ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: dark
+            ? '0 24px 60px rgba(0, 0, 0, 0.8), inset 0 0.5px 0 rgba(255, 255, 255, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.08)'
+            : '0 20px 50px rgba(0, 0, 0, 0.12), inset 0 0.5px 0 rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(32px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+        },
+        success: {
+          iconTheme: { primary: '#10b981', secondary: '#ffffff' },
+          style: {
+            borderLeft: '4px solid #10b981',
+          },
+        },
+        error: {
+          iconTheme: { primary: '#ef4444', secondary: '#ffffff' },
+          style: {
+            borderLeft: '4px solid #ef4444',
+          },
+        },
+        loading: {
+          iconTheme: { primary: '#0a84ff', secondary: '#ffffff' },
+          style: {
+            borderLeft: '4px solid #0a84ff',
+          },
+        },
+      }}
+    />,
+    document.body
+  )
+}
+
 function App() {
   return (
     <ThemeProvider>
       <CommandPaletteProvider>
         <AuthProvider>
-          <Toaster
-            position="top-right"
-            gutter={8}
-            toastOptions={{
-              duration: 3500,
-              style: {
-                fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
-                fontSize: '13px',
-                fontWeight: '500',
-                borderRadius: '12px',
-                padding: '12px 16px',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 12px 40px rgba(0,0,0,0.12)',
-                border: '1px solid rgba(229,231,235,0.7)',
-                backdropFilter: 'blur(16px)',
-                maxWidth: '380px',
-              },
-              success: {
-                iconTheme: { primary: '#10b981', secondary: '#fff' },
-                style: {
-                  background: 'rgba(255,255,255,0.97)',
-                  color: '#111827',
-                  borderLeft: '3px solid #10b981',
-                },
-              },
-              error: {
-                iconTheme: { primary: '#ef4444', secondary: '#fff' },
-                style: {
-                  background: 'rgba(255,255,255,0.97)',
-                  color: '#111827',
-                  borderLeft: '3px solid #ef4444',
-                },
-              },
-            }}
-          />
+          <GlobalToaster />
           <RouterProvider router={router} />
         </AuthProvider>
       </CommandPaletteProvider>

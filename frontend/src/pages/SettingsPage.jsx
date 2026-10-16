@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Settings, Building2, Users, Database, Key, Plus, Trash2,
   Sun, Moon, Palette, User, FileText, Copy, Check,
-  ChevronRight, Search, X
+  ChevronRight, Search, X, Sparkles, ExternalLink
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { settingsAPI, backupAPI, userAPI } from '../services/api'
@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { format } from 'date-fns'
 import { INDIAN_STATES } from '../services/constants'
+import { getResolvedKey, setStoredGeminiKey, removeStoredGeminiKey } from '../services/geminiVision'
 
 const SETTINGS_GROUPS = [
   {
@@ -32,6 +33,7 @@ const SETTINGS_GROUPS = [
     title: 'System Preferences',
     items: [
       { id: 'appearance', label: 'Appearance',        hint: 'Light & dark theme',      icon: Palette },
+      { id: 'ai',         label: 'Gemini AI Vision',  hint: 'Document & invoice scanner key', icon: Sparkles },
       { id: 'backup',     label: 'Database Backup',   hint: 'Exports & data safety',   icon: Database,  permission: 'backup' },
     ]
   }
@@ -57,6 +59,10 @@ const TAB_METADATA = {
   appearance: {
     title: 'Appearance Settings',
     subtitle: 'Customize the visual theme and liquid glass translucency of your workspace.'
+  },
+  ai: {
+    title: 'Gemini AI Vision Settings',
+    subtitle: 'Configure your Google Gemini API key for instant multi-page PDF, photo & invoice scanning.'
   },
   backup: {
     title: 'Database Backup & Restore',
@@ -109,6 +115,26 @@ export default function SettingsPage() {
   const [sidebarSearch, setSidebarSearch] = useState('')
   const [loading, setLoading]  = useState(false)
   const [saving, setSaving]    = useState(false)
+
+  // Gemini AI Key
+  const [settingsGeminiKey, setSettingsGeminiKey] = useState(() => getResolvedKey())
+
+  const handleSaveSettingsGeminiKey = () => {
+    const trimmed = (settingsGeminiKey || '').trim()
+    if (!trimmed) {
+      toast.error('Please enter a valid Gemini API key')
+      return
+    }
+    setStoredGeminiKey(trimmed)
+    setSettingsGeminiKey(trimmed)
+    toast.success('Gemini API key saved & activated!')
+  }
+
+  const handleClearSettingsGeminiKey = () => {
+    removeStoredGeminiKey()
+    setSettingsGeminiKey('')
+    toast.success('Gemini API key removed')
+  }
 
   // Company
   const [company, setCompany] = useState({
@@ -1109,6 +1135,64 @@ export default function SettingsPage() {
                 />
                 <span className="text-xs font-semibold text-slate-900 dark:text-white">Dark Mode</span>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'ai' && (
+        <div className="apple-settings-card max-w-2xl animate-fade-in space-y-6">
+          <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Google Gemini API Configuration</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Vyapaar Setu uses Google Gemini AI to analyze multi-page PDFs, camera photos, and wholesale bills directly in your browser.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-[#0a84ff]" /> Google Gemini API Key
+                </span>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#0071e3] dark:text-[#0a84ff] hover:underline flex items-center gap-1 font-semibold"
+                >
+                  Get Free Key from Google AI Studio <ExternalLink size={12} />
+                </a>
+              </div>
+              <input
+                type="password"
+                value={settingsGeminiKey}
+                onChange={(e) => setSettingsGeminiKey(e.target.value)}
+                placeholder="Paste Gemini API Key (AIzaSy...)"
+                className="input w-full text-xs"
+              />
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                Your key is stored securely in your browser's private local storage and is never uploaded to any intermediary servers.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleSaveSettingsGeminiKey}
+                className="btn-primary text-xs px-5 py-2.5 rounded-xl font-semibold"
+              >
+                Save Gemini Key
+              </button>
+              {settingsGeminiKey && (
+                <button
+                  type="button"
+                  onClick={handleClearSettingsGeminiKey}
+                  className="btn-secondary text-xs px-4 py-2.5 rounded-xl text-rose-500 hover:text-rose-600"
+                >
+                  Remove Key
+                </button>
+              )}
             </div>
           </div>
         </div>
